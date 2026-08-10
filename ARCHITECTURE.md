@@ -1,6 +1,6 @@
 # Architecture
 
-How Kept is put together and why. Product reasoning lives in [plan.md](plan.md);
+How CashLeak is put together and why. Product reasoning lives in [plan.md](plan.md);
 this file is the technical view.
 
 ---
@@ -43,7 +43,7 @@ and dismissible instead of silently corrupting the dataset.
 ## Target layout
 
 ```
-Kept/
+CashLeak/
 ├── App/                  entry point, ModelContainer, app-wide environment
 ├── Models/               SwiftData @Model types, enums, computed aggregates
 ├── Features/
@@ -63,9 +63,10 @@ Feature folders own their views, view models, and any feature-local helpers.
 Shared code moves up to `Models/` or a `Shared/` folder only once a second
 feature actually needs it — not in anticipation.
 
-The current on-disk structure is still the stock Xcode template (`cashleak/` with
-`ContentView.swift` and `Item.swift`). Restructuring is the first task before
-feature work.
+This layout is in place, minus the folders whose features haven't been built.
+`Intents/`, `Notifications/`, `Widgets/`, and `Resources/` arrive with L13, L19,
+and L18 respectively. `Support/` holds cross-feature helpers that more than one
+feature already needs — `LeakRamp`, `MerchantNormalizer`, `SpendingSummary`.
 
 ## Data model
 

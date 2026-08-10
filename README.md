@@ -1,4 +1,4 @@
-# Kept
+# CashLeak
 
 > Most spending apps tell you where your money went.
 > This one tells you what it cost you.
@@ -13,13 +13,20 @@ No account. No server. No bank login. No subscription.
 
 ## Status
 
-Pre-v1. Nothing is built yet — the repo currently holds the stock Xcode template
-plus planning documents.
+Pre-v1, foundation in place. The core loop runs: add a purchase, sort it *worth
+it* or *leak*, watch the Overview card respond.
 
-Before feature work starts, the verdict mechanic needs two weeks of manual
-validation. See **Before writing code** in [plan.md](plan.md). If labelling
-purchases *worth it* / *leak* doesn't change behaviour on paper, it won't change
-it in an app.
+Built so far — SwiftData models, five-tab shell, seeded debug dataset, number-pad
+entry, the Sort queue, and the Overview leak card with its ratio ramp. 56 unit
+tests cover merchant normalization, spending aggregates, the ramp rules,
+recurring date maths, and the two model invariants.
+
+Not yet built — Wallet capture, deduplication, recurring posting, Analysis,
+Trips, notifications, and the widget. See [BUILD_PLAN.md](BUILD_PLAN.md).
+
+**The four gate steps haven't run.** L1 in particular — two weeks of validating
+the verdict mechanic by hand — is the one step that can invalidate everything
+else here.
 
 ## Documents
 
@@ -38,7 +45,7 @@ connections break constantly, and they charge per user per connected account —
 which is why every app in this category is a $10–20/month subscription that wants
 your bank credentials.
 
-Kept never connects to a bank. Apple Pay taps arrive through a Shortcuts
+CashLeak never connects to a bank. Apple Pay taps arrive through a Shortcuts
 automation, receipts are scanned on-device, everything else takes five seconds to
 enter. Data lives on the phone and syncs through the user's own iCloud.
 
@@ -82,13 +89,13 @@ Every one of these will be requested. Saying no is the strategy.
 
 ## Naming
 
-The product is **Kept**. The repository, Xcode project, and bundle identifier
-still say `cashleak` from the original scaffold — see
-[DECISIONS.md](DECISIONS.md#d-007). "Cash Leak" survives as the in-app feature
-name.
+The product is **CashLeak** — repository, Xcode project, bundle identifier, and
+documents all agree. An earlier draft used "Kept"; that split is resolved in
+[DECISIONS.md](DECISIONS.md#d-007).
 
-Neither name is cleared yet. Check the App Store, CIPO, and USPTO classes 9 and
-42 before locking a bundle ID.
+The public App Store name isn't settled. "CashLeak" is descriptive, which reads
+clearly but defends poorly as a trademark. Check the App Store, CIPO, and USPTO
+classes 9 and 42 before locking a bundle ID — step L4.
 
 ## License
 

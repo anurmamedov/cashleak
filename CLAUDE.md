@@ -14,13 +14,37 @@ usually worth surfacing rather than silently resolving.
 
 ## Project state
 
-Pre-v1. The source tree is still the stock Xcode template — `cashleak/` with
-`ContentView.swift` and `Item.swift`. Restructuring to the layout in
-ARCHITECTURE.md is the first task; `Item.swift` is scaffold and gets deleted.
+Pre-v1. Foundation is in: models, tab shell, seed data, and the core loop
+screens (Add, Sort, Overview). See BUILD_PLAN.md for step-by-step status —
+L6, L7, L9, L10, L11, L12, and L16 are done.
 
-The product is called **Kept**. The project, folders, and bundle ID say
-`cashleak`. That mismatch is deliberate for now — see D-007. Don't "fix" it
-without being asked.
+Not yet done: capabilities (L5), CloudKit two-device verification (L8), the
+Wallet App Intent (L13), dedup (L14), recurring posting (L15), Analysis (L17),
+Trips (L18), notifications and widget (L19), the real You screen (L20).
+
+**All four gates — L1 to L4 — are still unrun.** Code written ahead of them
+rests on assumptions, particularly the merchant fixtures in
+`cashleakTests/TestSupport.swift`, which are guesses until L3 supplies real
+strings.
+
+The product is called **CashLeak**. Repo, project, bundle ID, and docs all agree.
+See D-007 — the name isn't cleared for the App Store yet, but it's no longer
+ambiguous internally.
+
+## Keeping documents current
+
+When a change makes a document wrong, fix the document in the same commit. These
+files describe the project as it is, not as it was planned:
+
+- **BUILD_PLAN.md** — mark steps done as they land. A plan nobody updates gets
+  ignored within a week.
+- **README.md** — the status section, when the project state changes materially.
+- **ARCHITECTURE.md** — when structure, models, or the capture pipeline change.
+- **DECISIONS.md** — add an entry when something is decided, and close open ones
+  (D-007, D-008) when their gate runs. Supersede, never edit history.
+
+Not every commit touches a document. A bug fix usually doesn't. A new model,
+a resolved gate, or a completed step always does.
 
 ## Stack constraints
 

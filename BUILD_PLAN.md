@@ -17,6 +17,23 @@ and bundle ID, resolve before the listing (P5).
 
 ---
 
+## Progress
+
+| | Steps |
+|---|---|
+| **Done** | L6 · L7 · L9 · L10 · L11 · L12 · L16, plus the test target and suite |
+| **Partial** | L5 — source tree restructured, capabilities not yet enabled |
+| **Gates unrun** | L1 · L2 · L3 · L4 |
+| **Pending** | L8 · L13 · L14 · L15 · L17 · L18 · L19 · L20, all of P1–P9 |
+
+Mark steps here as they land. A plan nobody updates gets ignored within a week.
+
+Worth stating plainly: every completed step is code, and every gate is
+untouched. L14's fixtures are guesses until L3 runs, and L1 can invalidate all
+of it.
+
+---
+
 # Local — 20 steps
 
 ## Gates (do these first, in parallel)

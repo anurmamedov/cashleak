@@ -1,4 +1,4 @@
-# Kept
+# CashLeak
 
 > Most spending apps tell you where your money went.
 > This one tells you what it cost you.
@@ -25,7 +25,7 @@ quietly drop Canadian bank support. Those aggregators also cost money per user
 per connected account, which is why every app in this category is a $10–20/month
 subscription that wants your bank credentials.
 
-Kept never connects to a bank. Apple Pay taps arrive through a Shortcuts
+CashLeak never connects to a bank. Apple Pay taps arrive through a Shortcuts
 automation, receipts are scanned on-device, everything else takes five seconds to
 enter. Data lives on your phone and syncs through your own iCloud.
 
@@ -301,7 +301,7 @@ Capabilities required: iCloud + CloudKit, Background Modes (background fetch),
 Push Notifications, App Group shared with the widget target.
 
 ```
-Kept/
+CashLeak/
 ├── App/                  entry point, ModelContainer
 ├── Models/               SwiftData @Model types
 ├── Features/

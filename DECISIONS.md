@@ -11,7 +11,7 @@ Add to the bottom. Don't edit history — supersede it with a new entry.
 
 **Decided.**
 
-Kept never connects to a bank account. Data arrives via Shortcuts automations,
+CashLeak never connects to a bank account. Data arrives via Shortcuts automations,
 on-device receipt OCR, recurring rules, and manual entry.
 
 Canada has no real open banking, so aggregators screen-scrape; connections break
@@ -126,20 +126,28 @@ feature is something other than what it looks like.
 
 ---
 
-## D-007 · Name unresolved — "Kept" provisional
+## D-007 · Working name is CashLeak
 
-**Open.** Blocks bundle ID, domain, and handles.
+**Decided internally. App Store name still open.**
 
-The product is called **Kept** in all planning documents. The repository, Xcode
-project, and scaffold are all `cashleak`, which is where the project started.
+"Kept" was the working name in an earlier draft of the planning documents, while
+the repository, Xcode project, and bundle ID said `cashleak`. That split produced
+documents that contradicted each other and code that matched neither
+consistently.
 
-"Cash Leak" is descriptive — clear to a user, weak as a trademark, and hard to
-defend. It survives as the in-app feature name regardless of what the product is
-called.
+Settled: **CashLeak** everywhere — repo, bundle ID, module, documents. The cost
+of the ambiguity was higher than the cost of picking.
+
+It's descriptive, which makes it clear to a user and weak as a trademark. That's
+an acceptable trade for a pre-launch working name and a bundle identifier nobody
+sees.
+
+**Still open:** the public App Store name. Descriptive marks are hard to defend,
+so this may not survive the L4 check.
 
 **Resolve by:** App Store search on device, CIPO, USPTO classes 9 and 42,
-registrar availability. Do this before the first TestFlight build — bundle
-identifiers are painful to change afterward.
+registrar availability — L4. Renaming the bundle identifier after the first
+TestFlight build is painful, so do it before P6.
 
 ---
 
@@ -197,3 +205,28 @@ that on paper costs two weeks. Learning it after building costs six.
 
 This is the single item most likely to be skipped, because the repo now exists
 and building is more fun than journalling.
+
+**Status: skipped so far.** The foundation was built first. That's a risk taken
+knowingly, not an oversight — but the two-week clock still hasn't started, and
+every step built on top of the mechanic assumes it works.
+
+---
+
+## D-011 · Tests are written per step, not in a phase
+
+**Decided.**
+
+Every build step carries its own tests and isn't done until they pass. There is
+no testing phase at the end; the only bulk step is P1, and that's manual device
+matrix and regression work.
+
+A test phase scheduled after the features is a test phase that gets compressed
+when the features run late. Writing them alongside also surfaces design problems
+while they're still cheap to fix.
+
+What gets tested is where being wrong is invisible: merchant normalization and
+dedup, recurring date maths, spending aggregates, the leak ramp rules, and
+notification copy. Not SwiftUI snapshots — at this size they cost more than they
+return.
+
+**Reverse if:** never, though the specific coverage list will grow.
