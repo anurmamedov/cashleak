@@ -95,6 +95,16 @@ from the user's own alert text. Worth testing deliberately in the same session.
 **Treat all of this as a hypothesis.** Run the test below and record what your
 device actually does.
 
+### Not testable in the Simulator
+
+Checked on iPhone 17 Pro / iOS 26.5: the Simulator ships a reduced set of system
+apps — Fitness, Watch, Contacts, Files, Preview, Utilities, Safari, Messages.
+**No Shortcuts, no Wallet, no Mail.** Simulator Messages also can't receive a
+real SMS.
+
+L2 and L3 both need the physical phone. The Simulator is still the right place
+for everything else: building, the UI, and the test suite.
+
 ### Setup
 
 1. Shortcuts → **Automation** tab → **+**

@@ -25,7 +25,11 @@ and bundle ID, resolve before the listing (P5).
 | **Partial** | L5 — source tree restructured, capabilities not yet enabled |
 | **Gates unrun** | L1 · L2 · L3 · L4 |
 | **Pending** | L8 · L17 · L18 · L19 · L20, all of P1–P9 |
-| **Unverified** | Nothing has been compiled. Every "done" above is provisional until the project builds. |
+| **Verified** | Builds and runs on iPhone 17 Pro / iOS 26.5. Overview renders, ramp holds palest shade at zero data, all five tab slots work. |
+| **Still unverified** | The 83 unit tests — the test target hasn't been added to the project yet. |
+
+Note for L2 and L3: the iOS Simulator does **not** include Shortcuts, Wallet, or
+Mail, so neither gate can be run there. Both need the physical phone.
 
 Mark steps here as they land. A plan nobody updates gets ignored within a week.
 
