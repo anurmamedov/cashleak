@@ -66,6 +66,35 @@ the app around it.
 This decides whether bank alert capture is the v1.1 headline feature or a
 consolation notification. One afternoon.
 
+### Prior evidence — leans yes, still unconfirmed on device
+
+Desk research, August 2026. Third-party reports, not Apple documentation.
+
+**Message trigger.** A published workflow forwards incoming SMS bodies to a
+webhook via a Message automation, which only works if the body is reachable as
+Shortcut Input. A commenter in July 2025 reported not finding the option; another
+confirmed in August 2025 with a screenshot that it still works. There is also a
+"Forward SMS" App Store app built entirely on this mechanism, which wouldn't
+exist if the body were inaccessible.
+
+**Email trigger.** Better attested. Multiple users report Shortcut Input arrives
+as a file whose *name* is the subject and whose *contents* are the body — so
+regex extraction works directly. One caveat repeated in those threads: the
+trigger matches on the **subject line, not the body**, so filtering has to use
+something in the subject.
+
+**A new problem this surfaced.** As of iOS 16.6, Message automation senders can
+reportedly only be phone numbers — not the short codes banks use for mass
+texting. Canadian bank alerts come from short codes almost exclusively.
+
+If that still holds, sender-based filtering is unusable and every rule has to key
+on **"Message contains"** instead. That's workable but changes the design:
+onboarding can't say "pick your bank," it has to capture a distinctive phrase
+from the user's own alert text. Worth testing deliberately in the same session.
+
+**Treat all of this as a hypothesis.** Run the test below and record what your
+device actually does.
+
 ### Setup
 
 1. Shortcuts → **Automation** tab → **+**
@@ -100,6 +129,25 @@ _______________________________________________
 
 **Also note:** did it fire instantly, or was there a delay? A trigger that takes
 30 seconds changes the UX.
+
+### Second test, same session — short code senders
+
+The desk research says sender filtering may reject short codes, which is how
+every Canadian bank texts.
+
+1. In the automation, try setting **Sender** to a short code you've actually
+   received from — check your Messages for one from RBC, TD, Scotiabank, BMO,
+   CIBC, or Tangerine
+2. Record whether the field accepts it
+
+```
+Short code tried: __________
+Accepted?         __________
+```
+
+If it rejects short codes, every rule must key on "Message contains" instead.
+That's still workable — it just means onboarding asks the user for a phrase from
+their own alert rather than offering a list of banks to pick from.
 
 ---
 
