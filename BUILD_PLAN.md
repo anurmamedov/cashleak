@@ -338,11 +338,25 @@ renaming.
 
 ## Suggested order
 
-1. Test target — 2 minutes, validates 131 tests
-2. Capabilities — 5 minutes, unblocks L8
-3. L1 — start the two-week clock today
-4. L2 and L3 — one evening each, on the phone
-5. L17 Analysis, then L18 Trips
+Only three local steps remain, and every one of them is blocked on something
+outside the code.
+
+1. **Test target** — 2 minutes in Xcode. 131 tests have never executed, and four
+   features have now been built on top of them. If `MerchantNormalizer` is
+   wrong, dedup is wrong, the Analysis leaderboard groups wrong, and merchant
+   memory misfires — one bug wearing four costumes, none of it visible on screen.
+2. **L5 capabilities** — 5 minutes in Xcode. Unblocks L8 sync and L19
+   notifications. Until this lands, CloudKit is configured in code and does
+   nothing at runtime.
+3. **L1** — start the two-week clock today. Nothing depends on it and everything
+   is invalidated by it.
+4. **L2 and L3** — one evening each, on the phone. L3's merchant strings replace
+   the guessed dedup fixtures.
+5. **L19** — the last unbuilt feature. Needs step 2 first.
+6. **L8** — two-device sync check. Needs step 2 and a second device.
+
+The pattern worth noticing: everything I can do alone is done. What's left needs
+Xcode, a phone, or two weeks.
 
 ---
 
