@@ -14,6 +14,7 @@ enum AppModelContainer {
         Category.self,
         Trip.self,
         RecurringRule.self,
+        CardAutomation.self,
     ])
 
     static let shared: ModelContainer = {

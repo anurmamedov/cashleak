@@ -12,12 +12,12 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 
 | | Local | Production |
 |---|---|---|
-| Done | 9 | 0 |
+| Done | 12 | 0 |
 | Partial | 3 | 0 |
-| Not started | 8 | 10 |
+| Not started | 5 | 10 |
 
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
-**Not verified:** all 83 unit tests — there is no test target in the project yet.
+**Not verified:** all 117 unit tests — there is no test target in the project yet.
 **Gates:** none of the four have been run.
 
 ---
@@ -90,7 +90,7 @@ Outstanding:
 
 Done:
 
-- [x] 83 tests across 6 files
+- [x] 117 tests across 8 files
 - [x] In-memory `ModelContainer` helper, CloudKit disabled
 - [x] Merchant fixture corpus
 
@@ -214,29 +214,32 @@ Outstanding:
 
 - [ ] Elements don't yet tap through to Analysis
 
-### L17 · Analysis — not started
+### L17 · Analysis — done
 
-Placeholder showing raw totals.
+- [x] Range selector: month, 3M, year
+- [x] Spent-vs-leaked trend in Swift Charts, bucketed by day or month
+- [x] Category breakdown, tappable
+- [x] Merchant leaderboard ranked by leak, grouped by normalized merchant
+- [x] Day-of-week pattern, always seven bars
+- [x] One plain-language finding in serif, suppressed below 15 transactions
+- [x] Merchant and category drill-downs
+- [x] Empty state
+- [x] 17 aggregate tests
 
-- [ ] Range selector
-- [ ] Spent-vs-leaked trend, Swift Charts
-- [ ] Category breakdown
-- [ ] Merchant leaderboard
-- [ ] Day-of-week pattern
-- [ ] One plain-language finding in serif
-- [ ] Every row navigates somewhere
+### L18 · Trips — done
 
-### L18 · Trips — not started
+- [x] Trip list grouped by now, coming up, been
+- [x] Curated cost index, 78 cities, multipliers relative to Toronto
+- [x] Personalised forecast from the user's own discretionary spend
+- [x] Fixed-cost categories excluded from the daily rate
+- [x] Live forecast preview while planning
+- [x] Detail screen shows the arithmetic, not just the total
+- [x] Live burn rate with on-pace indicator
+- [x] Actual vs. estimate after the trip
+- [x] Overview trip card navigates here
+- [x] 15 tests across index, forecast, and averaging
 
-Model exists with the forecast maths and is tested. No UI.
-
-- [ ] Trip creation and editing
-- [ ] Curated cost index, ~150 cities
-- [ ] Live burn rate during the trip
-- [ ] Actual vs. estimate after
-
-Unlocks the signature line — *"68% of your flight to Lisbon"* — which currently
-can't fire.
+- [ ] Index is 78 cities, not the ~150 the plan asked for
 
 ### L19 · Notification and widget — not started
 
@@ -246,26 +249,21 @@ can't fire.
 - [ ] Tapping opens Sort
 - [ ] Home Screen widget with today's total
 
-### L20 · You screen — partial
+### L20 · You screen — done
 
-Done:
-
+- [x] Per-card automation status, self-reported, with staleness detection
 - [x] Apple Pay setup walkthrough
-- [x] Recurring rules
-- [x] Data counts including merged duplicates
+- [x] Recurring rules and Trips
 - [x] Plain statement of what won't be captured
+- [x] Accent picker, four options
+- [x] Daily summary time
+- [x] **Currency now follows device locale**, overridable
+- [x] Category management with safe deletion
+- [x] CSV export via share sheet, RFC 4180 quoting
+- [x] Privacy page
 - [x] Debug tools
 
-Outstanding:
-
-- [ ] **Currency is hardcoded to `CAD`** in both formatters, ignoring the
-      `currencyCode` stored on every transaction — wrong symbols outside Canada
-- [ ] Accent picker
-- [ ] Notification time
-- [ ] Category management
-- [ ] CSV export
-- [ ] Privacy page
-- [ ] Per-card automation status
+- [ ] Card status is self-reported — no API can verify an automation exists
 
 ---
 

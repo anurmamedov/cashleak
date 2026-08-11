@@ -101,20 +101,30 @@ extension Double {
     /// `$1,284` — no decimals. Amounts in this app are glanceable, not
     /// accounting figures.
     var currencyRounded: String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.maximumFractionDigits = 0
-        f.currencyCode = "CAD"
-        return f.string(from: NSNumber(value: self)) ?? "$0"
+        Self.format(self, fractionDigits: 0)
     }
 
     /// `$34.20` — used where the exact figure matters, like a queue row.
     var currencyExact: String {
+        Self.format(self, fractionDigits: 2)
+    }
+
+    /// Formats in a specific currency, for a transaction captured abroad.
+    func currency(code: String, fractionDigits: Int = 2) -> String {
+        Self.format(self, fractionDigits: fractionDigits, code: code)
+    }
+
+    private static func format(
+        _ value: Double,
+        fractionDigits: Int,
+        code: String = AppSettings.currencyCode
+    ) -> String {
         let f = NumberFormatter()
         f.numberStyle = .currency
-        f.minimumFractionDigits = 2
-        f.maximumFractionDigits = 2
-        f.currencyCode = "CAD"
-        return f.string(from: NSNumber(value: self)) ?? "$0.00"
+        f.minimumFractionDigits = fractionDigits
+        f.maximumFractionDigits = fractionDigits
+        f.currencyCode = code
+        f.locale = .current
+        return f.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 }

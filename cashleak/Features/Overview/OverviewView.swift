@@ -150,24 +150,30 @@ struct OverviewView: View {
     // MARK: Trip
 
     private func tripCard(_ trip: Trip) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(trip.name)
-                    .font(.subheadline.weight(.medium))
-                Text(tripSubtitle(trip))
+        NavigationLink {
+            TripDetailView(trip: trip)
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(trip.name)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                    Text(tripSubtitle(trip))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.tertiary)
             }
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+            .padding(14)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color(.separator), lineWidth: 0.5)
+            )
         }
-        .padding(14)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color(.separator), lineWidth: 0.5)
-        )
+        .buttonStyle(.plain)
     }
 
     private func tripSubtitle(_ trip: Trip) -> String {
