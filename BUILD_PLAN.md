@@ -12,12 +12,12 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 
 | | Local | Production |
 |---|---|---|
-| Done | 12 | 0 |
-| Partial | 3 | 0 |
-| Not started | 5 | 10 |
+| Done | 15 | 0 |
+| Partial | 2 | 0 |
+| Not started | 3 | 10 |
 
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
-**Not verified:** all 117 unit tests — there is no test target in the project yet.
+**Not verified:** all 131 unit tests — there is no test target in the project yet.
 **Gates:** none of the four have been run.
 
 ---
@@ -90,7 +90,7 @@ Outstanding:
 
 Done:
 
-- [x] 117 tests across 8 files
+- [x] 131 tests across 9 files
 - [x] In-memory `ModelContainer` helper, CloudKit disabled
 - [x] Merchant fixture corpus
 
@@ -138,32 +138,28 @@ Not unit-testable. Needs two physical devices.
 
 ## Core loop
 
-### L11 · Manual entry sheet — partial
-
-Done:
+### L11 · Manual entry sheet — done
 
 - [x] Number pad opens focused, digits accumulate from the right
 - [x] Category chips
 - [x] Saves confirmed — the one deliberate exception to the unconfirmed rule
+- [x] Optional merchant field with recent-merchant suggestions
+- [x] Category pre-fills from the last time that merchant was filed
+- [x] An explicit category tap always beats the remembered one
+- [x] Memory returns categories only, never verdicts
+- [x] 11 memory tests
 
-Outstanding:
-
-- [ ] Merchant→category memory not implemented
-- [ ] No merchant field in the primary path
-
-### L12 · Sort queue — partial
-
-Done:
+### L12 · Sort queue — done
 
 - [x] Swipe right for worth it, left for leak
 - [x] Source badges: Pay, Alert, Scan, Auto, Manual
 - [x] Empty state reads as a reward
 - [x] VoiceOver actions for both verdicts
-
-Outstanding:
-
-- [ ] Tap-to-assign-category not built
-- [ ] No undo after a swipe
+- [x] Tap a row to assign a category, without confirming it
+- [x] Uncategorised rows say so, rather than showing nothing
+- [x] Undo banner for 4 seconds after each swipe
+- [x] Undo restores verdict and confirmation together
+- [x] 3 action tests
 
 ### L13 · Wallet App Intent — done
 
@@ -213,8 +209,7 @@ Outstanding:
 - [x] Trip card
 - [x] Trade-off line falls back gracefully with no trip
 - [x] Trip card navigates to trip detail
-
-- [ ] Leak breakdown rows don't yet tap through to Analysis
+- [x] Leak breakdown rows tap through to the category detail
 
 ### L17 · Analysis — done
 
@@ -343,7 +338,7 @@ renaming.
 
 ## Suggested order
 
-1. Test target — 2 minutes, validates 117 tests
+1. Test target — 2 minutes, validates 131 tests
 2. Capabilities — 5 minutes, unblocks L8
 3. L1 — start the two-week clock today
 4. L2 and L3 — one evening each, on the phone

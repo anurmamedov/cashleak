@@ -123,26 +123,38 @@ struct OverviewView: View {
                 .foregroundStyle(.secondary)
 
             ForEach(Array(leaksByCategory.enumerated()), id: \.offset) { _, row in
-                VStack(spacing: 5) {
-                    HStack {
-                        Text(row.category?.name ?? "Uncategorised")
-                            .font(.subheadline)
-                        Spacer()
-                        Text(row.total.currencyRounded)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    GeometryReader { geometry in
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(Color(.tertiarySystemFill))
-                            Capsule()
-                                .fill(Color(hex: row.category?.colorHex ?? "D85A30"))
-                                .frame(width: geometry.size.width * (row.total / maximum))
+                NavigationLink {
+                    CategoryDetailView(
+                        categoryName: row.category?.name ?? "Uncategorised",
+                        range: .month
+                    )
+                } label: {
+                    VStack(spacing: 5) {
+                        HStack {
+                            Text(row.category?.name ?? "Uncategorised")
+                                .font(.subheadline)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Text(row.total.currencyRounded)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
                         }
+                        GeometryReader { geometry in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color(.tertiarySystemFill))
+                                Capsule()
+                                    .fill(Color(hex: row.category?.colorHex ?? "D85A30"))
+                                    .frame(width: geometry.size.width * (row.total / maximum))
+                            }
+                        }
+                        .frame(height: 6)
                     }
-                    .frame(height: 6)
                 }
+                .buttonStyle(.plain)
             }
         }
     }

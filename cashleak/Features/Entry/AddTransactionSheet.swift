@@ -4,8 +4,9 @@ import SwiftData
 /// Number pad first. Amount → category chip → done.
 ///
 /// The target is under five seconds without looking, which is why there's no
-/// date picker, no required note, and no merchant field in the primary path.
-/// Anything that can be edited later in Sort doesn't belong here.
+/// date picker and no required note. The merchant field sits below the amount
+/// and stays optional — typing it buys you the remembered category, skipping it
+/// costs nothing.
 struct AddTransactionSheet: View {
 
     @Environment(\.modelContext) private var context
@@ -16,6 +17,9 @@ struct AddTransactionSheet: View {
     @State private var digits = ""
     @State private var selectedCategory: Category?
     @State private var merchant = ""
+    @State private var suggestions: [String] = []
+    @State private var categoryWasAutoFilled = false
+    @FocusState private var merchantFocused: Bool
 
     private var amount: Double {
         (Double(digits) ?? 0) / 100
@@ -27,12 +31,11 @@ struct AddTransactionSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 amountDisplay
+                merchantField
+                if !suggestions.isEmpty { suggestionRow }
                 categoryChips
                 Divider()
-                NumberPad(
-                    onDigit: append,
-                    onDelete: deleteLast
-                )
+                NumberPad(onDigit: append, onDelete: deleteLast)
                 saveButton
             }
             .navigationTitle("Add")
@@ -48,14 +51,73 @@ struct AddTransactionSheet: View {
 
     private var amountDisplay: some View {
         Text(amount.currencyExact)
-            .font(.system(size: 52, weight: .medium))
+            .font(.system(size: 50, weight: .medium))
             .monospacedDigit()
             .foregroundStyle(canSave ? .primary : .tertiary)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 28)
+            .padding(.top, 22)
+            .padding(.bottom, 14)
             .contentTransition(.numericText())
             .animation(.snappy(duration: 0.15), value: digits)
     }
+
+    // MARK: Merchant
+
+    private var merchantField: some View {
+        TextField("Where (optional)", text: $merchant)
+            .textFieldStyle(.plain)
+            .multilineTextAlignment(.center)
+            .font(.subheadline)
+            .focused($merchantFocused)
+            .autocorrectionDisabled()
+            .textInputAutocapitalization(.words)
+            .padding(.bottom, 12)
+            .onChange(of: merchant) { _, newValue in
+                suggestions = MerchantMemory.recentMerchants(matching: newValue, in: context)
+                applyRememberedCategory(for: newValue)
+            }
+    }
+
+    private var suggestionRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(suggestions, id: \.self) { suggestion in
+                    Button {
+                        merchant = suggestion
+                        suggestions = []
+                        merchantFocused = false
+                    } label: {
+                        Text(suggestion)
+                            .font(.caption)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color(.tertiarySystemFill))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 10)
+        }
+    }
+
+    /// Fills the category from the last time this merchant was filed —
+    /// but only while the user hasn't chosen one themselves. An explicit tap
+    /// always wins over memory.
+    private func applyRememberedCategory(for merchantName: String) {
+        guard selectedCategory == nil || categoryWasAutoFilled else { return }
+
+        if let remembered = MerchantMemory.lastCategory(forMerchant: merchantName, in: context) {
+            selectedCategory = remembered
+            categoryWasAutoFilled = true
+        } else if categoryWasAutoFilled {
+            selectedCategory = nil
+            categoryWasAutoFilled = false
+        }
+    }
+
+    // MARK: Categories
 
     private var categoryChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -64,6 +126,7 @@ struct AddTransactionSheet: View {
                     let isSelected = selectedCategory?.persistentModelID == category.persistentModelID
                     Button {
                         selectedCategory = isSelected ? nil : category
+                        categoryWasAutoFilled = false
                     } label: {
                         HStack(spacing: 5) {
                             Image(systemName: category.icon)
@@ -90,7 +153,7 @@ struct AddTransactionSheet: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.bottom, 16)
+            .padding(.bottom, 14)
         }
     }
 
@@ -124,13 +187,13 @@ struct AddTransactionSheet: View {
     private func save() {
         guard canSave else { return }
 
-        // Manual entries are confirmed on save — the user is looking right at
-        // the amount they just typed. Nothing else in the app gets this
-        // shortcut; every automated source goes through Sort unconfirmed.
+        // Manual entries are confirmed on save — the user is looking straight at
+        // the amount they just typed. Every automated source goes through Sort
+        // unconfirmed instead.
         let transaction = Transaction(
             amount: amount,
             date: .now,
-            merchant: merchant,
+            merchant: merchant.trimmingCharacters(in: .whitespaces),
             source: .manual,
             verdict: .unrated,
             isConfirmed: true,
@@ -167,12 +230,12 @@ private struct NumberPad: View {
                 }
             }
             HStack(spacing: 0) {
-                Color.clear.frame(maxWidth: .infinity, maxHeight: 60)
+                Color.clear.frame(maxWidth: .infinity, maxHeight: 58)
                 padButton("0") { onDigit("0") }
                 Button(action: onDelete) {
                     Image(systemName: "delete.left")
                         .font(.title3)
-                        .frame(maxWidth: .infinity, maxHeight: 60)
+                        .frame(maxWidth: .infinity, maxHeight: 58)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -185,7 +248,7 @@ private struct NumberPad: View {
         Button(action: action) {
             Text(label)
                 .font(.title2)
-                .frame(maxWidth: .infinity, maxHeight: 60)
+                .frame(maxWidth: .infinity, maxHeight: 58)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
