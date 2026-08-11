@@ -25,6 +25,11 @@ struct YouView: View {
                     } label: {
                         Label("Apple Pay setup", systemImage: "creditcard")
                     }
+                    NavigationLink {
+                        RecurringRulesView()
+                    } label: {
+                        Label("Recurring", systemImage: "repeat")
+                    }
                 }
 
                 Section("Data") {

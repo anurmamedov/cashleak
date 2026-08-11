@@ -21,10 +21,11 @@ and bundle ID, resolve before the listing (P5).
 
 | | Steps |
 |---|---|
-| **Done** | L6 · L7 · L9 · L10 · L11 · L12 · L13 · L14 · L16, plus the test target and suite |
+| **Done** | L6 · L7 · L9 · L10 · L11 · L12 · L13 · L14 · L15 · L16, plus the test target and suite |
 | **Partial** | L5 — source tree restructured, capabilities not yet enabled |
 | **Gates unrun** | L1 · L2 · L3 · L4 |
-| **Pending** | L8 · L15 · L17 · L18 · L19 · L20, all of P1–P9 |
+| **Pending** | L8 · L17 · L18 · L19 · L20, all of P1–P9 |
+| **Unverified** | Nothing has been compiled. Every "done" above is provisional until the project builds. |
 
 Mark steps here as they land. A plan nobody updates gets ignored within a week.
 
