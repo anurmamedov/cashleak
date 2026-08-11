@@ -2,7 +2,7 @@
 
 Two phases. **Local** is everything that happens on your machine and your own
 phone — 20 steps, ending with a complete app you use daily. **Production** is
-everything between "it works for me" and "it's on the App Store" — 9 steps.
+everything between "it works for me" and "it's on the App Store" — 10 steps.
 
 Steps marked **gate** should genuinely change the plan if they come back badly.
 Don't skip past them because the code is more fun.
@@ -21,12 +21,12 @@ and bundle ID, resolve before the listing (P5).
 
 | | Steps |
 |---|---|
-| **Done** | L6 · L7 · L9 · L10 · L11 · L12 · L13 · L14 · L15 · L16, plus the test target and suite |
-| **Partial** | L5 — source tree restructured, capabilities not yet enabled |
+| **Done** | L7 · L9 · L10 · L11 · L12 · L13 · L14 · L15 · L16 |
+| **Partial** | L5 — tree restructured, **capabilities not enabled**. L6 — 83 tests written, **no test target in the project** |
 | **Gates unrun** | L1 · L2 · L3 · L4 |
-| **Pending** | L8 · L17 · L18 · L19 · L20, all of P1–P9 |
+| **Pending** | L8 · L17 · L18 · L19 · L20, all of P1–P10 |
 | **Verified** | Builds and runs on iPhone 17 Pro / iOS 26.5. Overview renders, ramp holds palest shade at zero data, all five tab slots work. |
-| **Still unverified** | The 83 unit tests — the test target hasn't been added to the project yet. |
+| **Still unverified** | All 83 unit tests. None have ever executed. |
 
 Note for L2 and L3: the iOS Simulator does **not** include Shortcuts, Wallet, or
 Mail, so neither gate can be run there. Both need the physical phone.
@@ -300,14 +300,21 @@ Apple Pay card list with per-card automation status and a plain statement of wha
 won't be captured. Accent picker, notification time, categories, recurring,
 trips, CSV export, privacy.
 
-**Tests:** CSV export round-trips — export, re-import, compare. Deleting a
-category reassigns its transactions rather than orphaning them.
+**Also fix currency here.** Both formatters in `SpendingSummary` hardcode `CAD`
+and ignore the `currencyCode` already stored on every transaction. Anyone outside
+Canada sees the wrong symbol on every screen. Read the device locale by default,
+let the user override, and format from the transaction's own code.
 
-**Done when:** a new user could set up their automations from this screen alone.
+**Tests:** CSV export round-trips — export, re-import, compare. Deleting a
+category reassigns its transactions rather than orphaning them. Formatting
+respects a non-CAD locale.
+
+**Done when:** a new user could set up their automations from this screen alone,
+and a US user sees US dollars.
 
 ---
 
-# Production — 9 steps
+# Production — 10 steps
 
 ### P1. Device matrix and regression pass
 
@@ -351,14 +358,39 @@ The build takes six weeks; an audience takes longer. Starting at submission is
 the most common way a good indie app disappears. It sits in the production phase
 only because that's where it pays off.
 
-### P5. App Store Connect setup
+### P5. Release readiness
+
+Four things Apple requires or users notice, none of which existed in the first
+draft of this plan. All are cheap now and painful later.
+
+**App icon.** `AppIcon.appiconset` is empty — the app currently ships a blank
+tile. Needs a 1024×1024, plus dark and tinted variants for iOS 18+.
+
+**Privacy manifest.** `PrivacyInfo.xcprivacy` doesn't exist. Apple requires one
+for App Store submission. Ours is close to empty — no tracking, no data
+collection, no third-party SDKs — and that emptiness is the selling point, so
+it's worth getting exactly right rather than copying a template.
+
+**Schema versioning.** Right now the SwiftData schema is unversioned. That's fine
+while the only user is you and wiping the app is free. The moment TestFlight
+users have real data, an unversioned schema means any model change destroys it.
+Wrap the models in a `VersionedSchema` and add a `SchemaMigrationPlan` **before**
+P7, not after.
+
+**Support and privacy URLs.** App Store Connect requires both. A single static
+page covers it.
+
+**Done when:** icon renders on the Home Screen, the privacy manifest validates on
+upload, and a schema change survives an upgrade install with data intact.
+
+### P6. App Store Connect setup
 
 Resolve the name from L4. Bundle ID, app record, privacy nutrition labels — which
 are close to empty, and that's the selling point.
 
 **Done when:** the app record exists and the privacy section is filled honestly.
 
-### P6. TestFlight beta
+### P7. TestFlight beta
 
 10–20 people. Watch one metric: **are they still logging in week three?**
 
@@ -366,21 +398,21 @@ That answers whether the product works better than any feedback form will.
 
 **Done when:** three weeks of retention data exists.
 
-### P7. Screenshots and listing copy
+### P8. Screenshots and listing copy
 
 Screenshots lead with the leak card. Subtitle: "Find your cash leaks. No bank
 login." Description opens on the three things nobody else says — no bank login,
 one-time price, automatic Apple Pay capture. Keyword field filled to 100
 characters.
 
-### P8. Submit
+### P9. Submit
 
 Expect at least one rejection round. Budget a week.
 
 The likely flag is the Shortcuts dependency — be ready to explain in review notes
 that the app is fully functional without it.
 
-### P9. Post-launch — decide v1.1
+### P10. Post-launch — decide v1.1
 
 Receipt scanning is committed. Bank alerts ship if L2 came back well. Reconcile
 is v1.2, once real coverage numbers exist.
