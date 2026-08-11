@@ -17,7 +17,7 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 | Not started | 3 | 10 |
 
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
-**Not verified:** all 142 unit tests — there is no test target in the project yet.
+**Not verified:** all 141 unit tests — there is no test target in the project yet.
 **Gates:** none of the four have been run.
 
 ---
@@ -90,7 +90,7 @@ Outstanding:
 
 Done:
 
-- [x] 142 tests across 10 files
+- [x] 141 tests across 10 files
 - [x] In-memory `ModelContainer` helper, CloudKit disabled
 - [x] Merchant fixture corpus
 
