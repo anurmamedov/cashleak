@@ -22,6 +22,19 @@ struct SpendingSummary {
     /// Projected month-end spend from the current daily rate.
     let pace: Double
 
+    /// Days elapsed in the month so far.
+    let daysElapsed: Int
+
+    /// Whether the projection is worth showing.
+    ///
+    /// Extrapolating a month from two days produces a number that's
+    /// arithmetically correct and practically nonsense — one big grocery run on
+    /// the 2nd projects to a catastrophic month. Below a week, the projection
+    /// says more about the sample than about the user.
+    var paceIsMeaningful: Bool {
+        daysElapsed >= 7 && spent > 0
+    }
+
     var hasMeaningfulData: Bool {
         LeakRamp.hasMeaningfulData(
             transactionCount: transactionCount,
@@ -31,7 +44,7 @@ struct SpendingSummary {
 
     static let empty = SpendingSummary(
         spent: 0, leaked: 0, kept: 0,
-        transactionCount: 0, daysOfHistory: 0, pace: 0
+        transactionCount: 0, daysOfHistory: 0, pace: 0, daysElapsed: 0
     )
 
     /// - Parameters:
@@ -69,7 +82,8 @@ struct SpendingSummary {
             kept: kept,
             transactionCount: counted.count,
             daysOfHistory: daysOfHistory,
-            pace: pace
+            pace: pace,
+            daysElapsed: elapsed
         )
     }
 

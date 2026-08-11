@@ -77,12 +77,28 @@ struct OverviewView: View {
         guard summary.transactionCount > 0 else {
             return "Nothing sorted yet this month."
         }
-        if let trip = activeTrip, trip.estimatedBudget > 0 {
-            let share = Int((summary.leaked / trip.estimatedBudget * 100).rounded())
-            if share > 0 {
-                return "That's \(share)% of your trip to \(trip.destination.isEmpty ? trip.name : trip.destination)."
+
+        if let trip = activeTrip, trip.estimatedBudget > 0, summary.leaked > 0 {
+            let destination = trip.destination.isEmpty ? trip.name : trip.destination
+            let share = summary.leaked / trip.estimatedBudget
+
+            // Past 100%, a percentage stops being a trade-off and starts being
+            // arithmetic. "159% of your trip" is technically true and reads as
+            // nonsense — the point is that the trip is already paid for.
+            if share >= 2 {
+                let times = (share).rounded(.down)
+                return "That's \(Int(times)) trips to \(destination)."
+            }
+            if share >= 1 {
+                return "That's more than the whole trip to \(destination)."
+            }
+
+            let percent = Int((share * 100).rounded())
+            if percent > 0 {
+                return "That's \(percent)% of your trip to \(destination)."
             }
         }
+
         let percent = Int((summary.leakRatio * 100).rounded())
         return "\(percent)% of what you spent this month."
     }
@@ -92,19 +108,54 @@ struct OverviewView: View {
     private var statsRow: some View {
         HStack(spacing: 10) {
             stat("Spent", summary.spent.currencyRounded, tint: .primary)
-            stat("Pace", summary.pace.currencyRounded, tint: .primary)
+
+            // A month-end projection from three days of data is arithmetically
+            // correct and practically alarming. Below a week, show what's known
+            // instead of what's extrapolated.
+            if summary.paceIsMeaningful {
+                stat(
+                    "On pace for",
+                    summary.pace.currencyRounded,
+                    tint: .primary,
+                    footnote: "by month end"
+                )
+            } else {
+                stat(
+                    "Day",
+                    "\(summary.daysElapsed)",
+                    tint: .secondary,
+                    footnote: "pace after a week"
+                )
+            }
+
             stat("Kept", summary.kept.currencyRounded, tint: Color(hex: "0F6E56"))
         }
     }
 
-    private func stat(_ label: String, _ value: String, tint: Color) -> some View {
+    private func stat(
+        _ label: String,
+        _ value: String,
+        tint: Color,
+        footnote: String? = nil
+    ) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             Text(value)
                 .font(.title3.weight(.medium))
                 .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            if let footnote {
+                Text(footnote)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)

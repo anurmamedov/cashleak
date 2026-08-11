@@ -17,7 +17,7 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 | Not started | 3 | 10 |
 
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
-**Not verified:** all 131 unit tests — there is no test target in the project yet.
+**Not verified:** all 142 unit tests — there is no test target in the project yet.
 **Gates:** none of the four have been run.
 
 ---
@@ -90,7 +90,7 @@ Outstanding:
 
 Done:
 
-- [x] 131 tests across 9 files
+- [x] 142 tests across 10 files
 - [x] In-memory `ModelContainer` helper, CloudKit disabled
 - [x] Merchant fixture corpus
 
@@ -208,6 +208,10 @@ Not unit-testable. Needs two physical devices.
 - [x] Leak breakdown by category
 - [x] Trip card
 - [x] Trade-off line falls back gracefully with no trip
+- [x] Trade-off copy handles leaks above 100% of a trip — "more than the whole
+      trip", or a whole-trip count, never "159%"
+- [x] Pace suppressed in the first week and labelled "on pace for ... by month
+      end" rather than shown as a bare number
 - [x] Trip card navigates to trip detail
 - [x] Leak breakdown rows tap through to the category detail
 
