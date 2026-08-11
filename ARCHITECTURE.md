@@ -43,44 +43,60 @@ and dismissible instead of silently corrupting the dataset.
 ## Target layout
 
 ```
-CashLeak/
-├── App/                  entry point, ModelContainer, app-wide environment
-├── Models/               SwiftData @Model types, enums, computed aggregates
+cashleak/
+├── App/                  entry point, shared ModelContainer, tab shell
+├── Models/               SwiftData @Model types, enums, seed data
 ├── Features/
 │   ├── Overview/         hero leak card, intensity ramp, trip card
-│   ├── Sort/             queue, verdict swipe, category assignment
-│   ├── Entry/            number pad, receipt scan
-│   ├── Analysis/         range selector, Swift Charts sections, findings
-│   ├── Trips/            estimation modes, live burn rate
-│   └── Settings/         automations, accent, categories, recurring, export
+│   ├── Sort/             queue, verdict swipe
+│   ├── Entry/            number pad
+│   ├── Analysis/         range selector, charts, leaderboards, drill-downs
+│   ├── Trips/            forecast, live burn rate
+│   └── Settings/         capture status, preferences, export, privacy
 ├── Intents/              App Intents surface
-├── Notifications/        scheduling, BGAppRefreshTask
-├── Widgets/              WidgetKit extension
-└── Resources/            city cost index
+├── Support/              aggregates, dedup, ramp, formatting, settings
+├── Resources/            city cost index
+├── Notifications/        not built — L19
+└── Widgets/              not built — L19
 ```
 
 Feature folders own their views, view models, and any feature-local helpers.
-Shared code moves up to `Models/` or a `Shared/` folder only once a second
-feature actually needs it — not in anticipation.
+Shared code moves up only once a second feature actually needs it — not in
+anticipation.
 
-This layout is in place, minus the folders whose features haven't been built.
-`Intents/`, `Notifications/`, `Widgets/`, and `Resources/` arrive with L13, L19,
-and L18 respectively. `Support/` holds cross-feature helpers that more than one
-feature already needs — `LeakRamp`, `MerchantNormalizer`, `SpendingSummary`.
+`Support/` wasn't in the original plan; it emerged from that rule. It now holds
+`LeakRamp`, `MerchantNormalizer`, `DeduplicationMatcher`, `TransactionIngest`,
+`SpendingSummary`, `AnalysisAggregates`, `RecurringPoster`, `DiscretionarySpend`,
+`CSVExport`, and `AppSettings` — each promoted when a second feature reached for
+it.
 
 ## Data model
 
-Four SwiftData `@Model` types.
+Five SwiftData `@Model` types.
 
 | Model | Key fields |
 |---|---|
-| `Transaction` | `amount`, `currency`, `date`, `merchant`, `note`, `source`, `isConfirmed`, `verdict`, `category`, `trip`, `receiptImage` |
-| `Category` | `name`, `icon`, `colorHex`, `kind`, `monthlyBudget` |
-| `Trip` | `name`, `destination`, `startDate`, `endDate`, `estimatedBudget`, `costMultiplier`, `transactions` |
-| `RecurringRule` | `template`, `cadence`, `nextRunDate`, `lastPostedDate` |
+| `Transaction` | `amount`, `currencyCode`, `date`, `merchant`, `normalizedMerchant`, `note`, `source`, `isConfirmed`, `isSuperseded`, `verdict`, `category`, `trip`, `receiptImage` |
+| `Category` | `name`, `icon`, `colorHex`, `kind`, `monthlyBudget`, `sortIndex` |
+| `Trip` | `name`, `destination`, `startDate`, `endDate`, `fixedCosts`, `costMultiplier`, `dailyDiscretionaryAtEstimate`, `transactions` |
+| `RecurringRule` | `merchant`, `amount`, `cadence`, `nextRunDate`, `lastPostedDate`, `isEnabled` |
+| `CardAutomation` | `label`, `isConfigured`, `createdAt`, `lastCapturedAt` |
+
+Two fields exist purely to serve invariants rather than the UI.
+`normalizedMerchant` is written on every save so dedup never compares raw
+strings, and `isSuperseded` marks merged duplicates without deleting them.
+
+`Trip.estimatedBudget` is computed, not stored — but
+`dailyDiscretionaryAtEstimate` is a deliberate snapshot, so a past trip's
+forecast doesn't drift as later spending changes the average.
+
+`CardAutomation` is **self-reported**. No API lists Wallet cards or reports
+whether a Shortcuts automation exists, so the user marks it themselves.
+`lastCapturedAt` provides a factual counterweight — a card claiming to be active
+with nothing captured in a fortnight says so.
 
 ```swift
-enum Source: String, Codable {
+enum TransactionSource: String, Codable {
     case applePay, bankAlert, scan, recurring, manual
 }
 
@@ -156,8 +172,14 @@ by trying to detect them.
 ### Bank alerts — unresolved
 
 Gated on one unanswered question: does the Shortcuts Message trigger expose the
-message **body** as readable Shortcut Input? Documented examples only prove the
-sender is accessible. See the three-step test in [plan.md](plan.md).
+message **body** as readable Shortcut Input? Desk research leans yes — a
+published SMS-to-webhook workflow depends on it — but it hasn't been confirmed on
+device. See [GATES.md](GATES.md).
+
+A second question surfaced alongside it: Message automations may only accept
+phone numbers as senders, not the **short codes** Canadian banks text from. If
+so, every rule has to key on message text instead, and onboarding can't offer a
+list of banks to pick from.
 
 `IdentityLookup` / `ILMessageFilterExtension` is not an alternative — Apple
 sandboxed it specifically so a filter extension cannot pass message content to

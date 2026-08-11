@@ -107,6 +107,7 @@ Outstanding:
 - [x] Enums stored as raw strings so reordering can't remap records
 - [x] CloudKit rules honoured — defaults, no unique attributes, explicit inverses
 - [x] 14 default categories seeded once
+- [x] `CardAutomation` added for self-reported per-card capture status
 - [x] 13 model tests written
 
 Schema versioning deferred to P5 — see the note there.
@@ -211,8 +212,9 @@ Outstanding:
 - [x] Leak breakdown by category
 - [x] Trip card
 - [x] Trade-off line falls back gracefully with no trip
+- [x] Trip card navigates to trip detail
 
-- [ ] Elements don't yet tap through to Analysis
+- [ ] Leak breakdown rows don't yet tap through to Analysis
 
 ### L17 · Analysis — done
 
@@ -341,7 +343,7 @@ renaming.
 
 ## Suggested order
 
-1. Test target — 2 minutes, validates 83 tests
+1. Test target — 2 minutes, validates 117 tests
 2. Capabilities — 5 minutes, unblocks L8
 3. L1 — start the two-week clock today
 4. L2 and L3 — one evening each, on the phone

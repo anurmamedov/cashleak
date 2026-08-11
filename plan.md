@@ -11,9 +11,13 @@ something concrete — like the trip you could have taken instead.
 
 No account. No server. No subscription.
 
-> Name is provisional. Verify on the App Store, CIPO, and USPTO (classes 9 and
-> 42) before locking the bundle ID. "Cash Leak" stays as the in-app feature
-> name — it's descriptive, which makes it clear but weak as a trademark.
+> **Status: pre-v1, core loop working.** Entry, Sort, Overview, Analysis, Trips
+> and settings are built and run on device. Capture, dedup and recurring posting
+> are built but unproven against a real card. See BUILD_PLAN.md for step detail
+> and GATES.md for what's still unverified.
+>
+> Name settled internally as CashLeak (D-007). The App Store name is still open —
+> it's descriptive, which reads clearly and defends poorly.
 
 ---
 
@@ -59,9 +63,14 @@ reward, not a blank slate.
 
 **Add** — centre button in the tab bar. Number pad first, category chip, done.
 
-**Analysis** — range selector, then six sections in order: spent-vs-leaked trend,
-categories, merchant leaderboard, day-of-week pattern, and one plain-language
-finding in serif at the bottom. Every row is a link.
+**Analysis** — range selector, then five sections in order: spent-vs-leaked
+trend, categories, merchant leaderboard, day-of-week pattern, and one
+plain-language finding in serif at the bottom. Every row is a link.
+
+The leaderboard ranks by **leak, not by spend**. Groceries are the largest line
+on most statements and almost never the answer to "what would I take back". The
+finding stays silent below 15 transactions — a weak observation is worse than
+none.
 
 **You** — Apple Pay card automations and their status, accent picker, daily
 notification time, categories, recurring rules, trips, CSV export, privacy.
@@ -281,7 +290,8 @@ Two estimation modes:
   calculator says "$80/day for food"; this says "you average $34/day, Lisbon runs
   0.8× Toronto, budget $27/day."
 
-Ship a hand-curated cost index for ~150 cities in v1.
+Ship a hand-curated cost index in v1. **78 cities built** against a target of
+~150 — enough to cover common destinations, short of the goal.
 
 During the trip: live burn rate vs. plan with days remaining. After: actual vs.
 estimate, which sharpens the next one.
@@ -301,21 +311,26 @@ Capabilities required: iCloud + CloudKit, Background Modes (background fetch),
 Push Notifications, App Group shared with the widget target.
 
 ```
-CashLeak/
-├── App/                  entry point, ModelContainer
-├── Models/               SwiftData @Model types
+cashleak/
+├── App/                  entry point, shared ModelContainer, tab shell
+├── Models/               SwiftData @Model types, enums, seed data
 ├── Features/
-│   ├── Overview/
+│   ├── Overview/         hero leak card, ratio ramp, trip card
 │   ├── Sort/             queue, verdict swipe
-│   ├── Entry/            number pad, receipt scan
-│   ├── Analysis/
-│   ├── Trips/
-│   └── Settings/
+│   ├── Entry/            number pad
+│   ├── Analysis/         charts, leaderboards, drill-downs
+│   ├── Trips/            forecast, burn rate
+│   └── Settings/         capture status, preferences, export, privacy
 ├── Intents/              App Intents surface
-├── Notifications/
-├── Widgets/
-└── Resources/            city cost index
+├── Support/              aggregates, dedup, ramp, formatting, settings
+├── Resources/            city cost index
+├── Notifications/        not built — L19
+└── Widgets/              not built — L19
 ```
+
+`Support/` wasn't in the original plan. It holds the logic more than one feature
+needs — leak ramp, merchant normalization, dedup, aggregates — which is exactly
+the promotion rule in CLAUDE.md working as intended.
 
 ---
 
@@ -341,8 +356,8 @@ Every one of these will be requested. Saying no is the strategy.
 
 ## Roadmap
 
-- [ ] **v1.0** — entry, Sort queue, verdicts, Overview, Analysis, recurring,
-      trips, daily notification, widget
+- [ ] **v1.0** — entry, Sort queue, verdicts, Overview, Analysis, recurring and
+      trips are **built**; daily notification and widget are **not**
 - [ ] **v1.1** — receipt scan, bank alert capture *(pending the Shortcut Input
       test)*
 - [ ] **v1.2** — Reconcile, optional AI monthly summary (aggregates only, never
@@ -353,17 +368,24 @@ Every one of these will be requested. Saying no is the strategy.
 
 | Question | Blocks | How to resolve |
 |---|---|---|
-| Does the Shortcuts Message trigger expose the message body as readable input? | Bank alert capture, v1.1 scope | Run the three-step test above. One afternoon. |
-| Final name | Bundle ID, domain, handles | App Store search on device, CIPO, USPTO classes 9 and 42, registrar |
+| Does the Shortcuts Message trigger expose the message body as readable input? | Bank alert capture, v1.1 scope | Desk research leans yes. Run the on-device test. |
+| Do Message automations accept bank **short codes** as senders? | Bank alert onboarding design | Surfaced by research, untested. If not, rules must key on message text instead |
+| What does the Wallet trigger actually deliver? | Dedup tuning, L13 design | Tap-pay and record 10+ verbatim merchant strings |
+| Final App Store name | Listing, domain, handles | App Store search on device, CIPO, USPTO classes 9 and 42, registrar |
 | Price point — is $19.99 right? | Launch | Guess until trial-to-purchase data exists |
-| Does the verdict mechanic actually change behaviour? | Everything | Two weeks of manual self-testing before writing code |
+| Does the verdict mechanic actually change behaviour? | Everything | Two weeks of manual self-testing |
 
-## Before writing code
+## The validation that hasn't happened
 
 Validate the verdict mechanic manually for two weeks — even in Notes. Log
 everything, label each purchase, and see whether it actually changes behaviour.
 If it doesn't move you, it won't move a stranger, and that's a two-week lesson
 instead of a six-week one.
+
+**This was meant to happen before any code. It didn't.** The app was built
+first, and the two-week clock still hasn't started. That's a risk taken
+knowingly, recorded as D-010 — the mechanic remains unvalidated, and it's the
+one thing that could invalidate everything above.
 
 ## License
 

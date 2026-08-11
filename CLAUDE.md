@@ -14,13 +14,17 @@ usually worth surfacing rather than silently resolving.
 
 ## Project state
 
-Pre-v1. Foundation is in: models, tab shell, seed data, and the core loop
-screens (Add, Sort, Overview). See BUILD_PLAN.md for step-by-step status —
-L6, L7, L9, L10, L11, L12, and L16 are done.
+Pre-v1, builds and runs. Twelve of twenty local steps done — see BUILD_PLAN.md
+for per-step detail.
 
-Not yet done: capabilities (L5), CloudKit two-device verification (L8), the
-Wallet App Intent (L13), dedup (L14), recurring posting (L15), Analysis (L17),
-Trips (L18), notifications and widget (L19), the real You screen (L20).
+Built: models, tab shell, seed data, entry, Sort queue, Wallet App Intent,
+dedup, recurring posting, Overview, Analysis, Trips, and settings.
+
+Not built: capabilities (L5), CloudKit two-device verification (L8), the daily
+notification and widget (L19).
+
+**117 tests exist and none have run** — the project still has no test target.
+Treat every "done" as provisional in that specific sense.
 
 **All four gates — L1 to L4 — are still unrun.** Code written ahead of them
 rests on assumptions, particularly the merchant fixtures in
@@ -66,6 +70,11 @@ iCloud. A request that implies a server is a request to change the product.
 - `async`/`await` over Combine. Combine only where an Apple API demands it.
 - Prefer plain `struct` views over generic wrappers. Concrete and duplicated
   beats clever and abstract at this size.
+- Aggregation logic lives in `Support/` as pure functions over `[Transaction]`,
+  not in views. A number that renders wrong looks exactly like one that renders
+  right, so it has to be testable.
+- Never format currency with a hardcoded code. Use `currencyRounded` /
+  `currencyExact`, which read `AppSettings.currencyCode`.
 
 ### CloudKit schema rules
 
@@ -98,6 +107,13 @@ until 10 transactions or a week of data, and invert the direction in dark mode.
 
 **Dedup on every write**: `amount` exact + `date` within 72h + normalized fuzzy
 merchant. Mark superseded, don't delete.
+
+**Everything writes through `TransactionIngest.ingest`.** No view, intent, or
+service constructs and inserts a `Transaction` directly. That single funnel is
+what makes the unconfirmed rule and dedup enforceable in one place.
+
+**Analysis ranks merchants by leak, not spend.** And the finding stays silent
+below 15 transactions — a weak observation costs more credibility than it earns.
 
 ## Voice
 

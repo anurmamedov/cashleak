@@ -13,28 +13,37 @@ No account. No server. No bank login. No subscription.
 
 ## Status
 
-Pre-v1, foundation in place. The core loop runs: add a purchase, sort it *worth
-it* or *leak*, watch the Overview card respond.
+Pre-v1. Builds and runs on iPhone 17 Pro / iOS 26.5. Twelve of twenty local build
+steps done.
 
-Built so far — SwiftData models, five-tab shell, seeded debug dataset, number-pad
-entry, the Sort queue, and the Overview leak card with its ratio ramp. 56 unit
-tests cover merchant normalization, spending aggregates, the ramp rules,
-recurring date maths, and the two model invariants.
+**Built** — SwiftData models, five-tab shell, number-pad entry, Sort queue with
+verdict swipe, Overview with the leak ratio ramp, Analysis with Swift Charts and
+drill-downs, Trips with personalised forecasting, and a settings screen covering
+capture status, preferences, CSV export and privacy. Capture runs through a
+single ingest funnel with deduplication and recurring rule posting.
 
-Not yet built — Wallet capture, deduplication, recurring posting, Analysis,
-Trips, notifications, and the widget. See [BUILD_PLAN.md](BUILD_PLAN.md).
+**Not built** — daily notification, Home Screen widget, receipt scanning.
 
-**The four gate steps haven't run.** L1 in particular — two weeks of validating
-the verdict mechanic by hand — is the one step that can invalidate everything
-else here.
+**Not verified** — 117 unit tests exist and none have executed; the project has
+no test target yet. CloudKit sync is configured in code but the capabilities
+aren't enabled, so it currently does nothing.
+
+**The four gates haven't run.** L1 — two weeks of validating the verdict mechanic
+by hand — is the one step that can invalidate everything else here, and it was
+supposed to happen before any of this was written.
+
+See [BUILD_PLAN.md](BUILD_PLAN.md) for step detail and [GATES.md](GATES.md) for
+what's unproven.
 
 ## Documents
 
 | File | What's in it |
 |---|---|
 | [plan.md](plan.md) | Product thesis, screens, capture strategy, pricing, roadmap |
+| [BUILD_PLAN.md](BUILD_PLAN.md) | 30 steps with done and outstanding per step |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Layers, data model, capture pipeline, target layout |
 | [DECISIONS.md](DECISIONS.md) | Why things are the way they are, and what's still open |
+| [GATES.md](GATES.md) | The four checks that can change the plan, with space to record results |
 | [GIT_SETUP.md](GIT_SETUP.md) | Repo setup, push workflow, common git errors |
 | [CLAUDE.md](CLAUDE.md) | Working conventions for AI assistance in this repo |
 
