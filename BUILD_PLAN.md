@@ -1,448 +1,360 @@
 # CashLeak — build plan
 
-Two phases. **Local** is everything that happens on your machine and your own
-phone — 20 steps, ending with a complete app you use daily. **Production** is
-everything between "it works for me" and "it's on the App Store" — 10 steps.
+**Local** is everything on your machine and your phone — 20 steps, ending with an
+app you use daily. **Production** is the 10 steps between "it works for me" and
+"it's on the App Store."
 
-Steps marked **gate** should genuinely change the plan if they come back badly.
-Don't skip past them because the code is more fun.
-
-Testing isn't a phase at the end. The test target goes in at L6, before any model
-exists, and every step after it carries its own **Tests** line. A step isn't done
-until those pass. The only bulk testing is P1, and that's device matrix and
-regression — not writing tests you should have written weeks earlier.
-
-Working name is CashLeak. Descriptive, so weak as a trademark — fine for the repo
-and bundle ID, resolve before the listing (P5).
+Each step lists what's **done** and what's **outstanding**. Update as you go.
 
 ---
 
-## Progress
+## At a glance
 
-| | Steps |
-|---|---|
-| **Done** | L7 · L9 · L10 · L11 · L12 · L13 · L14 · L15 · L16 |
-| **Partial** | L5 — tree restructured, **capabilities not enabled**. L6 — 83 tests written, **no test target in the project** |
-| **Gates unrun** | L1 · L2 · L3 · L4 |
-| **Pending** | L8 · L17 · L18 · L19 · L20, all of P1–P10 |
-| **Verified** | Builds and runs on iPhone 17 Pro / iOS 26.5. Overview renders, ramp holds palest shade at zero data, all five tab slots work. |
-| **Still unverified** | All 83 unit tests. None have ever executed. |
+| | Local | Production |
+|---|---|---|
+| Done | 9 | 0 |
+| Partial | 3 | 0 |
+| Not started | 8 | 10 |
 
-Note for L2 and L3: the iOS Simulator does **not** include Shortcuts, Wallet, or
-Mail, so neither gate can be run there. Both need the physical phone.
-
-Mark steps here as they land. A plan nobody updates gets ignored within a week.
-
-Worth stating plainly: every completed step is code, and every gate is
-untouched. L1 can invalidate all of it.
-
-**L14 is built but not validated.** The dedup matcher passes 17 tests against
-fixtures that are guesses at Canadian card formats. Until L3 supplies real
-merchant strings, a green suite means the code matches my assumptions — not that
-it matches your bank.
+**Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
+**Not verified:** all 83 unit tests — there is no test target in the project yet.
+**Gates:** none of the four have been run.
 
 ---
 
-# Local — 20 steps
+# Local
 
-## Gates (do these first, in parallel)
+## Gates
 
-### L1. Validate the verdict mechanic on yourself — gate
+### L1 · Validate the verdict mechanic — `gate` · not started
 
-Two weeks. Apple Notes is fine. Log every purchase, label each *worth it* or
-*leak*, tally weekly.
+Two weeks of logging every purchase and labelling it *worth it* or *leak*.
 
-Two-week clock, and nothing else depends on it — start it today and let it run
-while you do L2–L6. Every day you delay adds a day to the front of the project.
+- [ ] Start the two-week log
+- [ ] Weekly tally, both weeks
+- [ ] Answer: did labelling change what you bought?
 
-**Done when:** you can answer whether labelling changed what you bought. If it
-didn't move you, it won't move a stranger.
+The only step that can invalidate the other 29. Clock hasn't started.
 
-### L2. Test the Shortcuts message body — gate
+### L2 · Shortcuts message body — `gate` · not started
 
-Shortcuts → Automation → Message → any sender, contains a test word. Actions:
-`Get Text from Input` → `Show Alert`. Text yourself.
+- [x] Desk research — evidence leans toward the body being readable
+- [x] Surfaced a new risk: sender field may reject bank short codes
+- [ ] Build the test automation on device
+- [ ] Record the alert output verbatim
+- [ ] Test whether a short code is accepted as a sender
 
-**Done when:** you know whether the body is readable. Readable → bank alerts are
-the v1.1 headline and coverage roughly doubles. Not readable → it's a nudge
-trigger that deep-links into the add sheet.
+Not runnable in the Simulator — it has no Shortcuts app.
 
-### L3. Test the Wallet trigger end to end — gate
+### L3 · Wallet trigger end to end — `gate` · not started
 
-Throwaway Shortcut on the Wallet trigger logging `Amount` and `Merchant` to a
-note. Tap-pay for a coffee. Then deliberately trigger a decline.
+- [ ] Throwaway Shortcut logging `Amount` and `Merchant`
+- [ ] Tap-pay and record latency
+- [ ] Confirm behaviour on a decline
+- [ ] **Collect 10+ verbatim merchant strings**
 
-**Done when:** you know the real latency, the actual shape of the merchant
-string, and whether declines come through. **Save every merchant string you
-see** — these become the fixtures for L14.
+The merchant strings are the real deliverable — they replace the guessed
+fixtures that L14 currently depends on.
 
-### L4. Name and trademark check
+### L4 · Name and trademark — not started
 
-App Store search on device, CIPO, USPTO classes 9 and 42, domain, handles.
+- [ ] App Store search on device
+- [ ] CIPO, USPTO classes 9 and 42
+- [ ] Domain and handles
+- [ ] Close DECISIONS.md D-007
 
-The bundle ID is already `cashleak`, so this is now a decision about whether to
-rename before TestFlight rather than before first build.
-
-**Done when:** the name is settled and DECISIONS.md D-007 is closed.
+Bundle ID is already `cashleak`, so this is now a rename-before-TestFlight
+decision rather than a pre-build one.
 
 ---
 
 ## Foundation
 
-### L5. Finish project setup and restructure
+### L5 · Project setup — partial
 
-Target → Signing & Capabilities → + Capability: **iCloud + CloudKit**,
-**Background Modes** (background fetch), **Push Notifications**, **App Group**
-shared with the widget.
+Done:
 
-Then move to the layout in ARCHITECTURE.md: `App/`, `Models/`, `Features/`,
-`Intents/`, `Notifications/`, `Widgets/`, `Resources/`. Delete `Item.swift`.
+- [x] Source tree matches ARCHITECTURE.md
+- [x] Template files removed
+- [x] Project builds and runs
 
-Cheap now, tedious once there are thirty files.
+Outstanding:
 
-**Done when:** structure matches ARCHITECTURE.md, four capabilities enabled, no
-signing errors.
+- [ ] iCloud + CloudKit capability
+- [ ] Background Modes — background fetch
+- [ ] Push Notifications
+- [ ] App Group for the widget
+- [ ] No `.entitlements` file exists yet — **sync silently does nothing**
 
-### L6. Test target and fixtures
+### L6 · Test target and fixtures — partial
 
-Add a unit test target. Create an in-memory `ModelContainer` helper so tests run
-against a real SwiftData stack without touching CloudKit or the simulator's
-store.
+Done:
 
-Drop in fixtures: the merchant strings captured in L3, and 5–10 receipt photos
-for L-phase receipt work later.
+- [x] 83 tests across 6 files
+- [x] In-memory `ModelContainer` helper, CloudKit disabled
+- [x] Merchant fixture corpus
 
-Do this **before** the models exist. A test target added at the end is a test
-target that gets three tests and dies.
+Outstanding:
 
-**Tests:** one trivial assertion that the in-memory container spins up and tears
-down clean.
+- [ ] **No test target in the project** — `⌘U` does nothing
+- [ ] Not one test has ever executed
+- [ ] Fixtures are guesses at Canadian formats until L3 lands
+- [ ] Receipt images for v1.1
 
-**Done when:** `⌘U` runs green in under five seconds.
+### L7 · SwiftData models — done
 
-### L7. SwiftData models
+- [x] `Transaction`, `Category`, `Trip`, `RecurringRule`
+- [x] Enums stored as raw strings so reordering can't remap records
+- [x] CloudKit rules honoured — defaults, no unique attributes, explicit inverses
+- [x] 14 default categories seeded once
+- [x] 13 model tests written
 
-`Transaction`, `Category`, `Trip`, `RecurringRule`. Get the `source` and
-`verdict` enums right now — migrating enum cases later is painful.
+Schema versioning deferred to P5 — see the note there.
 
-Every property defaulted or optional, no `@Attribute(.unique)`, relationships
-optional with explicit inverses. CloudKit enforces all three.
+### L8 · CloudKit sync — not started
 
-Seed ~14 default categories on first launch.
+- [ ] Blocked on L5 capabilities
+- [ ] Two-device test with a conflicting edit
+- [ ] Airplane mode and reconnect
 
-**Tests:** each model round-trips through the in-memory container; seeding runs
-exactly once across two launches; relationship inverses resolve both directions.
+Not unit-testable. Needs two physical devices.
 
-**Done when:** tests pass and the schema loads without a CloudKit validation
-warning.
+### L9 · Tab bar shell — done
 
-### L8. CloudKit sync
+- [x] Five slots: Overview · Sort · [Add] · Analysis · You
+- [x] Add opens a sheet and restores the previous tab
+- [x] Unsorted count badges the Sort tab
+- [x] Native `TabView`, inherits iOS 26 styling
 
-Configure the `ModelContainer` for the private database. Test on two physical
-devices before building anything on top — sync bugs found later are far harder to
-isolate.
+### L10 · Seed data generator — done
 
-Not unit-testable. This one is manual and has to be done on hardware.
-
-**Done when:** a transaction created on one device appears on the other, and a
-conflicting edit on both resolves without data loss.
-
-### L9. Tab bar shell
-
-`RootTabView.swift`. Five slots: `Overview · Sort · [Add] · Analysis · You`.
-Placeholder screens, native `TabView` so iOS 26 styling is inherited.
-
-**Done when:** the app is navigable end to end with nothing functional.
-
-### L10. Seed data generator
-
-Debug-only. 3–6 months of plausible transactions across categories, sources, and
-verdicts. Deterministic given a seed value, so charts and tests are reproducible.
-
-Every chart, empty state, and edge case after this depends on having data to look
-at. An hour here saves ten later.
-
-**Tests:** generator is deterministic — same seed produces the same dataset.
-
-**Done when:** one call fills the store with a realistic dataset.
+- [x] 4 months of plausible transactions across 16 merchants
+- [x] Deterministic per seed, so charts and tests reproduce
+- [x] Recent items left unconfirmed so the queue has content
+- [x] Debug-only, exposed in the You tab
 
 ---
 
 ## Core loop
 
-### L11. Manual entry sheet
+### L11 · Manual entry sheet — partial
 
-Number pad opens focused. Amount → category chip → save. No mandatory fields, no
-date picker. Remember category by merchant.
+Done:
 
-**Tests:** amount parsing across locales and decimal separators; the
-merchant→category memory returns the last used category.
+- [x] Number pad opens focused, digits accumulate from the right
+- [x] Category chips
+- [x] Saves confirmed — the one deliberate exception to the unconfirmed rule
 
-**Done when:** you can log a purchase in under five seconds without looking.
+Outstanding:
 
-### L12. Sort queue
+- [ ] Merchant→category memory not implemented
+- [ ] No merchant field in the primary path
 
-Inbox of unconfirmed transactions. Swipe left for leak, right for worth it, tap
-for category. Source badges: Pay, Scan, Auto, Manual.
+### L12 · Sort queue — partial
 
-Empty state is a reward, not a blank slate.
+Done:
 
-**Tests:** confirming sets `isConfirmed` without touching `verdict`, and vice
-versa — the two must stay independent; queue ordering is stable.
+- [x] Swipe right for worth it, left for leak
+- [x] Source badges: Pay, Alert, Scan, Auto, Manual
+- [x] Empty state reads as a reward
+- [x] VoiceOver actions for both verdicts
 
-**Done when:** a seeded queue can be cleared entirely by swipe.
+Outstanding:
 
-### L13. `LogWalletTransaction` App Intent
+- [ ] Tap-to-assign-category not built
+- [ ] No undo after a swipe
 
-Exposed to Shortcuts, accepts amount and merchant, writes **unconfirmed**,
-`openAppWhenRun = false`.
+### L13 · Wallet App Intent — done
 
-Then write the in-app setup walkthrough with screenshots. The feature is
-worthless if nobody completes the eight taps in Shortcuts.
+- [x] `LogWalletTransaction`, `openAppWhenRun = false`
+- [x] Writes unconfirmed through the ingest funnel
+- [x] `AppShortcutsProvider` for discovery
+- [x] In-app setup walkthrough with the eight Shortcuts steps
+- [x] States plainly what won't be captured
 
-**Tests:** intent invoked with the L3 fixture strings writes exactly one
-unconfirmed record; malformed and nil merchant inputs don't crash or write
-garbage.
+- [ ] Never exercised by a real Shortcuts automation — blocked on L3
 
-**Done when:** a real tap-payment lands in your Sort queue without the app
-opening.
+### L14 · Deduplication — done
 
-### L14. Deduplication
+- [x] Amount exact + 72h window + fuzzy merchant
+- [x] Normalization strips processor prefixes, store numbers, province suffixes
+- [x] Superseded, never deleted — wrong merges stay recoverable
+- [x] Richness ranking; human judgement always wins
+- [x] Single ingest funnel — nothing writes a `Transaction` directly
+- [x] Declines and implausible amounts rejected before the store
+- [x] 30 tests across matcher and ingest
 
-`amount` exact + `date` within 72h + normalized fuzzy merchant. Normalization
-strips store numbers, city suffixes, and processor prefixes. Matched records
-marked superseded, never deleted.
+- [ ] Tuned against guessed fixtures until L3
 
-Build it now even though nothing duplicates yet — retrofitting after bank alerts
-land means migrating data that's already been sorted.
+### L15 · Recurring rules — done
 
-**Tests:** this is the highest-value test file in the project. Cover the L3
-merchant strings pairwise; the 72h boundary at 71h and 73h; same amount and
-merchant on genuinely different days must **not** merge; superseded records stay
-recoverable.
+- [x] Poster backfills one transaction per missed period
+- [x] Idempotent — safe on launch and foreground
+- [x] Backfilled charges keep their own dates
+- [x] Posts unconfirmed; carries the rule's category
+- [x] Rules management UI with 11 templates
+- [x] Pause and resume
+- [x] 11 poster tests
 
-**Done when:** the matcher is right on every fixture pair and you'd trust it with
-real money.
-
-### L15. Recurring rules
-
-Templates with cadence, auto-posted **unconfirmed** on their date. Rent,
-subscriptions, phone, insurance.
-
-This is what covers the 40–60% of spend Apple Pay can't see.
-
-**Tests:** next-run dates across a DST spring-forward and fall-back; the 31st in
-a 30-day month; Feb 29; a rule that hasn't run in three months backfills once,
-not three times.
-
-**Done when:** the date maths survives every boundary case in tests.
+- [ ] `BGAppRefreshTask` registration — lands with L19
 
 ---
 
 ## The product
 
-### L16. Overview screen
+### L16 · Overview — done
 
-Leak card as hero with the four-step ratio ramp. Spent / pace / kept stats. Leak
-breakdown by category. Trip card. Every element taps through to Analysis.
+- [x] Leak card as hero with continuous four-band ratio ramp
+- [x] Palest shade held below 10 transactions or a week
+- [x] Dark mode inverts direction
+- [x] Spent / pace / kept, kept in teal
+- [x] Leak breakdown by category
+- [x] Trip card
+- [x] Trade-off line falls back gracefully with no trip
 
-Ramp rules: darkness maps to **ratio not amount**, interpolate continuously, hold
-the palest shade until 10 transactions or a week, invert direction in dark mode.
+- [ ] Elements don't yet tap through to Analysis
 
-**Tests:** ratio and pace aggregates against a known seeded dataset; the ramp
-holds the palest shade at 9 transactions and moves at 10; a single early leak
-doesn't read as 100%.
+### L17 · Analysis — not started
 
-**Done when:** the ramp reads correctly at 5%, 30%, and 60% in both appearances.
+Placeholder showing raw totals.
 
-### L17. Analysis screen
+- [ ] Range selector
+- [ ] Spent-vs-leaked trend, Swift Charts
+- [ ] Category breakdown
+- [ ] Merchant leaderboard
+- [ ] Day-of-week pattern
+- [ ] One plain-language finding in serif
+- [ ] Every row navigates somewhere
 
-Range selector, then in order: spent-vs-leaked trend, categories, merchant
-leaderboard, day-of-week pattern, one plain-language finding in serif. Swift
-Charts throughout.
+### L18 · Trips — not started
 
-Every row is a link. Dead-end analytics is why people stop opening these screens.
+Model exists with the forecast maths and is tested. No UI.
 
-**Tests:** each aggregate against the seeded dataset; range boundaries include
-and exclude the right days; empty ranges don't divide by zero.
+- [ ] Trip creation and editing
+- [ ] Curated cost index, ~150 cities
+- [ ] Live burn rate during the trip
+- [ ] Actual vs. estimate after
 
-**Done when:** every element navigates somewhere and nothing is a dead end.
+Unlocks the signature line — *"68% of your flight to Lisbon"* — which currently
+can't fire.
 
-### L18. Trips
+### L19 · Notification and widget — not started
 
-Personalized forecast: real daily discretionary spend × destination multiplier ×
-days + fixed costs. Hand-curate ~150 cities. Live burn rate during, actual vs.
-estimate after.
+- [ ] Daily 21:00 notification, rescheduled on every write
+- [ ] `BGAppRefreshTask` in the afternoon
+- [ ] Copy carries meaning, not just a number
+- [ ] Tapping opens Sort
+- [ ] Home Screen widget with today's total
 
-**Tests:** forecast maths; burn rate with zero days elapsed; a trip spanning a
-month boundary attributes transactions correctly.
+### L20 · You screen — partial
 
-**Done when:** a forecast uses your own spending data, not a generic per-diem.
+Done:
 
-### L19. Daily notification and widget
+- [x] Apple Pay setup walkthrough
+- [x] Recurring rules
+- [x] Data counts including merged duplicates
+- [x] Plain statement of what won't be captured
+- [x] Debug tools
 
-Reschedule the 21:00 notification on every transaction write — remove pending by
-identifier, re-add with the fresh figure. `BGAppRefreshTask` in the afternoon as
-backup.
+Outstanding:
 
-Copy carries meaning: `$67.40 today — $18 over your average`. Tapping opens Sort.
-Home Screen widget shows today's running total.
-
-**Tests:** the copy builder produces the right string for zero, one, and many
-transactions, and for above/below average; only one pending request exists after
-ten rapid writes.
-
-**Done when:** the figure is correct after a late-evening purchase.
-
-### L20. You screen
-
-Apple Pay card list with per-card automation status and a plain statement of what
-won't be captured. Accent picker, notification time, categories, recurring,
-trips, CSV export, privacy.
-
-**Also fix currency here.** Both formatters in `SpendingSummary` hardcode `CAD`
-and ignore the `currencyCode` already stored on every transaction. Anyone outside
-Canada sees the wrong symbol on every screen. Read the device locale by default,
-let the user override, and format from the transaction's own code.
-
-**Tests:** CSV export round-trips — export, re-import, compare. Deleting a
-category reassigns its transactions rather than orphaning them. Formatting
-respects a non-CAD locale.
-
-**Done when:** a new user could set up their automations from this screen alone,
-and a US user sees US dollars.
+- [ ] **Currency is hardcoded to `CAD`** in both formatters, ignoring the
+      `currencyCode` stored on every transaction — wrong symbols outside Canada
+- [ ] Accent picker
+- [ ] Notification time
+- [ ] Category management
+- [ ] CSV export
+- [ ] Privacy page
+- [ ] Per-card automation status
 
 ---
 
-# Production — 10 steps
+# Production
 
-### P1. Device matrix and regression pass
+### P1 · Device matrix and regression — not started
 
-The one bulk testing step, and it's manual on purpose — everything unit-testable
-already has tests from L6 onward.
+- [ ] Smallest and largest devices, both appearances
+- [ ] Largest Dynamic Type on every screen
+- [ ] VoiceOver through add → sort → overview
+- [ ] Two-device sync with a conflicting edit
+- [ ] Airplane mode and reconnect
+- [ ] Fresh install — every empty state
+- [ ] Upgrade install over existing data
 
-- Smallest and largest supported devices, both appearances
-- Dynamic Type at the largest accessibility size on every screen
-- VoiceOver through the full core loop: add → sort → overview
-- Two-device CloudKit sync with a conflicting edit
-- Airplane mode, then reconnect
-- Fresh install with zero data — every empty state
-- Upgrade install over a seeded database
+### P2 · Polish — not started
 
-**Done when:** the full suite is green and the manual checklist has no open
-items.
+- [ ] Haptics and animation timing
+- [ ] First-run onboarding, no account
+- [ ] Fixes from P1
 
-### P2. Polish pass
+### P3 · StoreKit — not started
 
-Haptics. Animation timing. First-run onboarding — no account, straight to the
-number pad. Fix whatever P1 surfaced.
+- [ ] One-time purchase, seven-day trial
+- [ ] Restore purchases
+- [ ] StoreKit Testing coverage
+- [ ] Manual restore on a clean device
 
-**Done when:** the core loop feels finished rather than functional.
+Note: `StoreKit.Transaction` collides with our model. Qualify it rather than
+renaming.
 
-### P3. StoreKit
+### P4 · Audience — start during L16–L20
 
-One-time purchase, seven-day trial, restore purchases.
+- [ ] Technical post on the Wallet automation
+- [ ] The contrarian Canadian angle: don't sync at all
+- [ ] Build in public
 
-**Tests:** StoreKit Testing framework for purchase, trial expiry, and restore.
-Then manually with a sandbox account on a device that has never seen the app —
-the automated tests won't catch a broken restore.
+### P5 · Release readiness — not started
 
-**Done when:** restore works on a clean device.
+- [ ] **App icon** — `AppIcon.appiconset` is empty, ships a blank tile
+- [ ] **Privacy manifest** — no `PrivacyInfo.xcprivacy`; required at submission
+- [ ] **Schema versioning** — unversioned today, so any model change wipes
+      TestFlight users' data. Must land before P7
+- [ ] Support and privacy policy URLs
 
-### P4. Audience — start during L16–L20, not here
+### P6 · App Store Connect — not started
 
-The technical post about the Wallet automation. The contrarian Canadian angle:
-don't sync at all. Build in public.
+- [ ] Resolve the name from L4
+- [ ] App record and bundle ID
+- [ ] Privacy nutrition labels — nearly empty, which is the selling point
 
-The build takes six weeks; an audience takes longer. Starting at submission is
-the most common way a good indie app disappears. It sits in the production phase
-only because that's where it pays off.
+### P7 · TestFlight — not started
 
-### P5. Release readiness
+- [ ] 10–20 testers
+- [ ] One metric: are they still logging in week three?
 
-Four things Apple requires or users notice, none of which existed in the first
-draft of this plan. All are cheap now and painful later.
+### P8 · Screenshots and copy — not started
 
-**App icon.** `AppIcon.appiconset` is empty — the app currently ships a blank
-tile. Needs a 1024×1024, plus dark and tinted variants for iOS 18+.
+- [ ] Screenshots leading with the leak card
+- [ ] Subtitle: "Find your cash leaks. No bank login."
+- [ ] Description opens on no bank login, one-time price, automatic capture
+- [ ] Keyword field to 100 characters
 
-**Privacy manifest.** `PrivacyInfo.xcprivacy` doesn't exist. Apple requires one
-for App Store submission. Ours is close to empty — no tracking, no data
-collection, no third-party SDKs — and that emptiness is the selling point, so
-it's worth getting exactly right rather than copying a template.
+### P9 · Submit — not started
 
-**Schema versioning.** Right now the SwiftData schema is unversioned. That's fine
-while the only user is you and wiping the app is free. The moment TestFlight
-users have real data, an unversioned schema means any model change destroys it.
-Wrap the models in a `VersionedSchema` and add a `SchemaMigrationPlan` **before**
-P7, not after.
+- [ ] Review notes explaining the Shortcuts dependency
+- [ ] Budget a week for a rejection round
 
-**Support and privacy URLs.** App Store Connect requires both. A single static
-page covers it.
+### P10 · Post-launch — not started
 
-**Done when:** icon renders on the Home Screen, the privacy manifest validates on
-upload, and a schema change survives an upgrade install with data intact.
-
-### P6. App Store Connect setup
-
-Resolve the name from L4. Bundle ID, app record, privacy nutrition labels — which
-are close to empty, and that's the selling point.
-
-**Done when:** the app record exists and the privacy section is filled honestly.
-
-### P7. TestFlight beta
-
-10–20 people. Watch one metric: **are they still logging in week three?**
-
-That answers whether the product works better than any feedback form will.
-
-**Done when:** three weeks of retention data exists.
-
-### P8. Screenshots and listing copy
-
-Screenshots lead with the leak card. Subtitle: "Find your cash leaks. No bank
-login." Description opens on the three things nobody else says — no bank login,
-one-time price, automatic Apple Pay capture. Keyword field filled to 100
-characters.
-
-### P9. Submit
-
-Expect at least one rejection round. Budget a week.
-
-The likely flag is the Shortcuts dependency — be ready to explain in review notes
-that the app is fully functional without it.
-
-### P10. Post-launch — decide v1.1
-
-Receipt scanning is committed. Bank alerts ship if L2 came back well. Reconcile
-is v1.2, once real coverage numbers exist.
-
-**Done when:** v1.1 scope is written down and DECISIONS.md is updated.
+- [ ] Decide v1.1 scope from the L2 result
+- [ ] Update DECISIONS.md
 
 ---
 
-## Testing policy
+## Suggested order
 
-Unit tests go where being wrong is invisible:
-
-- Merchant normalization and the dedup matcher (L14)
-- Recurring rule dates across DST and month-end (L15)
-- Leak ratio and pace aggregates (L16, L17)
-- Notification copy construction (L19)
-- Receipt field extraction against fixture images (v1.1)
-
-No snapshot tests for SwiftUI. At this project size they cost more than they
-return, and UI gets checked by hand in P1.
-
-Two invariants worth a test each, because breaking them silently corrupts the
-dataset: **everything enters unconfirmed**, and **`isConfirmed` never implies a
-`verdict`**.
+1. Test target — 2 minutes, validates 83 tests
+2. Capabilities — 5 minutes, unblocks L8
+3. L1 — start the two-week clock today
+4. L2 and L3 — one evening each, on the phone
+5. L17 Analysis, then L18 Trips
 
 ---
 
-## Deliberately not in this plan
+## Out of scope
 
 Bank sync · net worth · investments · debt payoff · shared budgets · envelope
-budgeting · income tracking · receipt line-item parsing · Android, web, Mac
+budgeting · income tracking · receipt line items · Android, web, Mac
 
-Every one of these will be requested. Saying no is the strategy.
+Receipt scanning is v1.1. Bank alerts are v1.1 if L2 comes back well. Reconcile
+is v1.2.
