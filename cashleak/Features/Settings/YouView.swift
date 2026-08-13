@@ -286,6 +286,17 @@ struct YouView: View {
                 SeedData.clearTransactions(in: context)
                 SeedData.generateTwoWeekTrial(in: context)
             }
+            Button("Run bank alert samples") {
+                for sample in BankAlertParser.sampleAlerts {
+                    guard let parsed = BankAlertParser.parse(sample.text) else { continue }
+                    TransactionIngest.ingest(
+                        amount: parsed.amount,
+                        merchant: parsed.merchant,
+                        source: .bankAlert,
+                        into: context
+                    )
+                }
+            }
             Button("Simulate an Apple Pay tap") {
                 TransactionIngest.ingest(
                     amount: Double.random(in: 4...60).rounded(),

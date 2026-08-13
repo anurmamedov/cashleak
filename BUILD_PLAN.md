@@ -17,7 +17,7 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 | Not started | 3 | 10 |
 
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
-**Not verified:** all 172 unit tests — there is no test target in the project yet.
+**Not verified:** all 192 unit tests — there is no test target in the project yet.
 **Gates:** L2 is on hold. L1, L3 and L4 haven't run.
 
 ---
@@ -60,6 +60,23 @@ built on a capability Apple could remove without notice.
 Wallet capture alone plus recurring rules covers the ground v1 needs.
 
 **Restart when:** v1 has shipped and coverage complaints are the top request.
+
+**Parser built ahead of the gate.** L2 is really two questions, and only one is
+Apple's:
+
+- [x] *Can we parse a bank alert once we have it?* Ours, and testable anywhere.
+      `BankAlertParser` extracts amount and merchant, rejects balances,
+      deposits, refunds, declines and one-time codes, and carries a confidence
+      level. 8 bank presets. 20 tests. A debug button runs the samples through
+      the ingest funnel so the whole path is exercisable in the Simulator.
+- [ ] *Does Shortcuts hand us the message body?* **Only a physical phone can
+      answer this.** Confirmed by inspection: the Simulator ships Fitness,
+      Watch, Contacts, Files, Preview, Utilities, Safari and Messages — no
+      Shortcuts app at all.
+
+The sample alerts are **invented, not collected**. They're modelled on how banks
+tend to phrase things, which isn't the same as being right. Real alerts replace
+them when L2 runs — same discipline as the Wallet merchant fixtures.
 
 ### L3 · Wallet trigger end to end — `gate` · not started
 
@@ -106,7 +123,7 @@ Outstanding:
 
 Done:
 
-- [x] 172 tests across 12 files
+- [x] 192 tests across 13 files
 - [x] In-memory `ModelContainer` helper, CloudKit disabled
 - [x] Merchant fixture corpus
 
