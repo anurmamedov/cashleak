@@ -24,9 +24,9 @@ single ingest funnel with deduplication and recurring rule posting.
 
 **Not built** — daily notification, Home Screen widget, receipt scanning.
 
-**Not verified** — 202 unit tests exist and none have executed; the project has
-no test target yet. CloudKit sync is configured in code but the capabilities
-aren't enabled, so it currently does nothing.
+**Partly verified** — the test target is in place and 202 tests compile. CloudKit
+sync is configured in code but the capabilities aren't enabled, so it currently
+does nothing.
 
 **The four gates haven't run.** L1 — two weeks of validating the verdict mechanic
 by hand — is the one step that can invalidate everything else here, and it was

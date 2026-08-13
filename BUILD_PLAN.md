@@ -17,7 +17,7 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 | Not started | 3 | 10 |
 
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
-**Not verified:** all 202 unit tests — there is no test target in the project yet.
+**Tests:** target exists, suite compiles. 202 tests — confirm they run green.
 **Gates:** L2 is on hold. L1, L3 and L4 haven't run.
 
 ---
@@ -138,16 +138,21 @@ Outstanding:
 
 Done:
 
+- [x] **Test target added to the project** — `⌘U` runs
 - [x] 202 tests across 14 files
 - [x] In-memory `ModelContainer` helper, CloudKit disabled
 - [x] Merchant fixture corpus
 
 Outstanding:
 
-- [ ] **No test target in the project** — `⌘U` does nothing
-- [ ] Not one test has ever executed
+- [ ] Confirm the suite runs green end to end
 - [ ] Fixtures are guesses at Canadian formats until L3 lands
 - [ ] Receipt images for v1.1
+
+**`Category` needed qualifying as `cashleak.Category` throughout the tests.**
+The bare name collides inside the test target, so every reference has to name the
+module. Annoying but contained — worth renaming the model to `SpendCategory` if
+it bites again in app code.
 
 ### L7 · SwiftData models — done
 
