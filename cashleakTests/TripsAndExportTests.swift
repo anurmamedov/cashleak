@@ -68,8 +68,8 @@ final class TripsAndExportTests: XCTestCase {
 
     /// Rent would triple the daily figure and make every forecast useless.
     func testFixedCostCategoriesAreExcluded() {
-        let rent = Category(name: "Rent")
-        let coffee = Category(name: "Coffee")
+        let rent = cashleak.Category(name: "Rent")
+        let coffee = cashleak.Category(name: "Coffee")
 
         var data = (1...25).map { day in
             Transaction(

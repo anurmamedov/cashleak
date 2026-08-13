@@ -104,7 +104,7 @@ final class ModelInvariantTests: XCTestCase {
     // MARK: Relationships
 
     func testCategoryInverseResolvesBothDirections() throws {
-        let category = Category(name: "Coffee")
+        let category = cashleak.Category(name: "Coffee")
         let transaction = TestSupport.confirmed(4.50, verdict: .worthIt, category: category)
 
         context.insert(category)
@@ -116,7 +116,7 @@ final class ModelInvariantTests: XCTestCase {
     }
 
     func testDeletingCategoryLeavesTransactionIntact() throws {
-        let category = Category(name: "Coffee")
+        let category = cashleak.Category(name: "Coffee")
         let transaction = TestSupport.confirmed(4.50, verdict: .leak, category: category)
         context.insert(category)
         context.insert(transaction)
@@ -136,10 +136,10 @@ final class ModelInvariantTests: XCTestCase {
 
     func testCategoriesSeedExactlyOnce() throws {
         SeedData.seedCategoriesIfNeeded(in: context)
-        let first = try context.fetchCount(FetchDescriptor<Category>())
+        let first = try context.fetchCount(FetchDescriptor<cashleak.Category>())
 
         SeedData.seedCategoriesIfNeeded(in: context)
-        let second = try context.fetchCount(FetchDescriptor<Category>())
+        let second = try context.fetchCount(FetchDescriptor<cashleak.Category>())
 
         XCTAssertEqual(first, SeedData.defaultCategories.count)
         XCTAssertEqual(first, second)

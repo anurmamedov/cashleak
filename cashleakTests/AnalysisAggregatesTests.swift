@@ -127,7 +127,13 @@ final class AnalysisAggregatesTests: XCTestCase {
     }
 
     func testLeaderboardRespectsLimit() {
-        let data = (1...10).map { transaction(Double($0 * 10), day: $0, merchant: "Merchant \($0)") }
+        let merchants = [
+            "Alpha", "Bravo", "Charlie", "Delta", "Echo",
+            "Foxtrot", "Golf", "Hotel", "India", "Juliet",
+        ]
+        let data = merchants.enumerated().map { index, merchant in
+            transaction(Double((index + 1) * 10), day: index + 1, merchant: merchant)
+        }
         let board = AnalysisAggregates.merchantLeaderboard(
             data, range: .month, limit: 3, now: now, calendar: calendar
         )

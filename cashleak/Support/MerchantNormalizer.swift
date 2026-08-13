@@ -52,14 +52,23 @@ enum MerchantNormalizer {
 
     /// Whether two normalized merchants are close enough to be the same place.
     ///
-    /// Exact match, containment either way, or a Levenshtein distance within a
-    /// length-scaled threshold. Containment catches
-    /// `blue bottle` vs `blue bottle coffee`; edit distance catches typos and
-    /// truncation.
+    /// Exact match, safe phrase containment, or a Levenshtein distance within
+    /// a length-scaled threshold. Containment is limited to multi-word names:
+    /// `blue bottle` and `blue bottle coffee` are variants, while `uber` and
+    /// `uber eats` are genuinely different merchants. Edit distance catches
+    /// typos and truncation.
     static func isFuzzyMatch(_ a: String, _ b: String) -> Bool {
         if a.isEmpty || b.isEmpty { return false }
         if a == b { return true }
-        if a.contains(b) || b.contains(a) { return true }
+
+        let aWords = a.split(separator: " ")
+        let bWords = b.split(separator: " ")
+        let shorter = aWords.count <= bWords.count ? a : b
+        let longer = aWords.count <= bWords.count ? b : a
+        let shorterWordCount = min(aWords.count, bWords.count)
+        if shorterWordCount >= 2 && " \(longer) ".contains(" \(shorter) ") {
+            return true
+        }
 
         let threshold = max(1, min(a.count, b.count) / 4)
         return levenshtein(a, b) <= threshold

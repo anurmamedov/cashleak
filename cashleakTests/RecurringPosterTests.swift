@@ -116,7 +116,7 @@ final class RecurringPosterTests: XCTestCase {
     /// Recurring is the one source where the category is known in advance — the
     /// user picked it when creating the rule.
     func testCategoryCarriesFromTheRule() throws {
-        let category = Category(name: "Utilities")
+        let category = cashleak.Category(name: "Utilities")
         context.insert(category)
 
         let rule = RecurringRule(

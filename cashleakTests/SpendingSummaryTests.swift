@@ -100,8 +100,8 @@ final class SpendingSummaryTests: XCTestCase {
     // MARK: Breakdown
 
     func testLeaksByCategoryOrdersByTotalDescending() {
-        let dining = Category(name: "Dining out")
-        let coffee = Category(name: "Coffee")
+        let dining = cashleak.Category(name: "Dining out")
+        let coffee = cashleak.Category(name: "Coffee")
 
         let rows = SpendingSummary.leaksByCategory(from: [
             TestSupport.confirmed(20, verdict: .leak, category: coffee),
@@ -117,7 +117,7 @@ final class SpendingSummaryTests: XCTestCase {
 
     func testLeaksByCategoryIgnoresWorthItEntirely() {
         let rows = SpendingSummary.leaksByCategory(from: [
-            TestSupport.confirmed(500, verdict: .worthIt, category: Category(name: "Rent"))
+            TestSupport.confirmed(500, verdict: .worthIt, category: cashleak.Category(name: "Rent"))
         ])
         XCTAssertTrue(rows.isEmpty)
     }

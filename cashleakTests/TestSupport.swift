@@ -15,7 +15,7 @@ enum TestSupport {
     static func makeContainer() throws -> ModelContainer {
         let schema = Schema([
             Transaction.self,
-            Category.self,
+            cashleak.Category.self,
             Trip.self,
             RecurringRule.self,
         ])
@@ -55,7 +55,7 @@ enum TestSupport {
         verdict: Verdict,
         date: Date = .now,
         merchant: String = "Test",
-        category: Category? = nil
+        category: cashleak.Category? = nil
     ) -> Transaction {
         Transaction(
             amount: amount,

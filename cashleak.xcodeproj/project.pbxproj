@@ -6,11 +6,27 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		03144FFE302AC54D005BD554 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 55295586302934E900A062CC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5529558D302934E900A062CC;
+			remoteInfo = cashleak;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		03144FFA302AC54D005BD554 /* cashleakTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cashleakTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5529558E302934E900A062CC /* cashleak.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cashleak.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		03144FFB302AC54D005BD554 /* cashleakTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = cashleakTests;
+			sourceTree = "<group>";
+		};
 		55295590302934E900A062CC /* cashleak */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = cashleak;
@@ -19,6 +35,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		03144FF7302AC54D005BD554 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5529558B302934E900A062CC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				55295590302934E900A062CC /* cashleak */,
+				03144FFB302AC54D005BD554 /* cashleakTests */,
 				5529558F302934E900A062CC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				5529558E302934E900A062CC /* cashleak.app */,
+				03144FFA302AC54D005BD554 /* cashleakTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +73,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		03144FF9302AC54D005BD554 /* cashleakTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 03145002302AC54D005BD554 /* Build configuration list for PBXNativeTarget "cashleakTests" */;
+			buildPhases = (
+				03144FF6302AC54D005BD554 /* Sources */,
+				03144FF7302AC54D005BD554 /* Frameworks */,
+				03144FF8302AC54D005BD554 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				03144FFF302AC54D005BD554 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				03144FFB302AC54D005BD554 /* cashleakTests */,
+			);
+			name = cashleakTests;
+			packageProductDependencies = (
+			);
+			productName = cashleakTests;
+			productReference = 03144FFA302AC54D005BD554 /* cashleakTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		5529558D302934E900A062CC /* cashleak */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5529559B302934EA00A062CC /* Build configuration list for PBXNativeTarget "cashleak" */;
@@ -77,9 +125,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2660;
+				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
+					03144FF9302AC54D005BD554 = {
+						CreatedOnToolsVersion = 26.1.1;
+						TestTargetID = 5529558D302934E900A062CC;
+					};
 					5529558D302934E900A062CC = {
 						CreatedOnToolsVersion = 26.6;
 					};
@@ -100,11 +152,19 @@
 			projectRoot = "";
 			targets = (
 				5529558D302934E900A062CC /* cashleak */,
+				03144FF9302AC54D005BD554 /* cashleakTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		03144FF8302AC54D005BD554 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5529558C302934E900A062CC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +175,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		03144FF6302AC54D005BD554 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5529558A302934E900A062CC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +191,57 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		03144FFF302AC54D005BD554 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5529558D302934E900A062CC /* cashleak */;
+			targetProxy = 03144FFE302AC54D005BD554 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		03145000302AC54D005BD554 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = aykos.cashleakTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/cashleak.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/cashleak";
+			};
+			name = Debug;
+		};
+		03145001302AC54D005BD554 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = aykos.cashleakTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/cashleak.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/cashleak";
+			};
+			name = Release;
+		};
 		55295599302934EA00A062CC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -177,7 +294,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -234,7 +351,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -266,6 +383,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = anar.cashleak;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -297,6 +415,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = anar.cashleak;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -309,6 +428,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		03145002302AC54D005BD554 /* Build configuration list for PBXNativeTarget "cashleakTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				03145000302AC54D005BD554 /* Debug */,
+				03145001302AC54D005BD554 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		55295589302934E900A062CC /* Build configuration list for PBXProject "cashleak" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

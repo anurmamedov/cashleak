@@ -22,7 +22,7 @@ final class MerchantMemoryTests: XCTestCase {
 
     private func insert(
         merchant: String,
-        category: Category?,
+        category: cashleak.Category?,
         date: Date,
         verdict: Verdict = .worthIt
     ) {
@@ -37,7 +37,7 @@ final class MerchantMemoryTests: XCTestCase {
     // MARK: Recall
 
     func testRecallsTheCategoryUsedForAMerchant() {
-        let coffee = Category(name: "Coffee")
+        let coffee = cashleak.Category(name: "Coffee")
         context.insert(coffee)
         insert(merchant: "Blue Bottle", category: coffee, date: TestSupport.date(2026, 8, 1))
 
@@ -48,7 +48,7 @@ final class MerchantMemoryTests: XCTestCase {
     /// Real feeds deliver the same shop three different ways. Memory has to
     /// match on the normalized form or it never fires.
     func testMatchesAcrossMerchantFormats() {
-        let coffee = Category(name: "Coffee")
+        let coffee = cashleak.Category(name: "Coffee")
         context.insert(coffee)
         insert(merchant: "SQ *BLUE BOTTLE", category: coffee, date: TestSupport.date(2026, 8, 1))
 
@@ -59,8 +59,8 @@ final class MerchantMemoryTests: XCTestCase {
     /// Most recent, not most frequent — a correction should take effect at
     /// once rather than waiting to outvote history.
     func testMostRecentWinsOverMostFrequent() {
-        let coffee = Category(name: "Coffee")
-        let dining = Category(name: "Dining out")
+        let coffee = cashleak.Category(name: "Coffee")
+        let dining = cashleak.Category(name: "Dining out")
         context.insert(coffee)
         context.insert(dining)
 
@@ -73,7 +73,7 @@ final class MerchantMemoryTests: XCTestCase {
 
     /// Skips past uncategorised records rather than giving up at the first one.
     func testSkipsUncategorisedRecords() {
-        let coffee = Category(name: "Coffee")
+        let coffee = cashleak.Category(name: "Coffee")
         context.insert(coffee)
 
         insert(merchant: "Blue Bottle", category: coffee, date: TestSupport.date(2026, 8, 1))
@@ -87,7 +87,7 @@ final class MerchantMemoryTests: XCTestCase {
     }
 
     func testEmptyMerchantRecallsNothing() {
-        let coffee = Category(name: "Coffee")
+        let coffee = cashleak.Category(name: "Coffee")
         context.insert(coffee)
         insert(merchant: "Blue Bottle", category: coffee, date: TestSupport.date(2026, 8, 1))
 
@@ -101,7 +101,7 @@ final class MerchantMemoryTests: XCTestCase {
     /// something under Coffee twice says nothing about whether the third one
     /// was worth it, and that judgement is the product. See D-002.
     func testMemoryOnlyReturnsCategoriesNotVerdicts() {
-        let coffee = Category(name: "Coffee")
+        let coffee = cashleak.Category(name: "Coffee")
         context.insert(coffee)
         insert(merchant: "Blue Bottle", category: coffee, date: TestSupport.date(2026, 8, 1), verdict: .leak)
         insert(merchant: "Blue Bottle", category: coffee, date: TestSupport.date(2026, 8, 2), verdict: .leak)
@@ -184,7 +184,7 @@ final class SortActionsTests: XCTestCase {
 
     /// Categorising is filing. Confirming is judgement. A tap must not do both.
     func testAssigningCategoryDoesNotConfirm() {
-        let category = Category(name: "Coffee")
+        let category = cashleak.Category(name: "Coffee")
         let transaction = Transaction(amount: 5, merchant: "Blue Bottle", source: .applePay)
         context.insert(category)
         context.insert(transaction)
@@ -199,7 +199,7 @@ final class SortActionsTests: XCTestCase {
     }
 
     func testCategorisedTransactionStaysInTheQueue() throws {
-        let category = Category(name: "Coffee")
+        let category = cashleak.Category(name: "Coffee")
         let transaction = Transaction(amount: 5, merchant: "Blue Bottle", source: .applePay)
         context.insert(category)
         context.insert(transaction)
