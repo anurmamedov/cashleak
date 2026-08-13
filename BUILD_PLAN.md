@@ -12,12 +12,12 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 
 | | Local | Production |
 |---|---|---|
-| Done | 15 | 0 |
+| Done | 16 | 0 |
 | Partial | 2 | 0 |
 | Not started | 3 | 10 |
 
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
-**Not verified:** all 141 unit tests — there is no test target in the project yet.
+**Not verified:** all 162 unit tests — there is no test target in the project yet.
 **Gates:** none of the four have been run.
 
 ---
@@ -84,13 +84,14 @@ Outstanding:
 - [ ] Background Modes — background fetch
 - [ ] Push Notifications
 - [ ] App Group for the widget
+- [ ] **Sign in with Apple** — needed by the welcome screen
 - [ ] No `.entitlements` file exists yet — **sync silently does nothing**
 
 ### L6 · Test target and fixtures — partial
 
 Done:
 
-- [x] 141 tests across 10 files
+- [x] 162 tests across 11 files
 - [x] In-memory `ModelContainer` helper, CloudKit disabled
 - [x] Merchant fixture corpus
 
@@ -249,6 +250,26 @@ Not unit-testable. Needs two physical devices.
 - [ ] Copy carries meaning, not just a number
 - [ ] Tapping opens Sort
 - [ ] Home Screen widget with today's total
+
+### L21 · Profile and app lock — done
+
+Added after the plan was written, in response to a request for login screens.
+Resolved locally rather than with a backend — see D-012.
+
+- [x] Welcome screen with Sign in with Apple
+- [x] Registration: first name, last name, email, optional password
+- [x] Sign-in screen matching against the on-device profile
+- [x] Passcode stored as a salted SHA-256 hash in the Keychain, never the
+      password itself
+- [x] Face ID and Touch ID unlock, attempted automatically
+- [x] 60-second grace period so a glance at a notification doesn't re-lock
+- [x] Profile row and sign out in the You screen
+- [x] Signing out clears the profile and passcode, never the transactions
+- [x] 24 validation, hashing and profile tests
+
+- [ ] **Sign in with Apple capability not enabled in Xcode** — the button will
+      fail at runtime until it is (L5)
+- [ ] Google sign-in deliberately not built — needs an SDK and a backend
 
 ### L20 · You screen — done
 

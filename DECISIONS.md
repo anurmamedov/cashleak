@@ -230,3 +230,52 @@ notification copy. Not SwiftUI snapshots — at this size they cost more than th
 return.
 
 **Reverse if:** never, though the specific coverage list will grow.
+
+---
+
+## D-012 · A profile, not an account
+
+**Decided.** Supersedes nothing — clarifies the "no account" claim in D-001.
+
+The app has a registration screen asking for first name, last name, email and an
+optional password, plus Sign in with Apple. None of it creates an account
+anywhere.
+
+**What was asked for:** email/password login, Sign in with Apple, and Google
+sign-in.
+
+**What was built:** the same screens, resolved entirely on-device.
+
+- **Sign in with Apple** — native `AuthenticationServices`, no SDK, no server.
+  Stores Apple's app-specific user identifier, which is not an Apple ID and not
+  an email.
+- **Email registration** — name and email stored in the user's own SwiftData
+  store, syncing through their private CloudKit database.
+- **Password** — sets a device passcode for opening the app, stored as a salted
+  SHA-256 hash in the Keychain. Optional, because a password that protects
+  nothing beyond the device passcode is theatre.
+- **Google sign-in** — **not built.**
+
+**Why Google was dropped.** It needs the GoogleSignIn SDK, which breaks the
+no-third-party-dependency rule, and it authenticates against Google's servers to
+produce a token nothing here can verify without a backend of our own. It would be
+a login screen that logs into nothing.
+
+There's also an App Store rule: offering a third-party sign-in obliges the app to
+offer Sign in with Apple too. We have Apple; adding Google buys nothing and costs
+a dependency.
+
+**Why not a real backend.** Email and password authentication needs somewhere to
+store credentials, hash them, and handle resets. That's a server, which breaks
+the no-backend constraint and introduces per-user cost — the exact thing that
+makes the one-time price possible instead of a subscription (D-004).
+
+**What this preserves.** "No account. No server." stays literally true. The
+privacy label stays close to empty. The App Store subtitle stays defensible.
+
+**Reverse if:** the product genuinely needs cross-user features — shared
+budgets, a web app — both of which are currently out of scope. That would be a
+decision to change the product, not to add a feature.
+
+**Note for L5:** Sign in with Apple needs its capability enabled in Xcode. Until
+then the button will fail at runtime.

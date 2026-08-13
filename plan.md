@@ -72,8 +72,16 @@ on most statements and almost never the answer to "what would I take back". The
 finding stays silent below 15 transactions — a weak observation is worse than
 none.
 
-**You** — Apple Pay card automations and their status, accent picker, daily
-notification time, categories, recurring rules, trips, CSV export, privacy.
+**You** — profile, Apple Pay card automations and their status, accent picker,
+daily notification time, categories, recurring rules, trips, CSV export, privacy.
+
+**Welcome** — first run only. Sign in with Apple, or register with first name,
+last name, email and an optional passcode.
+
+This is a profile, not an account. Nothing is transmitted, nothing is created on
+a server, and there is no Google sign-in — it would need an SDK and a backend to
+verify a token against. See D-012. The screen says so in as many words, because
+users have been trained that a sign-in screen means a server.
 
 ### Navigation
 

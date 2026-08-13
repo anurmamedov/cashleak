@@ -15,6 +15,7 @@ struct YouView: View {
     @Query(sort: \CardAutomation.createdAt) private var cards: [CardAutomation]
     @Query private var trips: [Trip]
     @Query private var rules: [RecurringRule]
+    @Query private var profiles: [UserProfile]
 
     @State private var isAddingCard = false
     @State private var newCardLabel = ""
@@ -29,6 +30,7 @@ struct YouView: View {
     var body: some View {
         NavigationStack {
             List {
+                profileSection
                 captureSection
                 coverageNote
                 preferencesSection
@@ -50,6 +52,62 @@ struct YouView: View {
             }
             .onAppear(perform: loadNotificationTime)
         }
+    }
+
+    // MARK: Profile
+
+    private var profileSection: some View {
+        Section {
+            if let profile = profiles.first {
+                HStack(spacing: 12) {
+                    Text(profile.initials)
+                        .font(.subheadline.weight(.medium))
+                        .frame(width: 42, height: 42)
+                        .background(Color(hex: AppSettings.accentHex).opacity(0.18))
+                        .foregroundStyle(Color(hex: AppSettings.accentHex))
+                        .clipShape(Circle())
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(profile.fullName.isEmpty ? "You" : profile.fullName)
+                            .font(.body.weight(.medium))
+                        if !profile.email.isEmpty {
+                            Text(profile.email)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text("Signed in with \(profile.signInMethod.displayName)")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .padding(.vertical, 4)
+
+                NavigationLink {
+                    LockSettingsView()
+                } label: {
+                    HStack {
+                        Label("Passcode", systemImage: "lock")
+                        Spacer()
+                        Text(AppLock.isEnabled ? "On" : "Off")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Button(role: .destructive) {
+                    signOut(profile)
+                } label: {
+                    Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+                }
+            }
+        } footer: {
+            Text("Signing out clears your profile and passcode from this device. Your transactions stay — they live in your own iCloud, not in an account.")
+        }
+    }
+
+    private func signOut(_ profile: UserProfile) {
+        AppLock.removePassword()
+        context.delete(profile)
+        try? context.save()
     }
 
     // MARK: Capture
@@ -307,6 +365,78 @@ struct CategoriesView: View {
             context.delete(categories[index])
         }
         try? context.save()
+    }
+}
+
+/// Turn the passcode on or off after registration.
+struct LockSettingsView: View {
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var isEnabled = AppLock.isEnabled
+    @State private var password = ""
+    @State private var confirmPassword = ""
+    @State private var error: String?
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Require a passcode", isOn: $isEnabled.animation())
+                    .onChange(of: isEnabled) { _, on in
+                        if !on {
+                            AppLock.removePassword()
+                            password = ""
+                            confirmPassword = ""
+                            error = nil
+                        }
+                    }
+            } footer: {
+                Text("Your phone's own passcode already protects the app. This adds a second one, useful if you share the device.")
+            }
+
+            if isEnabled && !AppLock.isEnabled {
+                Section {
+                    SecureField("New password", text: $password)
+                        .textContentType(.newPassword)
+                    SecureField("Confirm", text: $confirmPassword)
+                        .textContentType(.newPassword)
+                    Button("Set passcode") { set() }
+                        .disabled(password.isEmpty)
+
+                    if let error {
+                        Text(error)
+                            .font(.footnote)
+                            .foregroundStyle(Color(hex: "993C1D"))
+                    }
+                } footer: {
+                    Text("Stored as a salted hash in the device Keychain. It can't be recovered — only replaced by turning this off and on again.")
+                }
+            }
+
+            if AppLock.isEnabled && AppLock.biometryIsAvailable {
+                Section {
+                    Label("\(AppLock.biometryName) unlocks the app too", systemImage: "faceid")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .navigationTitle("Passcode")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func set() {
+        guard password.count >= ProfileValidator.minimumPasswordLength else {
+            error = ProfileValidator.message(for: .passwordTooShort)
+            return
+        }
+        guard password == confirmPassword else {
+            error = ProfileValidator.message(for: .passwordMismatch)
+            return
+        }
+        AppLock.setPassword(password)
+        error = nil
+        dismiss()
     }
 }
 
