@@ -304,12 +304,10 @@ struct YouView: View {
                 }
             }
             Button("Simulate an Apple Pay tap") {
-                TransactionIngest.ingest(
-                    amount: Double.random(in: 4...60).rounded(),
-                    merchant: ["Blue Bottle", "Uber Eats", "Loblaws", "Shell"].randomElement(),
-                    source: .applePay,
-                    into: context
-                )
+                simulateTap()
+            }
+            Button("Simulate 12 taps") {
+                for _ in 0..<12 { simulateTap() }
             }
             Button("Clear transactions", role: .destructive) {
                 SeedData.clearTransactions(in: context)
@@ -319,6 +317,59 @@ struct YouView: View {
     #endif
 
     // MARK: Actions
+
+    #if DEBUG
+    /// Merchant strings shaped like what card feeds actually deliver — processor
+    /// prefixes, store numbers, city suffixes, and the occasional empty string
+    /// from a timed-out trigger.
+    ///
+    /// **Invented, not collected.** That's exactly what L3 exists to fix. They're
+    /// here so the capture log and normalizer can be exercised without a card;
+    /// real strings replace them the moment the gate runs.
+    private static let simulatedRawMerchants: [String?] = [
+        "SQ *BLUE BOTTLE COFFEE",
+        "BLUE BOTTLE #4412",
+        "UBER   EATS",
+        "TST* TERRONI",
+        "LOBLAWS #1043 TORONTO ON",
+        "SHELL C12345",
+        "AMZN Mktp CA*MT4XY9",
+        "PRESTO/METROLINX",
+        "TIM HORTONS 4471",
+        "NETFLIX.COM",
+        "DOORDASH*ORDER",
+        "CINEPLEX ODEON 2201 ON",
+        nil,
+    ]
+
+    /// Goes through the same path a real tap does, including the capture log —
+    /// otherwise the log stays empty and can't be checked without a terminal.
+    private func simulateTap() {
+        let raw = Self.simulatedRawMerchants.randomElement() ?? nil
+        let amount = (Double.random(in: 3...90) * 100).rounded() / 100
+
+        let result = TransactionIngest.ingest(
+            amount: amount,
+            merchant: raw,
+            source: .applePay,
+            into: context
+        )
+
+        CaptureLog.record(
+            rawMerchant: raw,
+            amount: amount,
+            source: .applePay,
+            outcome: {
+                switch result {
+                case .inserted: "inserted"
+                case .duplicate: "duplicate"
+                case .rejected(let reason): "rejected: \(reason.rawValue)"
+                }
+            }(),
+            in: context
+        )
+    }
+    #endif
 
     private func addCard() {
         let trimmed = newCardLabel.trimmingCharacters(in: .whitespaces)
