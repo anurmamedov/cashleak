@@ -61,8 +61,6 @@ CORAL = "#D85A30"
 # iOS / Android app icon — coral ground, white cup
 render(CORAL, "#FFFFFF", CORAL, "#FFFFFF", "AppIcon-1024.png")
 
-# iOS dark appearance — deeper ground so it sits back on a dark Home Screen
-render("#7A2E14", "#FFF4EE", "#7A2E14", "#FFF4EE", "AppIcon-1024-dark.png")
 
 # iOS tinted — iOS applies its own hue, so ship luminance only
 render("#3A3A38", "#F2F2F0", "#3A3A38", "#F2F2F0", "AppIcon-1024-tinted.png")

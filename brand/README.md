@@ -11,9 +11,13 @@ mark is the product's argument rather than a generic finance symbol.
 | `Logo-coral-1024.png` | iOS and Android app icon. White cup on coral. |
 | `Logo-light-1024.png` | Favicon, web header, anything on white. Coral cup, inverted coin. |
 
-The iOS asset catalogue holds three variants — light, dark and tinted. iOS 18+
+The iOS asset catalogue holds two variants — light and tinted. iOS 18+
 composites the tinted one itself, so that file carries luminance only and no
 hue.
+
+There's deliberately **no dark variant**. Without one iOS uses the light icon on
+dark Home Screens, which is fine for a saturated coral tile — it doesn't need to
+recede. Add one if it ever looks too bright in place.
 
 ## Regenerating
 

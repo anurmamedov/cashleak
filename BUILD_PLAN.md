@@ -379,8 +379,10 @@ renaming.
 
 ### P5 · Release readiness — not started
 
-- [x] **App icon** — coffee cup with a coin, coral ground. Light, dark and
-      tinted 1024s installed. Regenerable from `brand/make_icon.py`
+- [x] **App icon** — coffee cup with a coin, coral ground. Light and tinted
+      1024s installed. Regenerable from `brand/make_icon.py`
+- [ ] No dark variant — iOS will use the light icon on dark Home Screens. Add
+      one later if it looks too bright
 - [ ] Check it at Home Screen size on a device before submitting
 - [ ] **Privacy manifest** — no `PrivacyInfo.xcprivacy`; required at submission
 - [ ] **Schema versioning** — unversioned today, so any model change wipes
