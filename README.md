@@ -44,6 +44,7 @@ what's unproven.
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Layers, data model, capture pipeline, target layout |
 | [DECISIONS.md](DECISIONS.md) | Why things are the way they are, and what's still open |
 | [GATES.md](GATES.md) | The four checks that can change the plan, with space to record results |
+| [LISTING.md](LISTING.md) | App Store copy — subtitle, description, keywords, review notes |
 | [GIT_SETUP.md](GIT_SETUP.md) | Repo setup, push workflow, common git errors |
 | [CLAUDE.md](CLAUDE.md) | Working conventions for AI assistance in this repo |
 

@@ -321,12 +321,16 @@ renaming.
 - [ ] 10–20 testers
 - [ ] One metric: are they still logging in week three?
 
-### P8 · Screenshots and copy — not started
+### P8 · Screenshots and copy — partial
 
-- [ ] Screenshots leading with the leak card
-- [ ] Subtitle: "Find your cash leaks. No bank login."
-- [ ] Description opens on no bank login, one-time price, automatic capture
-- [ ] Keyword field to 100 characters
+- [x] Full listing drafted in [LISTING.md](LISTING.md)
+- [x] Subtitle fixed to fit 30 characters — the original was 36 and would have
+      been rejected
+- [x] Description, promo text, keywords, screenshot order, review notes
+
+- [ ] Take the actual screenshots
+- [ ] Trim keywords from 103 to 100 characters
+- [ ] Final subtitle choice
 
 ### P9 · Submit — not started
 
