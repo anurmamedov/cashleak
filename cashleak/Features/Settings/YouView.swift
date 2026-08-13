@@ -165,6 +165,12 @@ struct YouView: View {
             } label: {
                 Label("Trips · \(trips.count)", systemImage: "airplane")
             }
+
+            NavigationLink {
+                CaptureLogView()
+            } label: {
+                Label("Capture log", systemImage: "list.bullet.rectangle")
+            }
         }
     }
 
@@ -338,7 +344,7 @@ extension URL: @retroactive Identifiable {
     public var id: String { absoluteString }
 }
 
-private struct ShareSheet: UIViewControllerRepresentable {
+struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
 
     func makeUIViewController(context: Context) -> UIActivityViewController {

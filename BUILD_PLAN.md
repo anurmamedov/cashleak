@@ -17,7 +17,7 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 | Not started | 3 | 10 |
 
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
-**Not verified:** all 192 unit tests — there is no test target in the project yet.
+**Not verified:** all 203 unit tests — there is no test target in the project yet.
 **Gates:** L2 is on hold. L1, L3 and L4 haven't run.
 
 ---
@@ -80,13 +80,28 @@ them when L2 runs — same discipline as the Wallet merchant fixtures.
 
 ### L3 · Wallet trigger end to end — `gate` · not started
 
-- [ ] Throwaway Shortcut logging `Amount` and `Merchant`
-- [ ] Tap-pay and record latency
-- [ ] Confirm behaviour on a decline
-- [ ] **Collect 10+ verbatim merchant strings**
+Needs a card and a terminal. Not runnable in the Simulator — no Wallet, no NFC,
+no Shortcuts.
 
-The merchant strings are the real deliverable — they replace the guessed
-fixtures that L14 currently depends on.
+- [ ] Build the Wallet automation on the card you tap with most
+- [ ] Tap-pay a few times, across several merchants
+- [ ] Note the receipt time and compare against the log to get real latency
+- [ ] Trigger a decline deliberately and see whether it fires
+- [ ] Revisit one merchant twice — does it send the same string both times?
+
+**The app now collects the data itself.** You → Capture log records every Apple
+Pay arrival verbatim: raw merchant string, what `MerchantNormalizer` made of it,
+and what the ingest funnel decided. It counts distinct merchants toward L3's
+target of ten and exports as Swift ready to paste into `TestSupport`.
+
+- [x] `CaptureLogEntry` model, capped at 50 entries
+- [x] Wired into `LogWalletTransaction`, recording before interpretation
+- [x] Capture log screen with raw → normalized shown side by side
+- [x] Fixture export with quote escaping
+- [x] 11 tests
+
+**The disagreements are the point.** A raw string that normalizes to something
+wrong is a dedup bug that's invisible everywhere else in the app.
 
 ### L4 · Name and trademark — not started
 
@@ -123,7 +138,7 @@ Outstanding:
 
 Done:
 
-- [x] 192 tests across 13 files
+- [x] 203 tests across 14 files
 - [x] In-memory `ModelContainer` helper, CloudKit disabled
 - [x] Merchant fixture corpus
 

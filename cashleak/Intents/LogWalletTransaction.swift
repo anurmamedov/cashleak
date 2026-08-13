@@ -60,6 +60,22 @@ struct LogWalletTransaction: AppIntent {
             into: context
         )
 
+        // Record what actually arrived, before anything interpreted it.
+        // This is L3's data collection — see `CaptureLogEntry`.
+        CaptureLog.record(
+            rawMerchant: merchant,
+            amount: amount,
+            source: .applePay,
+            outcome: {
+                switch result {
+                case .inserted: "inserted"
+                case .duplicate: "duplicate"
+                case .rejected(let reason): "rejected: \(reason.rawValue)"
+                }
+            }(),
+            in: context
+        )
+
         // Dialog text is deliberately terse. It can surface as a banner while
         // the user is still at the till, so it states the outcome and stops.
         switch result {

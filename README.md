@@ -24,7 +24,7 @@ single ingest funnel with deduplication and recurring rule posting.
 
 **Not built** — daily notification, Home Screen widget, receipt scanning.
 
-**Not verified** — 192 unit tests exist and none have executed; the project has
+**Not verified** — 203 unit tests exist and none have executed; the project has
 no test target yet. CloudKit sync is configured in code but the capabilities
 aren't enabled, so it currently does nothing.
 
