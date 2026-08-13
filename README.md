@@ -13,7 +13,7 @@ No account. No server. No bank login. No subscription.
 
 ## Status
 
-Pre-v1. Builds and runs on iPhone 17 Pro / iOS 26.5. Twelve of twenty local build
+Pre-v1. Builds and runs on iPhone 17 Pro / iOS 26.5. Fifteen of twenty local build
 steps done.
 
 **Built** — SwiftData models, five-tab shell, number-pad entry, Sort queue with
@@ -24,7 +24,7 @@ single ingest funnel with deduplication and recurring rule posting.
 
 **Not built** — daily notification, Home Screen widget, receipt scanning.
 
-**Not verified** — 117 unit tests exist and none have executed; the project has
+**Not verified** — 141 unit tests exist and none have executed; the project has
 no test target yet. CloudKit sync is configured in code but the capabilities
 aren't enabled, so it currently does nothing.
 
