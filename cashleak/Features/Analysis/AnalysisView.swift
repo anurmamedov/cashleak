@@ -184,19 +184,34 @@ struct AnalysisView: View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader("By day of week")
 
-            Chart(weekdays) { day in
-                BarMark(
-                    x: .value("Day", day.shortName),
-                    y: .value("Spent", day.spent)
-                )
-                .foregroundStyle(
-                    day.leaked > day.spent * 0.4
-                        ? Color(hex: AppSettings.accentHex)
-                        : Color(.tertiarySystemFill)
-                )
+            // Stacked rather than conditionally tinted. The old version turned a
+            // bar coral only above a 40% leak share, so at any ordinary ratio
+            // every bar stayed grey — a spend chart sitting under a heading
+            // about leaks, encoding nothing.
+            Chart {
+                ForEach(weekdays) { day in
+                    BarMark(
+                        x: .value("Day", day.shortName),
+                        y: .value("Kept", max(day.spent - day.leaked, 0))
+                    )
+                    .foregroundStyle(Color(.tertiarySystemFill))
+
+                    BarMark(
+                        x: .value("Day", day.shortName),
+                        y: .value("Leaked", day.leaked)
+                    )
+                    .foregroundStyle(Color(hex: AppSettings.accentHex))
+                }
             }
             .chartYAxis(.hidden)
             .frame(height: 110)
+
+            if let worst = weekdays.filter({ $0.spent > 0 }).max(by: { $0.leakShare < $1.leakShare }),
+               worst.leakShare > 0 {
+                Text("\(worst.fullName) leaks most — \(Int((worst.leakShare * 100).rounded()))% of what you spend that day.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 

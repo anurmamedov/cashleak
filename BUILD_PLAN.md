@@ -17,7 +17,7 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 | Not started | 3 | 10 |
 
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
-**Not verified:** all 162 unit tests — there is no test target in the project yet.
+**Not verified:** all 173 unit tests — there is no test target in the project yet.
 **Gates:** L2 is on hold. L1, L3 and L4 haven't run.
 
 ---
@@ -106,7 +106,7 @@ Outstanding:
 
 Done:
 
-- [x] 162 tests across 11 files
+- [x] 173 tests across 12 files
 - [x] In-memory `ModelContainer` helper, CloudKit disabled
 - [x] Merchant fixture corpus
 
@@ -230,6 +230,9 @@ Not unit-testable. Needs two physical devices.
       end" rather than shown as a bare number
 - [x] Trip card navigates to trip detail
 - [x] Leak breakdown rows tap through to the category detail
+- [x] **Week-over-week banner** — the month figure blends a good week with a bad
+      one and hides improvement. plan.md's "make it work in reverse"
+- [x] Trip card reads "Starts today" / "Tomorrow", not "In 0 days"
 
 ### L17 · Analysis — done
 
@@ -241,7 +244,11 @@ Not unit-testable. Needs two physical devices.
 - [x] One plain-language finding in serif, suppressed below 15 transactions
 - [x] Merchant and category drill-downs
 - [x] Empty state
-- [x] 17 aggregate tests
+- [x] Weekday finding gated on 3+ occurrences of each day and compared per
+      occurrence — a fortnight has two Sundays, which isn't a pattern
+- [x] Day-of-week chart stacked leaked over kept, so it encodes leaks at any
+      ratio rather than staying grey below 40%
+- [x] 30 aggregate and comparison tests
 
 ### L18 · Trips — done
 

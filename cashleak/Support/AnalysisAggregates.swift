@@ -85,6 +85,102 @@ enum AnalysisAggregates {
             let symbols = Calendar.current.weekdaySymbols
             return symbols.indices.contains(weekday - 1) ? symbols[weekday - 1] : "?"
         }
+
+        /// Spend per occurrence of this weekday in the range.
+        ///
+        /// A raw total says more about how many Mondays fell inside the range
+        /// than about Mondays.
+        func averagePerOccurrence(_ occurrences: [Int: Int]) -> Double {
+            let count = occurrences[weekday] ?? 0
+            return count > 0 ? spent / Double(count) : 0
+        }
+
+        var leakShare: Double {
+            spent > 0 ? leaked / spent : 0
+        }
+    }
+
+    /// How many times each weekday actually falls inside the range.
+    static func weekdayOccurrences(
+        in range: Range,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> [Int: Int] {
+
+        let interval = range.interval(endingAt: now, calendar: calendar)
+        var counts: [Int: Int] = [:]
+        var cursor = calendar.startOfDay(for: interval.start)
+        let end = min(interval.end, now)
+
+        var guardCount = 0
+        while cursor <= end && guardCount < 400 {
+            let weekday = calendar.component(.weekday, from: cursor)
+            counts[weekday, default: 0] += 1
+            cursor = calendar.date(byAdding: .day, value: 1, to: cursor) ?? end.addingTimeInterval(1)
+            guardCount += 1
+        }
+        return counts
+    }
+
+    // MARK: Week over week
+
+    struct WeekComparison: Equatable {
+        let thisWeekRatio: Double
+        let lastWeekRatio: Double
+        let thisWeekLeaked: Double
+        let lastWeekLeaked: Double
+
+        /// Negative means improvement — less of what you'd take back.
+        var change: Double { thisWeekRatio - lastWeekRatio }
+        var isImprovement: Bool { change < 0 }
+
+        /// Percentage points, not a percentage of a percentage.
+        var pointsChanged: Int { Int((abs(change) * 100).rounded()) }
+    }
+
+    /// This week against last week.
+    ///
+    /// The month figure blends them, which hides exactly the thing the product
+    /// exists to reward. Someone who halved their leak mid-month sees an
+    /// unremarkable average and no reason to keep going.
+    ///
+    /// Returns `nil` unless both weeks have enough data to compare honestly.
+    static func weekOverWeek(
+        _ transactions: [Transaction],
+        now: Date = .now,
+        calendar: Calendar = .current,
+        minimumPerWeek: Int = 5
+    ) -> WeekComparison? {
+
+        guard
+            let thisWeekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start,
+            let lastWeekStart = calendar.date(byAdding: .day, value: -7, to: thisWeekStart)
+        else { return nil }
+
+        let counted = transactions.filter(\.countsTowardTotals)
+
+        let thisWeek = counted.filter { $0.date >= thisWeekStart && $0.date <= now }
+        let lastWeek = counted.filter { $0.date >= lastWeekStart && $0.date < thisWeekStart }
+
+        guard thisWeek.count >= minimumPerWeek, lastWeek.count >= minimumPerWeek else {
+            return nil
+        }
+
+        func ratio(_ set: [Transaction]) -> (ratio: Double, leaked: Double) {
+            let spent = set.reduce(0) { $0 + $1.amount }
+            let leaked = set.filter { $0.verdict == .leak }.reduce(0) { $0 + $1.amount }
+            return (spent > 0 ? leaked / spent : 0, leaked)
+        }
+
+        let current = ratio(thisWeek)
+        let previous = ratio(lastWeek)
+
+        return WeekComparison(
+            thisWeekRatio: current.ratio,
+            lastWeekRatio: previous.ratio,
+            thisWeekLeaked: current.leaked,
+            lastWeekLeaked: previous.leaked
+        )
     }
 
     // MARK: Filtering
@@ -241,17 +337,32 @@ enum AnalysisAggregates {
         let counted = counted(transactions, in: range, now: now, calendar: calendar)
         guard counted.count >= 15 else { return nil }
 
-        // Candidate 1 — the most expensive weekday, if it's meaningfully worse.
+        // Candidate 1 — the most expensive weekday, if it's meaningfully worse
+        // and there's enough of each day to mean anything.
+        //
+        // The transaction count alone isn't enough of a gate. Over two weeks
+        // there are only two Sundays, so "Sunday costs €333 more than Friday"
+        // is a difference between two days and two other days, presented as a
+        // pattern. Requiring at least three occurrences of each weekday pushes
+        // this past a month of data, which is the point at which a weekday
+        // habit is a habit rather than a coincidence.
+        let occurrences = weekdayOccurrences(in: range, now: now, calendar: calendar)
         let weekdays = weekdayPattern(transactions, range: range, now: now, calendar: calendar)
-            .filter { $0.spent > 0 }
+            .filter { $0.spent > 0 && (occurrences[$0.weekday] ?? 0) >= 3 }
 
         if weekdays.count >= 5,
-           let worst = weekdays.max(by: { $0.spent < $1.spent }),
-           let best = weekdays.min(by: { $0.spent < $1.spent }),
+           let worst = weekdays.max(by: { $0.averagePerOccurrence(occurrences) < $1.averagePerOccurrence(occurrences) }),
+           let best = weekdays.min(by: { $0.averagePerOccurrence(occurrences) < $1.averagePerOccurrence(occurrences) }),
            worst.weekday != best.weekday {
-            let gap = worst.spent - best.spent
-            if gap > worst.spent * 0.35 {
-                return "\(worst.fullName) is your most expensive day. It costs about \(gap.currencyRounded) more than a \(best.fullName)."
+
+            // Compare per-occurrence averages, not raw totals. A total says
+            // more about how many Sundays fell in the range than about Sundays.
+            let worstAverage = worst.averagePerOccurrence(occurrences)
+            let bestAverage = best.averagePerOccurrence(occurrences)
+            let gap = worstAverage - bestAverage
+
+            if gap > worstAverage * 0.35 {
+                return "\(worst.fullName) is your most expensive day — about \(gap.currencyRounded) more than a \(best.fullName), every time."
             }
         }
 

@@ -25,6 +25,7 @@ struct OverviewView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     leakCard
+                    if let comparison = weekComparison { weekBanner(comparison) }
                     statsRow
                     if !leaksByCategory.isEmpty { leakBreakdown }
                     if let trip = activeTrip { tripCard(trip) }
@@ -101,6 +102,57 @@ struct OverviewView: View {
 
         let percent = Int((summary.leakRatio * 100).rounded())
         return "\(percent)% of what you spent this month."
+    }
+
+    // MARK: Week over week
+
+    private var weekComparison: AnalysisAggregates.WeekComparison? {
+        AnalysisAggregates.weekOverWeek(transactions)
+    }
+
+    /// The improvement line.
+    ///
+    /// A month figure blends a good week with a bad one and shows an
+    /// unremarkable average. Someone who halved their leak on Tuesday should
+    /// find that out, or there's no reward for the behaviour the whole app is
+    /// trying to encourage. plan.md: "make it work in reverse".
+    private func weekBanner(_ comparison: AnalysisAggregates.WeekComparison) -> some View {
+        let improving = comparison.isImprovement
+        let tint = improving ? Color(hex: "0F6E56") : Color(hex: "993C1D")
+
+        return HStack(spacing: 10) {
+            Image(systemName: improving ? "arrow.down.right" : "arrow.up.right")
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(tint)
+                .frame(width: 26, height: 26)
+                .background(tint.opacity(0.12))
+                .clipShape(Circle())
+
+            Text(weekBannerText(comparison))
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+
+    /// States the change and stops. No praise, no scolding — a number moved.
+    private func weekBannerText(_ comparison: AnalysisAggregates.WeekComparison) -> String {
+        let points = comparison.pointsChanged
+        guard points >= 1 else { return "About the same as last week." }
+
+        if comparison.isImprovement {
+            let saved = comparison.lastWeekLeaked - comparison.thisWeekLeaked
+            if saved > 0 {
+                return "Down \(points) points from last week — \(saved.currencyRounded) less."
+            }
+            return "Down \(points) points from last week."
+        }
+        return "Up \(points) points from last week."
     }
 
     // MARK: Stats
@@ -243,7 +295,15 @@ struct OverviewView: View {
         if trip.isActive {
             return "\(trip.daysRemaining) days left · \(trip.actualSpend.currencyRounded) of \(trip.estimatedBudget.currencyRounded)"
         }
+
         let days = Calendar.current.dateComponents([.day], from: .now, to: trip.startDate).day ?? 0
-        return "In \(days) days · \(trip.estimatedBudget.currencyRounded) estimated"
+        let when: String
+        switch days {
+        case ..<0: when = "Starts soon"
+        case 0: when = "Starts today"
+        case 1: when = "Tomorrow"
+        default: when = "In \(days) days"
+        }
+        return "\(when) · \(trip.estimatedBudget.currencyRounded) estimated"
     }
 }
