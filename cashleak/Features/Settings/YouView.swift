@@ -282,6 +282,10 @@ struct YouView: View {
             Button("Generate 4 months of data") {
                 SeedData.generate(months: 4, in: context)
             }
+            Button("Simulate a 2-week L1 trial") {
+                SeedData.clearTransactions(in: context)
+                SeedData.generateTwoWeekTrial(in: context)
+            }
             Button("Simulate an Apple Pay tap") {
                 TransactionIngest.ingest(
                     amount: Double.random(in: 4...60).rounded(),

@@ -152,6 +152,89 @@ enum SeedData {
         try? context.save()
     }
 
+    /// Fourteen days shaped like an honest L1 trial, with a behaviour change
+    /// built into it.
+    ///
+    /// **This does not answer L1.** L1 asks whether labelling purchases changes
+    /// what *you* buy, and no generated dataset can tell you that. What this
+    /// does test is the instrument: if a real person's habits shifted mid-trial,
+    /// would the app show it, or would the change hide inside the averages?
+    ///
+    /// Week one runs at roughly a third leaked — the ratio of someone logging
+    /// honestly for the first time. Week two drops to under a fifth, with the
+    /// delivery habit mostly gone. That's the shape of the mechanic working.
+    /// If Overview and Analysis don't make that visible, the app is a diary
+    /// rather than a tool.
+    @MainActor
+    static func generateTwoWeekTrial(seed: UInt64 = 7, in context: ModelContext) {
+        seedCategoriesIfNeeded(in: context)
+
+        let categories = (try? context.fetch(FetchDescriptor<Category>())) ?? []
+        guard !categories.isEmpty else { return }
+
+        var rng = SeededGenerator(seed: seed)
+        let calendar = Calendar.current
+        let today = Date.now
+
+        // (merchant, category, low, high, leak chance week 1, leak chance week 2)
+        let profiles: [(String, String, Double, Double, Double, Double)] = [
+            ("Uber Eats",     "Delivery",      22, 48, 0.85, 0.80),
+            ("DoorDash",      "Delivery",      24, 52, 0.85, 0.80),
+            ("Tim Hortons",   "Coffee",         3, 11, 0.40, 0.25),
+            ("Blue Bottle",   "Coffee",         5,  9, 0.35, 0.20),
+            ("Terroni",       "Dining out",    38, 95, 0.30, 0.20),
+            ("Loblaws",       "Groceries",     35,110, 0.03, 0.02),
+            ("Presto",        "Transit",        7, 16, 0.02, 0.02),
+            ("Amazon",        "Shopping",      18,120, 0.55, 0.35),
+            ("Cineplex",      "Fun",           16, 42, 0.25, 0.20),
+            ("Shoppers",      "Health",        11, 48, 0.12, 0.10),
+        ]
+
+        for dayOffset in stride(from: 13, through: 0, by: -1) {
+            guard let day = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            let isSecondWeek = dayOffset < 7
+            let isWeekend = calendar.isDateInWeekend(day)
+
+            // The behaviour change: fewer discretionary purchases in week two.
+            let count = isSecondWeek
+                ? Int.random(in: (isWeekend ? 2...4 : 1...3), using: &rng)
+                : Int.random(in: (isWeekend ? 4...6 : 2...5), using: &rng)
+
+            for _ in 0..<count {
+                var profile = profiles.randomElement(using: &rng)!
+
+                // Week two: the delivery habit is the thing that actually got
+                // dropped. Re-roll most of those into groceries.
+                if isSecondWeek, profile.1 == "Delivery",
+                   Double.random(in: 0...1, using: &rng) < 0.7 {
+                    profile = profiles.first { $0.0 == "Loblaws" }!
+                }
+
+                let amount = (Double.random(in: profile.2...profile.3, using: &rng) * 100).rounded() / 100
+                let hour = Int.random(in: 7...21, using: &rng)
+                let date = calendar.date(bySettingHour: hour, minute: Int.random(in: 0...59, using: &rng), second: 0, of: day) ?? day
+
+                let leakChance = isSecondWeek ? profile.5 : profile.4
+                let verdict: Verdict = Double.random(in: 0...1, using: &rng) < leakChance ? .leak : .worthIt
+
+                let transaction = Transaction(
+                    amount: amount,
+                    date: date,
+                    merchant: profile.0,
+                    source: dayOffset == 0 ? .applePay : .manual,
+                    verdict: dayOffset == 0 ? .unrated : verdict,
+                    // Today's stay unsorted, so the queue has something in it —
+                    // which is what the trial actually feels like each evening.
+                    isConfirmed: dayOffset != 0,
+                    category: categories.first { $0.name == profile.1 }
+                )
+                context.insert(transaction)
+            }
+        }
+
+        try? context.save()
+    }
+
     /// Removes every transaction, leaving categories in place.
     @MainActor
     static func clearTransactions(in context: ModelContext) {
