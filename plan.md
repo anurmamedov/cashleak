@@ -161,9 +161,18 @@ Declines and bad merchant strings never reach the dataset. The You tab lists eac
 card's automation status and states plainly what won't appear — setting that
 expectation up front prevents the worst review you can get.
 
-### Bank alerts — OPEN QUESTION, test before committing
+### Bank alerts — ON HOLD
 
-**Status: unresolved. Decide this before planning v1.1.**
+**Status: parked, not cancelled.** Revisit after v1 ships, when real coverage
+numbers exist and users have said whether the gap actually bothers them.
+
+The reasoning is setup burden rather than feasibility. It roughly doubles
+automatic capture, but it needs one automation per bank, each requiring the user
+to know their own alert wording — a lot of onboarding for a feature nobody has
+asked for yet, resting on a Shortcuts capability Apple could change without
+notice. Wallet capture plus recurring rules covers what v1 needs.
+
+The research below is kept for whenever this restarts.
 
 iOS gives apps no way to read SMS or email. `IdentityLookup` /
 `ILMessageFilterExtension` exists but is deliberately sandboxed so a filter
@@ -366,8 +375,8 @@ Every one of these will be requested. Saying no is the strategy.
 
 - [ ] **v1.0** — entry, Sort queue, verdicts, Overview, Analysis, recurring and
       trips are **built**; daily notification and widget are **not**
-- [ ] **v1.1** — receipt scan, bank alert capture *(pending the Shortcut Input
-      test)*
+- [ ] **v1.1** — receipt scan. Bank alert capture is **on hold** — see the
+      capture section
 - [ ] **v1.2** — Reconcile, optional AI monthly summary (aggregates only, never
       raw transactions)
 - [ ] **v2.0** — evaluate FinanceKit for a US launch

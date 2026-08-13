@@ -151,9 +151,9 @@ TestFlight build is painful, so do it before P6.
 
 ---
 
-## D-008 · Shortcuts message body — untested
+## D-008 · Shortcuts message body — on hold
 
-**Open.** Blocks bank alert capture and therefore v1.1 scope.
+**Parked.** Superseded in priority by D-013; the research below stands.
 
 Unknown: whether the Shortcuts Message trigger exposes the message **body** as
 parseable Shortcut Input. Documented examples only demonstrate reading the
@@ -279,3 +279,39 @@ decision to change the product, not to add a feature.
 
 **Note for L5:** Sign in with Apple needs its capability enabled in Xcode. Until
 then the button will fail at runtime.
+
+
+---
+
+## D-013 · Bank alert capture is parked
+
+**Decided.**
+
+Bank alert capture — the Shortcuts Message and Email triggers — is on hold. Not
+cancelled, not proven impossible. Deprioritised.
+
+Desk research suggests it would probably work: a published SMS-to-webhook
+workflow depends on the message body being readable as Shortcut Input, and email
+triggers are better attested still.
+
+The problem isn't feasibility, it's **setup burden**. One automation per bank,
+each requiring the user to know their own bank's alert wording, on top of the
+Wallet automation they've already been asked to build. That's a lot of onboarding
+friction for a feature nobody has requested yet.
+
+Research also surfaced a design problem: Message automations may only accept
+phone numbers as senders, not the short codes Canadian banks text from. If so,
+rules must key on message text, and onboarding can't offer a bank picker — it has
+to ask the user to find a distinctive phrase in their own alerts. Materially
+worse.
+
+There's a durability concern too. The whole approach rests on a Shortcuts
+behaviour Apple never documented as an integration point and could change in any
+release.
+
+**What this leaves:** Wallet capture plus recurring rules. Roughly 40–60%
+automatic, with the rest covered by rules and quick manual entry — which the app
+already states plainly.
+
+**Restart when:** v1 has shipped and coverage complaints are the top request.
+That's evidence the setup burden is worth it; right now it's a guess.

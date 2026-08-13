@@ -18,7 +18,7 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
 **Not verified:** all 162 unit tests — there is no test target in the project yet.
-**Gates:** none of the four have been run.
+**Gates:** L2 is on hold. L1, L3 and L4 haven't run.
 
 ---
 
@@ -34,17 +34,32 @@ Two weeks of logging every purchase and labelling it *worth it* or *leak*.
 - [ ] Weekly tally, both weeks
 - [ ] Answer: did labelling change what you bought?
 
-The only step that can invalidate the other 29. Clock hasn't started.
+The only step that can invalidate the rest. Clock hasn't started.
 
-### L2 · Shortcuts message body — `gate` · not started
+### L2 · Shortcuts message body — **on hold**
 
-- [x] Desk research — evidence leans toward the body being readable
-- [x] Surfaced a new risk: sender field may reject bank short codes
-- [ ] Build the test automation on device
-- [ ] Record the alert output verbatim
-- [ ] Test whether a short code is accepted as a sender
+Bank alert capture is parked. Not cancelled — deprioritised until v1 ships and
+real coverage numbers exist.
 
-Not runnable in the Simulator — it has no Shortcuts app.
+What the research found, kept for whenever this restarts:
+
+- Message body is probably readable as Shortcut Input — a published
+  SMS-to-webhook workflow depends on it, confirmed working August 2025
+- Email triggers are better attested: Shortcut Input arrives as a file whose
+  name is the subject and contents are the body
+- **Sender filtering may reject short codes**, which is how every Canadian bank
+  texts. If so, rules must key on message text instead, and onboarding can't
+  offer a list of banks to pick from
+- Email triggers only work with Apple Mail
+
+Why it's parked: it doubles automatic coverage, but it also doubles the setup
+burden — one automation per bank, each needing the user to know their own alert
+wording. That's a lot of onboarding for a feature nobody has asked for yet,
+built on a capability Apple could remove without notice.
+
+Wallet capture alone plus recurring rules covers the ground v1 needs.
+
+**Restart when:** v1 has shipped and coverage complaints are the top request.
 
 ### L3 · Wallet trigger end to end — `gate` · not started
 
@@ -379,8 +394,8 @@ outside the code.
    nothing at runtime.
 3. **L1** — start the two-week clock today. Nothing depends on it and everything
    is invalidated by it.
-4. **L2 and L3** — one evening each, on the phone. L3's merchant strings replace
-   the guessed dedup fixtures.
+4. **L3** — one evening, on the phone. Its merchant strings replace the guessed
+   dedup fixtures. L2 is parked.
 5. **L19** — the last unbuilt feature. Needs step 2 first.
 6. **L8** — two-device sync check. Needs step 2 and a second device.
 
