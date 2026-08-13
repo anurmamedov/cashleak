@@ -379,7 +379,9 @@ renaming.
 
 ### P5 · Release readiness — not started
 
-- [ ] **App icon** — `AppIcon.appiconset` is empty, ships a blank tile
+- [x] **App icon** — coffee cup with a coin, coral ground. Light, dark and
+      tinted 1024s installed. Regenerable from `brand/make_icon.py`
+- [ ] Check it at Home Screen size on a device before submitting
 - [ ] **Privacy manifest** — no `PrivacyInfo.xcprivacy`; required at submission
 - [ ] **Schema versioning** — unversioned today, so any model change wipes
       TestFlight users' data. Must land before P7
