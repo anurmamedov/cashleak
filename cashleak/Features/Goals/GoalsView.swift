@@ -78,8 +78,15 @@ struct GoalsView: View {
             GoalStore.activate(goal, in: context)
         } label: {
             HStack(spacing: 12) {
+                // Both branches have to be the same concrete type. `.tertiary`
+                // is a ShapeStyle rather than a Color, so mixing it with
+                // `Color(hex:)` in a ternary won't type-check.
                 Image(systemName: goal.isActive ? "largecircle.fill.circle" : "circle")
-                    .foregroundStyle(goal.isActive ? Color(hex: AppSettings.accentHex) : .tertiary)
+                    .foregroundStyle(
+                        goal.isActive
+                            ? Color(hex: AppSettings.accentHex)
+                            : Color.secondary.opacity(0.5)
+                    )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(goal.name)

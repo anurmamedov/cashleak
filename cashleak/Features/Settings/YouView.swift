@@ -548,7 +548,7 @@ struct CategoryEditor: View {
                                               ? Color(hex: colorHex).opacity(0.22)
                                               : Color(.secondarySystemBackground))
                                 )
-                                .foregroundStyle(icon == symbol ? Color(hex: colorHex) : .secondary)
+                                .foregroundStyle(icon == symbol ? Color(hex: colorHex) : Color.secondary)
                                 .onTapGesture { icon = symbol }
                         }
                     }

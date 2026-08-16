@@ -13,12 +13,12 @@ enum TestSupport {
     /// flaky, and dependent on whoever is signed in on the machine.
     @MainActor
     static func makeContainer() throws -> ModelContainer {
-        let schema = Schema([
-            Transaction.self,
-            cashleak.Category.self,
-            Trip.self,
-            RecurringRule.self,
-        ])
+        // Reuse the app's schema rather than restating it. The hand-written
+        // copy had already drifted — it still listed `Trip`, which no longer
+        // exists, and was missing `CardAutomation`, `UserProfile` and
+        // `CaptureLogEntry`, so any test inserting one of those would fail at
+        // runtime for a reason that has nothing to do with what it's testing.
+        let schema = AppModelContainer.schema
         let configuration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: true,

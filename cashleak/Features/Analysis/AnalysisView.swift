@@ -344,7 +344,7 @@ struct CategoryDetailView: View {
                     Spacer()
                     Text(transaction.amount.currencyExact)
                         .monospacedDigit()
-                        .foregroundStyle(transaction.verdict == .leak ? Color(hex: "993C1D") : .primary)
+                        .foregroundStyle(transaction.verdict == .leak ? Color(hex: "993C1D") : Color.primary)
                 }
             }
         }
