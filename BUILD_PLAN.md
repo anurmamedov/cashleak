@@ -121,22 +121,36 @@ decision rather than a pre-build one.
 
 ## Foundation
 
-### L5 · Project setup — partial
+### L5 · Project setup — code done, account outstanding
 
 Done:
 
 - [x] Source tree matches ARCHITECTURE.md
 - [x] Template files removed
 - [x] Project builds and runs
+- [x] `cashleak/cashleak.entitlements` written and wired into both configs
+- [x] Sign in with Apple
+- [x] iCloud + CloudKit, container `iCloud.anar.cashleak`
+- [x] Push — not for messaging; CloudKit uses silent pushes to signal changes
+- [x] App Group `group.anar.cashleak` for the widget
+- [x] Background Modes via `INFOPLIST_KEY_UIBackgroundModes = fetch remote-notification`
 
-Outstanding:
+**The entitlement immediately broke launch, which is the point.** With no iCloud
+entitlement, `cloudKitDatabase: .automatic` had been quietly falling back to a
+local store and never validating the schema. The moment a container existed,
+`ModelContainer` failed at launch: `RecurringRule.category` was a relationship
+with no inverse, which CloudKit forbids. Fixed by adding `Category.recurringRules`.
+Nothing else in the schema was wrong — every property already had a default and
+there were no unique attributes.
 
-- [ ] iCloud + CloudKit capability
-- [ ] Background Modes — background fetch
-- [ ] Push Notifications
-- [ ] App Group for the widget
-- [ ] **Sign in with Apple** — needed by the welcome screen
-- [ ] No `.entitlements` file exists yet — **sync silently does nothing**
+Outstanding — needs an Apple Developer account, not code:
+
+- [ ] Select a Development Team in Signing & Capabilities
+- [ ] Register the CloudKit container and App Group in the developer portal
+- [ ] **A free Apple ID can't do any of this.** CloudKit, Sign in with Apple,
+      Push and App Groups all require the paid Program. Until then the app is
+      Simulator-only and sync stays local.
+- [ ] `aps-environment` is `development`; distribution needs `production` (P4)
 
 ### L6 · Test target and fixtures — partial
 

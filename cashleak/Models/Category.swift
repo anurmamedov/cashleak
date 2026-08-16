@@ -29,6 +29,16 @@ final class Category {
     @Relationship(inverse: \Transaction.category)
     var transactions: [Transaction]?
 
+    /// Never read by any view — it exists because CloudKit requires an explicit
+    /// inverse on *every* relationship, and `RecurringRule.category` had none.
+    ///
+    /// The omission was invisible until L5: with no iCloud entitlement,
+    /// `cloudKitDatabase: .automatic` quietly fell back to a local store and
+    /// never validated the schema. The moment the entitlement existed, the
+    /// container failed to load at launch.
+    @Relationship(inverse: \RecurringRule.category)
+    var recurringRules: [RecurringRule]?
+
     var kind: CategoryKind {
         get { CategoryKind(rawValue: kindRaw) ?? .want }
         set { kindRaw = newValue.rawValue }
