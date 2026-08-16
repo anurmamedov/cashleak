@@ -32,7 +32,7 @@ CloudKit replicates it to the user's own private database.
                     │  Sort queue → verdict       │
                     └──────────────┬──────────────┘
                                    ▼
-                     Overview · Analysis · Trips · Widget
+                     Overview · Analysis · History · Widget
 ```
 
 Everything enters through one funnel and lands in the Sort queue unconfirmed,
@@ -47,7 +47,7 @@ cashleak/
 ├── App/                  entry point, shared ModelContainer, tab shell
 ├── Models/               SwiftData @Model types, enums, seed data
 ├── Features/
-│   ├── Overview/         hero leak card, intensity ramp, trip card
+│   ├── Overview/         hero leak card, intensity ramp, goal card
 │   ├── Sort/             queue, verdict swipe
 │   ├── Entry/            number pad
 │   ├── Analysis/         range selector, charts, leaderboards, drill-downs
@@ -56,7 +56,6 @@ cashleak/
 │   └── Settings/         capture status, preferences, export, privacy
 ├── Intents/              App Intents surface
 ├── Support/              aggregates, dedup, ramp, formatting, settings
-├── Resources/            city cost index
 ├── Notifications/        not built — L19
 └── Widgets/              not built — L19
 ```
@@ -67,17 +66,18 @@ anticipation.
 
 `Support/` wasn't in the original plan; it emerged from that rule. It now holds
 `LeakRamp`, `MerchantNormalizer`, `DeduplicationMatcher`, `TransactionIngest`,
-`SpendingSummary`, `AnalysisAggregates`, `RecurringPoster`, `DiscretionarySpend`,
-`CSVExport`, and `AppSettings` — each promoted when a second feature reached for
-it.
+`SpendingSummary`, `AnalysisAggregates`, `RecurringPoster`, `MerchantMemory`,
+`BankAlertParser`, `CSVExport`, `AppLock` and `AppSettings` — each promoted when
+a second feature reached for it.
 
 ## Data model
 
-Five SwiftData `@Model` types.
+Seven SwiftData `@Model` types — the five below plus `UserProfile` and
+`CaptureLogEntry`.
 
 | Model | Key fields |
 |---|---|
-| `Transaction` | `amount`, `currencyCode`, `date`, `merchant`, `normalizedMerchant`, `note`, `source`, `isConfirmed`, `isSuperseded`, `verdict`, `category`, `trip`, `receiptImage` |
+| `Transaction` | `amount`, `currencyCode`, `date`, `merchant`, `normalizedMerchant`, `note`, `source`, `isConfirmed`, `isSuperseded`, `verdict`, `category`, `receiptImage` |
 | `Category` | `name`, `icon`, `colorHex`, `kind`, `monthlyBudget`, `sortIndex` |
 | `Goal` | `name`, `targetAmount`, `note`, `isActive`, `createdAt`, `achievedAt` |
 | `RecurringRule` | `merchant`, `amount`, `cadence`, `nextRunDate`, `lastPostedDate`, `isEnabled` |
@@ -87,9 +87,9 @@ Two fields exist purely to serve invariants rather than the UI.
 `normalizedMerchant` is written on every save so dedup never compares raw
 strings, and `isSuperseded` marks merged duplicates without deleting them.
 
-`Trip.estimatedBudget` is computed, not stored — but
-`dailyDiscretionaryAtEstimate` is a deliberate snapshot, so a past trip's
-forecast doesn't drift as later spending changes the average.
+`Goal` replaced `Trip` in D-014. Exactly one goal is active at a time, enforced
+in code rather than by a constraint — CloudKit forbids unique attributes, the
+same reason dedup is application logic.
 
 `CardAutomation` is **self-reported**. No API lists Wallet cards or reports
 whether a Shortcuts automation exists, so the user marks it themselves.
