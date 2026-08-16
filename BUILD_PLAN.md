@@ -143,7 +143,7 @@ Outstanding:
 Done:
 
 - [x] **Test target added to the project** — `⌘U` runs
-- [x] 202 tests across 14 files
+- [x] 205 tests across 16 files
 - [x] In-memory `ModelContainer` helper, CloudKit disabled
 - [x] Merchant fixture corpus
 
@@ -160,7 +160,7 @@ it bites again in app code.
 
 ### L7 · SwiftData models — done
 
-- [x] `Transaction`, `Category`, `Trip`, `RecurringRule`
+- [x] `Transaction`, `Category`, `Goal`, `RecurringRule`
 - [x] Enums stored as raw strings so reordering can't remap records
 - [x] CloudKit rules honoured — defaults, no unique attributes, explicit inverses
 - [x] 14 default categories seeded once

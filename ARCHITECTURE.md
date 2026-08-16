@@ -51,7 +51,8 @@ cashleak/
 │   ├── Sort/             queue, verdict swipe
 │   ├── Entry/            number pad
 │   ├── Analysis/         range selector, charts, leaderboards, drill-downs
-│   ├── Trips/            forecast, live burn rate
+│   ├── Goals/            what you're saving for
+│   ├── History/          searchable list, edit and delete
 │   └── Settings/         capture status, preferences, export, privacy
 ├── Intents/              App Intents surface
 ├── Support/              aggregates, dedup, ramp, formatting, settings
@@ -78,7 +79,7 @@ Five SwiftData `@Model` types.
 |---|---|
 | `Transaction` | `amount`, `currencyCode`, `date`, `merchant`, `normalizedMerchant`, `note`, `source`, `isConfirmed`, `isSuperseded`, `verdict`, `category`, `trip`, `receiptImage` |
 | `Category` | `name`, `icon`, `colorHex`, `kind`, `monthlyBudget`, `sortIndex` |
-| `Trip` | `name`, `destination`, `startDate`, `endDate`, `fixedCosts`, `costMultiplier`, `dailyDiscretionaryAtEstimate`, `transactions` |
+| `Goal` | `name`, `targetAmount`, `note`, `isActive`, `createdAt`, `achievedAt` |
 | `RecurringRule` | `merchant`, `amount`, `cadence`, `nextRunDate`, `lastPostedDate`, `isEnabled` |
 | `CardAutomation` | `label`, `isConfigured`, `createdAt`, `lastCapturedAt` |
 
