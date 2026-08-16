@@ -58,9 +58,11 @@ struct SortQueueView: View {
         List {
             Section {
                 ForEach(queue) { transaction in
-                    QueueRow(transaction: transaction)
-                        .contentShape(Rectangle())
-                        .onTapGesture { categorising = transaction }
+                    NavigationLink {
+                        TransactionDetailView(transaction: transaction)
+                    } label: {
+                        QueueRow(transaction: transaction)
+                    }
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             Button {
                                 apply(.worthIt, to: transaction)
@@ -79,7 +81,7 @@ struct SortQueueView: View {
                         }
                 }
             } footer: {
-                Text("Swipe right for worth it, left for leak. Tap to set a category.")
+                Text("Swipe right for worth it, left for leak. Tap to edit.")
             }
         }
         .listStyle(.plain)

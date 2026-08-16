@@ -50,7 +50,6 @@ final class Transaction {
     // MARK: Relationships
 
     var category: Category?
-    var trip: Trip?
 
     // MARK: Computed
 
@@ -86,8 +85,7 @@ final class Transaction {
         verdict: Verdict = .unrated,
         isConfirmed: Bool = false,
         currencyCode: String = "CAD",
-        category: Category? = nil,
-        trip: Trip? = nil
+        category: Category? = nil
     ) {
         self.amount = amount
         self.date = date
@@ -100,7 +98,6 @@ final class Transaction {
         self.isSuperseded = false
         self.currencyCode = currencyCode
         self.category = category
-        self.trip = trip
     }
 
     /// Updates `merchant` and keeps `normalizedMerchant` in step.

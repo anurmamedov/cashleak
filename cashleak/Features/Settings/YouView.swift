@@ -13,7 +13,7 @@ struct YouView: View {
     @Query private var transactions: [Transaction]
     @Query private var categories: [Category]
     @Query(sort: \CardAutomation.createdAt) private var cards: [CardAutomation]
-    @Query private var trips: [Trip]
+    @Query private var goals: [Goal]
     @Query private var rules: [RecurringRule]
     @Query private var profiles: [UserProfile]
 
@@ -161,9 +161,9 @@ struct YouView: View {
             }
 
             NavigationLink {
-                TripsListView()
+                GoalsView()
             } label: {
-                Label("Trips · \(trips.count)", systemImage: "airplane")
+                Label("Goals · \(goals.count)", systemImage: "target")
             }
 
             NavigationLink {
@@ -259,7 +259,16 @@ struct YouView: View {
 
     private var dataSection: some View {
         Section {
-            LabeledContent("Transactions", value: "\(activeCount)")
+            NavigationLink {
+                HistoryView()
+            } label: {
+                HStack {
+                    Label("History", systemImage: "list.bullet")
+                    Spacer()
+                    Text("\(activeCount)")
+                        .foregroundStyle(.secondary)
+                }
+            }
             if supersededCount > 0 {
                 LabeledContent("Merged duplicates", value: "\(supersededCount)")
             }
@@ -405,31 +414,55 @@ struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
 
-/// Categories. Deleting one must not take its transactions with it.
+/// Categories. Create, rename, recolour, delete.
+///
+/// Previously list-and-delete only — fourteen seeded categories, permanently,
+/// and deleting one was irreversible. Anyone with a hobby, a pet or childcare
+/// was stuck with someone else's taxonomy.
 struct CategoriesView: View {
 
     @Environment(\.modelContext) private var context
     @Query(sort: \Category.sortIndex) private var categories: [Category]
 
+    @State private var editing: Category?
+    @State private var isAdding = false
+
     var body: some View {
         List {
             ForEach(categories) { category in
-                HStack {
-                    Image(systemName: category.icon)
-                        .foregroundStyle(Color(hex: category.colorHex))
-                        .frame(width: 26)
-                    Text(category.name)
-                    Spacer()
-                    Text(category.kind == .need ? "Need" : "Want")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                Button {
+                    editing = category
+                } label: {
+                    HStack {
+                        Image(systemName: category.icon)
+                            .foregroundStyle(Color(hex: category.colorHex))
+                            .frame(width: 26)
+                        Text(category.name)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Text(category.kind == .need ? "Need" : "Want")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .buttonStyle(.plain)
             }
             .onDelete(perform: delete)
+
+            Section {
+                Button {
+                    isAdding = true
+                } label: {
+                    Label("Add a category", systemImage: "plus")
+                }
+            } footer: {
+                Text("Deleting a category keeps its transactions — they become uncategorised.")
+            }
         }
         .navigationTitle("Categories")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { EditButton() }
+        .sheet(isPresented: $isAdding) { CategoryEditor(category: nil) }
+        .sheet(item: $editing) { category in CategoryEditor(category: category) }
     }
 
     private func delete(at offsets: IndexSet) {
@@ -440,74 +473,127 @@ struct CategoriesView: View {
     }
 }
 
-/// Turn the passcode on or off after registration.
-struct LockSettingsView: View {
+/// Create or edit a category.
+struct CategoryEditor: View {
 
+    let category: Category?
+
+    @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Query private var existing: [Category]
 
-    @State private var isEnabled = AppLock.isEnabled
-    @State private var password = ""
-    @State private var confirmPassword = ""
-    @State private var error: String?
+    @State private var name = ""
+    @State private var icon = "circle"
+    @State private var colorHex = "888780"
+    @State private var kind: CategoryKind = .want
+    @State private var budgetText = ""
 
-    var body: some View {
-        Form {
-            Section {
-                Toggle("Require a passcode", isOn: $isEnabled.animation())
-                    .onChange(of: isEnabled) { _, on in
-                        if !on {
-                            AppLock.removePassword()
-                            password = ""
-                            confirmPassword = ""
-                            error = nil
-                        }
-                    }
-            } footer: {
-                Text("Your phone's own passcode already protects the app. This adds a second one, useful if you share the device.")
-            }
+    private static let icons = [
+        "circle", "cart", "fork.knife", "cup.and.saucer", "bag", "car",
+        "tram", "fuelpump", "house", "bolt", "wifi", "phone", "shield",
+        "cross.case", "heart", "pawprint", "figure.child", "book",
+        "graduationcap", "gift", "tshirt", "scissors", "wrench", "ticket",
+        "gamecontroller", "music.note", "airplane", "repeat", "creditcard",
+    ]
 
-            if isEnabled && !AppLock.isEnabled {
-                Section {
-                    SecureField("New password", text: $password)
-                        .textContentType(.newPassword)
-                    SecureField("Confirm", text: $confirmPassword)
-                        .textContentType(.newPassword)
-                    Button("Set passcode") { set() }
-                        .disabled(password.isEmpty)
+    private static let colors = [
+        "D85A30", "BA7517", "639922", "1D9E75", "378ADD",
+        "7F77DD", "D4537E", "888780",
+    ]
 
-                    if let error {
-                        Text(error)
-                            .font(.footnote)
-                            .foregroundStyle(Color(hex: "993C1D"))
-                    }
-                } footer: {
-                    Text("Stored as a salted hash in the device Keychain. It can't be recovered — only replaced by turning this off and on again.")
-                }
-            }
-
-            if AppLock.isEnabled && AppLock.biometryIsAvailable {
-                Section {
-                    Label("\(AppLock.biometryName) unlocks the app too", systemImage: "faceid")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .navigationTitle("Passcode")
-        .navigationBarTitleDisplayMode(.inline)
+    private var canSave: Bool {
+        !name.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
-    private func set() {
-        guard password.count >= ProfileValidator.minimumPasswordLength else {
-            error = ProfileValidator.message(for: .passwordTooShort)
-            return
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Name", text: $name)
+                    Picker("Kind", selection: $kind) {
+                        Text("Want").tag(CategoryKind.want)
+                        Text("Need").tag(CategoryKind.need)
+                    }
+                    .pickerStyle(.segmented)
+                } footer: {
+                    Text("Need or want is for grouping only. It never affects a verdict — whether something was worth it is always your call.")
+                }
+
+                Section("Colour") {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 8), spacing: 12) {
+                        ForEach(Self.colors, id: \.self) { hex in
+                            Circle()
+                                .fill(Color(hex: hex))
+                                .frame(width: 28, height: 28)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.primary, lineWidth: colorHex == hex ? 2 : 0)
+                                        .padding(-3)
+                                )
+                                .onTapGesture { colorHex = hex }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                Section("Icon") {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 14) {
+                        ForEach(Self.icons, id: \.self) { symbol in
+                            Image(systemName: symbol)
+                                .font(.body)
+                                .frame(width: 34, height: 34)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(icon == symbol
+                                              ? Color(hex: colorHex).opacity(0.22)
+                                              : Color(.secondarySystemBackground))
+                                )
+                                .foregroundStyle(icon == symbol ? Color(hex: colorHex) : .secondary)
+                                .onTapGesture { icon = symbol }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            .navigationTitle(category == nil ? "New category" : "Edit category")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { save() }.disabled(!canSave)
+                }
+            }
+            .onAppear(perform: load)
         }
-        guard password == confirmPassword else {
-            error = ProfileValidator.message(for: .passwordMismatch)
-            return
+    }
+
+    private func load() {
+        guard let category else { return }
+        name = category.name
+        icon = category.icon
+        colorHex = category.colorHex
+        kind = category.kind
+    }
+
+    private func save() {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+
+        if let category {
+            category.name = trimmed
+            category.icon = icon
+            category.colorHex = colorHex
+            category.kind = kind
+        } else {
+            let next = (existing.map(\.sortIndex).max() ?? 0) + 1
+            context.insert(Category(
+                name: trimmed, icon: icon, colorHex: colorHex,
+                kind: kind, sortIndex: next
+            ))
         }
-        AppLock.setPassword(password)
-        error = nil
+
+        try? context.save()
         dismiss()
     }
 }

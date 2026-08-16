@@ -12,7 +12,7 @@ enum AppModelContainer {
     static let schema = Schema([
         Transaction.self,
         Category.self,
-        Trip.self,
+        Goal.self,
         RecurringRule.self,
         CardAutomation.self,
         UserProfile.self,

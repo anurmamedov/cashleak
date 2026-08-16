@@ -14,6 +14,7 @@ struct RecurringRulesView: View {
     @Query(sort: \Category.sortIndex) private var categories: [Category]
 
     @State private var isAddingRule = false
+    @State private var editingRule: RecurringRule?
 
     var body: some View {
         List {
@@ -43,9 +44,15 @@ struct RecurringRulesView: View {
         .sheet(isPresented: $isAddingRule) {
             AddRecurringRuleSheet()
         }
+        .sheet(item: $editingRule) { rule in
+            EditRecurringRuleSheet(rule: rule)
+        }
     }
 
     private func ruleRow(_ rule: RecurringRule) -> some View {
+        Button {
+            editingRule = rule
+        } label: {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(rule.merchant)
@@ -59,6 +66,8 @@ struct RecurringRulesView: View {
                 .font(.body)
                 .foregroundStyle(rule.amount > 0 ? .primary : .tertiary)
         }
+        }
+        .buttonStyle(.plain)
         .opacity(rule.isEnabled ? 1 : 0.5)
         .swipeActions(edge: .leading) {
             Button {
@@ -167,5 +176,76 @@ struct AddRecurringRuleSheet: View {
         context.insert(rule)
         try? context.save()
         dismiss()
+    }
+}
+
+
+/// Edit an existing rule.
+///
+/// Rent goes up. Without this, fixing an amount meant deleting the rule and
+/// recreating it, which loses `lastPostedDate` and can cause a re-post.
+struct EditRecurringRuleSheet: View {
+
+    @Bindable var rule: RecurringRule
+
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    @Query(sort: \Category.sortIndex) private var categories: [Category]
+
+    @State private var amountText = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Merchant", text: $rule.merchant)
+                    TextField("Amount", text: $amountText)
+                        .keyboardType(.decimalPad)
+                    Picker("Repeats", selection: Binding(
+                        get: { rule.cadence },
+                        set: { rule.cadence = $0 }
+                    )) {
+                        ForEach(Cadence.allCases, id: \.self) { option in
+                            Text(option.displayName).tag(option)
+                        }
+                    }
+                    DatePicker("Next charge", selection: $rule.nextRunDate, displayedComponents: .date)
+                    Toggle("Active", isOn: $rule.isEnabled)
+                }
+
+                Section("Category") {
+                    Picker("Category", selection: Binding(
+                        get: { rule.category },
+                        set: { rule.category = $0 }
+                    )) {
+                        Text("None").tag(Category?.none)
+                        ForEach(categories) { category in
+                            Text(category.name).tag(Category?.some(category))
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                }
+
+                if let last = rule.lastPostedDate {
+                    Section {
+                        LabeledContent("Last posted", value: last.formatted(.dateTime.month().day().year()))
+                    }
+                }
+            }
+            .navigationTitle("Edit rule")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        rule.amount = Double(amountText) ?? rule.amount
+                        try? context.save()
+                        dismiss()
+                    }
+                }
+            }
+            .onAppear {
+                amountText = rule.amount > 0 ? String(format: "%.2f", rule.amount) : ""
+            }
+        }
     }
 }

@@ -16,8 +16,12 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 | Partial | 2 | 0 |
 | Not started | 3 | 10 |
 
+**Convenience pass done:** transaction editing and deletion, searchable history,
+category creation, backdating, recurring rule editing, Goals replacing Trips.
+See D-014 and D-015.
+
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
-**Tests:** target exists, suite compiles. 202 tests — confirm they run green.
+**Tests:** target exists. 205 tests — confirm they run green after the Goals refactor.
 **Gates:** L2 is on hold. L1, L3 and L4 haven't run.
 
 ---
@@ -287,7 +291,20 @@ Not unit-testable. Needs two physical devices.
       ratio rather than staying grey below 40%
 - [x] 30 aggregate and comparison tests
 
-### L18 · Trips — done
+### L18 · Goals — done
+
+Replaced Trips (D-014). A name and an amount, which is what the trade-off line
+actually needs.
+
+- [x] `Goal` model with the trade-off sentence and its thresholds
+- [x] List with create, edit, delete, activate, mark reached
+- [x] Exactly one active goal, enforced in code
+- [x] Overview card, plus a prompt when there's a leak but no goal
+- [x] 15 goal tests
+
+- [ ] Lost with Trips: the personalised forecast and 78-city cost index
+
+### L18b · Trips — removed
 
 - [x] Trip list grouped by now, coming up, been
 - [x] Curated cost index, 78 cities, multipliers relative to Toronto

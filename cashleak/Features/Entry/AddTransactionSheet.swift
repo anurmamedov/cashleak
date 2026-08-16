@@ -19,6 +19,8 @@ struct AddTransactionSheet: View {
     @State private var merchant = ""
     @State private var suggestions: [String] = []
     @State private var categoryWasAutoFilled = false
+    @State private var date = Date.now
+    @State private var showingDate = false
     @FocusState private var merchantFocused: Bool
 
     private var amount: Double {
@@ -34,6 +36,7 @@ struct AddTransactionSheet: View {
                 merchantField
                 if !suggestions.isEmpty { suggestionRow }
                 categoryChips
+                dateRow
                 Divider()
                 NumberPad(onDigit: append, onDelete: deleteLast)
                 saveButton
@@ -157,6 +160,35 @@ struct AddTransactionSheet: View {
         }
     }
 
+    /// Collapsed by default so the fast path stays fast — but a purchase you
+    /// forgot on Tuesday has to be enterable on Wednesday, or the app quietly
+    /// demands same-day logging.
+    private var dateRow: some View {
+        Group {
+            if showingDate {
+                DatePicker("When", selection: $date, in: ...Date.now)
+                    .datePickerStyle(.compact)
+                    .padding(.horizontal)
+                    .padding(.bottom, 12)
+            } else {
+                Button {
+                    withAnimation { showingDate = true }
+                } label: {
+                    Label(
+                        Calendar.current.isDateInToday(date)
+                            ? "Today"
+                            : date.formatted(.dateTime.month().day()),
+                        systemImage: "calendar"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, 12)
+            }
+        }
+    }
+
     private var saveButton: some View {
         Button {
             save()
@@ -192,7 +224,7 @@ struct AddTransactionSheet: View {
         // unconfirmed instead.
         let transaction = Transaction(
             amount: amount,
-            date: .now,
+            date: date,
             merchant: merchant.trimmingCharacters(in: .whitespaces),
             source: .manual,
             verdict: .unrated,

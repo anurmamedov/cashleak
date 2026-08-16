@@ -145,26 +145,43 @@ final class ModelInvariantTests: XCTestCase {
         XCTAssertEqual(first, second)
     }
 
-    // MARK: Trip
+    // MARK: Goals
 
-    func testTripEstimateUsesPersonalisedFormula() {
-        let trip = Trip(
-            name: "Lisbon",
-            destination: "Lisbon",
-            startDate: TestSupport.date(2026, 10, 1),
-            endDate: TestSupport.date(2026, 10, 11),
-            fixedCosts: 900,
-            costMultiplier: 0.8,
-            dailyDiscretionaryAtEstimate: 34
-        )
+    func testGoalStoresItsTarget() throws {
+        let goal = Goal(name: "Lisbon", targetAmount: 1200, note: "October")
+        context.insert(goal)
+        try context.save()
 
-        // 34 × 0.8 × 10 + 900
-        XCTAssertEqual(trip.estimatedBudget, 1172, accuracy: 0.01)
+        let stored = try XCTUnwrap(try context.fetch(FetchDescriptor<Goal>()).first)
+        XCTAssertEqual(stored.name, "Lisbon")
+        XCTAssertEqual(stored.targetAmount, 1200)
+        XCTAssertFalse(stored.isAchieved)
     }
 
-    func testTripDayCountIsNeverZero() {
-        let sameDay = TestSupport.date(2026, 10, 1)
-        let trip = Trip(name: "Day trip", startDate: sameDay, endDate: sameDay)
-        XCTAssertEqual(trip.dayCount, 1)
+    /// Two comparisons in one hero line is no comparison at all, and CloudKit
+    /// forbids unique attributes — so exclusivity is enforced in code.
+    func testActivatingOneGoalDeactivatesTheRest() throws {
+        let a = Goal(name: "Camera", targetAmount: 900)
+        let b = Goal(name: "Lisbon", targetAmount: 1200)
+        context.insert(a)
+        context.insert(b)
+        try context.save()
+
+        GoalStore.activate(b, in: context)
+
+        XCTAssertFalse(a.isActive)
+        XCTAssertTrue(b.isActive)
+    }
+
+    /// Reaching a goal keeps it — the app should be able to show what's been
+    /// achieved rather than silently forgetting it.
+    func testAchievedGoalIsKept() throws {
+        let goal = Goal(name: "Camera", targetAmount: 900)
+        context.insert(goal)
+        goal.achievedAt = .now
+        try context.save()
+
+        XCTAssertTrue(goal.isAchieved)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<Goal>()).count, 1)
     }
 }

@@ -315,3 +315,72 @@ already states plainly.
 
 **Restart when:** v1 has shipped and coverage complaints are the top request.
 That's evidence the setup burden is worth it; right now it's a guess.
+
+---
+
+## D-014 · Goals replace Trips
+
+**Decided.** Supersedes D-006 in part.
+
+Trips is removed. In its place, a **Goal** — a name and an amount — is what the
+leak total gets compared against.
+
+**Why.** Two different features were bundled together:
+
+- A **comparison target**, which is essential. "Tells you what it cost you"
+  needs a *what*. Without one the hero line degrades to "35% of what you spent
+  this month", restating the number above it instead of converting it.
+- A **trip tracker** — live burn rate, days remaining, actual vs. estimate —
+  which is a travel budgeting app bolted onto a spending app.
+
+The first is the product. The second was the largest surface in the codebase
+(78-city cost index, forecast maths, burn rate, three screens) serving something
+D-006 already admitted is used a few times a year.
+
+**The deciding argument:** a trip only produces a trade-off line for people with
+travel booked. A goal produces one for everyone — a camera, a deposit, an
+emergency fund, a flight. The signature line now fires for every user from their
+first sorted month.
+
+**What was deleted:** `Trip`, `CityCostIndex`, `DiscretionarySpend`,
+`TripsListView`, `AddTripSheet`, and `Transaction.trip`.
+
+**What was lost.** The personalised forecast — *your* daily discretionary spend
+× a destination multiplier — was the cleverest thing in the app and genuinely
+differentiated. It's gone. That's the cost, and it's real.
+
+**Also fixed by this.** Nothing ever assigned a transaction to a trip, so
+`actualSpend` was permanently zero and the burn rate could never work. The
+feature looked built and wasn't.
+
+**Reverse if:** users ask for trip tracking specifically, rather than for a
+target to save toward. Then it returns as a *type* of goal, with dates — not as
+a parallel concept.
+
+---
+
+## D-015 · Everything must be editable
+
+**Decided.**
+
+Every record the user creates or receives can be edited and deleted:
+transactions, categories, recurring rules, goals.
+
+This is a correction, not a feature. The app previously had no way to fix a
+mistyped amount — enter $450 instead of $45 and it sat in the totals
+permanently. For an app whose entire argument is that its numbers mean
+something, uncorrectable numbers are disqualifying.
+
+Specifics worth keeping:
+
+- **Editing a verdict is allowed after the Sort undo window closes.** Realising
+  two days later that something *was* a leak is the reflection the product wants
+  to encourage, not an error to prevent.
+- **Clearing a verdict back to unrated also unconfirms**, returning the row to
+  the queue. Otherwise it would count toward totals with no judgement attached —
+  the exact state the model exists to prevent.
+- **Deleting a category keeps its transactions**, which become uncategorised.
+- **Transaction edits save on dismissal, not per keystroke**, so editing an
+  amount digit by digit doesn't rewrite the month's totals on every character.
+
+**Reverse if:** never.

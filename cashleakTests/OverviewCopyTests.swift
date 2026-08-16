@@ -72,21 +72,21 @@ final class OverviewCopyTests: XCTestCase {
         XCTAssertEqual(Int((share * 100).rounded()), 35)
     }
 
-    func testShareBetweenOneAndTwoReadsAsMoreThanTheWholeTrip() {
+    func testShareBetweenOneAndTwoReadsAsMoreThanTheWholeGoal() {
         let share = 301.0 / 189.0
         XCTAssertGreaterThanOrEqual(share, 1)
         XCTAssertLessThan(share, 2)
     }
 
-    func testShareAboveTwoCountsWholeTrips() {
+    func testShareAboveTwoCountsWholeGoals() {
         let share = 600.0 / 189.0
         XCTAssertGreaterThanOrEqual(share, 2)
         XCTAssertEqual(Int(share.rounded(.down)), 3)
     }
 
-    /// Rounding down matters: 2.9 trips is "2 trips", not "3". Overstating the
+    /// Rounding down matters: 2.9 goals is "2", not "3". Overstating the
     /// trade-off would be the app exaggerating to make a point.
-    func testTripCountRoundsDownNotNearest() {
+    func testGoalCountRoundsDownNotNearest() {
         XCTAssertEqual(Int((2.9).rounded(.down)), 2)
         XCTAssertEqual(Int((2.1).rounded(.down)), 2)
     }

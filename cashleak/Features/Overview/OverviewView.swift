@@ -6,7 +6,7 @@ struct OverviewView: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Query private var transactions: [Transaction]
-    @Query(sort: \Trip.startDate) private var trips: [Trip]
+    @Query private var goals: [Goal]
 
     private var summary: SpendingSummary {
         SpendingSummary.make(from: transactions)
@@ -16,8 +16,8 @@ struct OverviewView: View {
         Array(SpendingSummary.leaksByCategory(from: transactions).prefix(4))
     }
 
-    private var activeTrip: Trip? {
-        trips.first(where: \.isActive) ?? trips.first(where: \.isUpcoming)
+    private var goal: Goal? {
+        GoalStore.current(from: goals)
     }
 
     var body: some View {
@@ -28,7 +28,7 @@ struct OverviewView: View {
                     if let comparison = weekComparison { weekBanner(comparison) }
                     statsRow
                     if !leaksByCategory.isEmpty { leakBreakdown }
-                    if let trip = activeTrip { tripCard(trip) }
+                    goalCard
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 32)
@@ -79,25 +79,15 @@ struct OverviewView: View {
             return "Nothing sorted yet this month."
         }
 
-        if let trip = activeTrip, trip.estimatedBudget > 0, summary.leaked > 0 {
-            let destination = trip.destination.isEmpty ? trip.name : trip.destination
-            let share = summary.leaked / trip.estimatedBudget
+        // The goal is what turns a number into a trade-off. Without one this
+        // falls back to restating the ratio, which is honest but inert — hence
+        // the prompt to set one.
+        if let goal, let line = goal.tradeOffLine(leaked: summary.leaked) {
+            return line
+        }
 
-            // Past 100%, a percentage stops being a trade-off and starts being
-            // arithmetic. "159% of your trip" is technically true and reads as
-            // nonsense — the point is that the trip is already paid for.
-            if share >= 2 {
-                let times = (share).rounded(.down)
-                return "That's \(Int(times)) trips to \(destination)."
-            }
-            if share >= 1 {
-                return "That's more than the whole trip to \(destination)."
-            }
-
-            let percent = Int((share * 100).rounded())
-            if percent > 0 {
-                return "That's \(percent)% of your trip to \(destination)."
-            }
+        guard summary.leaked > 0 else {
+            return "Nothing you'd take back this month."
         }
 
         let percent = Int((summary.leakRatio * 100).rounded())
@@ -262,48 +252,63 @@ struct OverviewView: View {
         }
     }
 
-    // MARK: Trip
+    // MARK: Goal
 
-    private func tripCard(_ trip: Trip) -> some View {
-        NavigationLink {
-            TripDetailView(trip: trip)
-        } label: {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(trip.name)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.primary)
-                    Text(tripSubtitle(trip))
+    @ViewBuilder
+    private var goalCard: some View {
+        if let goal {
+            NavigationLink {
+                GoalsView()
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(goal.name)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+                        Text("\(goal.targetAmount.currencyRounded) · saving for")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.tertiary)
                 }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                .padding(14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color(.separator), lineWidth: 0.5)
+                )
             }
-            .padding(14)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color(.separator), lineWidth: 0.5)
-            )
+            .buttonStyle(.plain)
+        } else if summary.leaked > 0 {
+            // The prompt only appears once there's a leak to compare against.
+            // Asking on an empty month is asking before the question means
+            // anything.
+            NavigationLink {
+                GoalsView()
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("What would you rather have?")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+                        Text("Name something you're saving for")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "plus.circle")
+                        .foregroundStyle(Color(hex: AppSettings.accentHex))
+                }
+                .padding(14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color(.separator), lineWidth: 0.5)
+                )
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
-    private func tripSubtitle(_ trip: Trip) -> String {
-        if trip.isActive {
-            return "\(trip.daysRemaining) days left · \(trip.actualSpend.currencyRounded) of \(trip.estimatedBudget.currencyRounded)"
-        }
-
-        let days = Calendar.current.dateComponents([.day], from: .now, to: trip.startDate).day ?? 0
-        let when: String
-        switch days {
-        case ..<0: when = "Starts soon"
-        case 0: when = "Starts today"
-        case 1: when = "Tomorrow"
-        default: when = "In \(days) days"
-        }
-        return "\(when) · \(trip.estimatedBudget.currencyRounded) estimated"
-    }
 }
