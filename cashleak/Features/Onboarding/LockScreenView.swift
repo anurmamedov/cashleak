@@ -20,7 +20,7 @@ struct LockScreenView: View {
             Image("LogoMark")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 72, height: 72)
+                .frame(height: 96)
                 .accessibilityHidden(true)
 
             Text("CashLeak is locked")

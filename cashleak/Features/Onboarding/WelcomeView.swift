@@ -90,10 +90,13 @@ struct WelcomeView: View {
     /// whatever is behind it — white here, the system background on the lock
     /// screen — without a plate around it.
     private var dropMark: some View {
+        // Constrained by height, not into a square. The mark is portrait, so a
+        // square frame with `scaledToFit` sizes it by the *width* it never
+        // uses — which is what made it look tiny even at 96pt.
         Image("LogoMark")
             .resizable()
             .scaledToFit()
-            .frame(width: 96, height: 96)
+            .frame(height: 140)
             .accessibilityHidden(true)
     }
 

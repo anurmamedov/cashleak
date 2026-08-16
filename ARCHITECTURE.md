@@ -50,7 +50,7 @@ cashleak/
 │   ├── Overview/         hero leak card, intensity ramp, goal card
 │   ├── Sort/             queue, verdict swipe
 │   ├── Entry/            number pad
-│   ├── Analysis/         range selector, charts, leaderboards, drill-downs
+│   ├── Analysis/         range selector, charts, weeks, leaderboards, drill-downs
 │   ├── Goals/            what you're saving for
 │   ├── History/          searchable list, edit and delete
 │   └── Settings/         capture status, preferences, export, privacy
@@ -243,9 +243,9 @@ leak *ratio* rises — under 15%, 15–25%, 25–40%, over 40%.
 - Dark mode inverts: deepening means going lighter.
 
 **Navigation.** Five slots — `Overview · Sort · [Add] · Analysis · You`. Native
-`TabView` so iOS 26 tab bar styling is inherited rather than reimplemented. Trips
-is a card on Overview and a row in You, not a tab; it's used a few times a year
-and doesn't earn permanent space.
+`TabView` so iOS 26 tab bar styling is inherited rather than reimplemented. Goals
+is a card on Overview and a row in You, not a tab; it's set once and then read
+passively, so it doesn't earn permanent space.
 
 ## Testing
 

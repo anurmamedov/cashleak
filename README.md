@@ -17,9 +17,10 @@ Pre-v1. Builds and runs on iPhone 17 Pro / iOS 26.5. Fifteen of twenty local bui
 steps done.
 
 **Built** — SwiftData models, five-tab shell, number-pad entry, Sort queue with
-verdict swipe, Overview with the leak ratio ramp, Analysis with Swift Charts and
-drill-downs, Trips with personalised forecasting, and a settings screen covering
-capture status, preferences, CSV export and privacy. Capture runs through a
+verdict swipe, Overview with the leak ratio ramp, Analysis with Swift Charts,
+a week-by-week breakdown and drill-downs, Goals for the trade-off line, full
+transaction history with edit and delete, and a settings screen covering capture
+status, the app lock, preferences, CSV export and privacy. Capture runs through a
 single ingest funnel with deduplication and recurring rule posting.
 
 **Not built** — daily notification, Home Screen widget, receipt scanning.

@@ -289,7 +289,13 @@ Not unit-testable. Needs two physical devices.
       occurrence — a fortnight has two Sundays, which isn't a pattern
 - [x] Day-of-week chart stacked leaked over kept, so it encodes leaks at any
       ratio rather than staying grey below 40%
-- [x] 30 aggregate and comparison tests
+- [x] Week-by-week section: each week's spend and leak, change against the week
+      before, drill-down to that week's purchases
+- [x] Change suppressed on partial weeks and on non-adjacent ones — three days
+      against seven always flatters, and a month-old week isn't "last week"
+- [x] Weekly note stays silent below three whole weeks and unless one week is
+      1.4x the median of the others
+- [x] 30 aggregate and comparison tests, plus 20 for the week breakdown
 
 ### L18 · Goals — done
 

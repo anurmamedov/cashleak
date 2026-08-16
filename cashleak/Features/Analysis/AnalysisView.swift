@@ -29,6 +29,10 @@ struct AnalysisView: View {
         AnalysisAggregates.weekdayPattern(transactions, range: range)
     }
 
+    private var weeks: [AnalysisAggregates.WeekTotal] {
+        AnalysisAggregates.weekBreakdown(transactions, range: range)
+    }
+
     private var finding: String? {
         AnalysisAggregates.finding(transactions, range: range)
     }
@@ -43,6 +47,7 @@ struct AnalysisView: View {
 
                     if hasData {
                         trendSection
+                        if !weeks.isEmpty { weekSection }
                         if !categories.isEmpty { categorySection }
                         if !merchants.isEmpty { merchantSection }
                         weekdaySection
@@ -60,6 +65,9 @@ struct AnalysisView: View {
             }
             .navigationDestination(for: AnalysisAggregates.CategoryTotal.self) { category in
                 CategoryDetailView(categoryName: category.name, range: range)
+            }
+            .navigationDestination(for: AnalysisAggregates.WeekTotal.self) { week in
+                WeekDetailView(weekStart: week.start, title: week.label())
             }
         }
     }
@@ -100,6 +108,104 @@ struct AnalysisView: View {
             }
             .frame(height: 160)
         }
+    }
+
+    // MARK: Weeks
+
+    /// Week by week, newest first.
+    ///
+    /// The trend chart above is daily, which is too fine a grain to feel
+    /// responsible for — one expensive Saturday reads as an accident. A week is
+    /// the shortest unit where a habit is visible and still recent enough to
+    /// change.
+    private var weekSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader("Week by week")
+
+            let maximum = weeks.map(\.spent).max() ?? 1
+
+            VStack(spacing: 0) {
+                ForEach(weeks) { week in
+                    NavigationLink(value: week) {
+                        weekRow(week, maximum: maximum)
+                    }
+                    .buttonStyle(.plain)
+
+                    if week.id != weeks.last?.id { Divider() }
+                }
+            }
+
+            if let note = AnalysisAggregates.weeklyNote(weeks) {
+                Text(note)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func weekRow(_ week: AnalysisAggregates.WeekTotal, maximum: Double) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(week.label())
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+
+                if week.isPartial {
+                    Text("so far")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Spacer()
+
+                // The change is deliberately absent on partial weeks. Three days
+                // measured against seven always looks like an improvement.
+                if let change = week.change {
+                    changeBadge(change)
+                }
+
+                Text(week.spent.currencyRounded)
+                    .font(.subheadline)
+                    .monospacedDigit()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+
+            // Full width is the week's spend against the biggest week shown;
+            // the coral portion is the part of it the user would take back.
+            GeometryReader { geometry in
+                let width = geometry.size.width * (maximum > 0 ? week.spent / maximum : 0)
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color(.tertiarySystemFill))
+                        .frame(width: width)
+                    Capsule()
+                        .fill(Color(hex: AppSettings.accentHex))
+                        .frame(width: width * week.leakShare)
+                }
+            }
+            .frame(height: 6)
+
+            Text("\(week.leaked.currencyRounded) leaked · \(week.count) \(week.count == 1 ? "purchase" : "purchases")")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 9)
+    }
+
+    private func changeBadge(_ change: Double) -> some View {
+        let isUp = change > 0
+        let percent = Int((abs(change) * 100).rounded())
+
+        return Label(
+            "\(percent)%",
+            systemImage: isUp ? "arrow.up.right" : "arrow.down.right"
+        )
+        .font(.caption2)
+        .labelStyle(.titleAndIcon)
+        .foregroundStyle(Color(hex: isUp ? "993C1D" : "0F6E56"))
     }
 
     // MARK: Categories
@@ -263,6 +369,78 @@ extension AnalysisAggregates.MerchantTotal: Hashable {
 extension AnalysisAggregates.CategoryTotal: Hashable {
     static func == (lhs: Self, rhs: Self) -> Bool { lhs.name == rhs.name }
     func hash(into hasher: inout Hasher) { hasher.combine(name) }
+}
+
+extension AnalysisAggregates.WeekTotal: Hashable {
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.start == rhs.start }
+    func hash(into hasher: inout Hasher) { hasher.combine(start) }
+}
+
+/// One week, every purchase in it.
+///
+/// Queried by date rather than handed the array, so edits made here are
+/// reflected immediately instead of showing a snapshot taken when the
+/// aggregate ran.
+struct WeekDetailView: View {
+
+    let weekStart: Date
+    let title: String
+
+    @Query(sort: \Transaction.date, order: .reverse)
+    private var transactions: [Transaction]
+
+    private var weekEnd: Date {
+        Calendar.current.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
+    }
+
+    private var matching: [Transaction] {
+        transactions.filter {
+            $0.countsTowardTotals && $0.date >= weekStart && $0.date < weekEnd
+        }
+    }
+
+    private var spent: Double { matching.reduce(0) { $0 + $1.amount } }
+    private var leaked: Double {
+        matching.filter { $0.verdict == .leak }.reduce(0) { $0 + $1.amount }
+    }
+
+    var body: some View {
+        List {
+            Section {
+                LabeledContent("Spent", value: spent.currencyRounded)
+                LabeledContent("Leaked", value: leaked.currencyRounded)
+                LabeledContent("Purchases", value: "\(matching.count)")
+            }
+
+            Section("Every purchase") {
+                ForEach(matching) { transaction in
+                    NavigationLink {
+                        TransactionDetailView(transaction: transaction)
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(transaction.merchant.isEmpty ? "Unknown" : transaction.merchant)
+                                    .font(.subheadline)
+                                Text(transaction.date.formatted(.dateTime.weekday(.abbreviated).month().day()))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(transaction.amount.currencyExact)
+                                .monospacedDigit()
+                                .foregroundStyle(
+                                    transaction.verdict == .leak
+                                        ? Color(hex: "993C1D")
+                                        : Color.primary
+                                )
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
 }
 
 /// Every transaction at one merchant. The end of the chain — this is what the

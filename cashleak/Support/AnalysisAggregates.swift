@@ -183,6 +183,157 @@ enum AnalysisAggregates {
         )
     }
 
+    // MARK: Week by week
+
+    struct WeekTotal: Identifiable {
+        /// Start of the calendar week, per the user's locale.
+        let start: Date
+        let spent: Double
+        let leaked: Double
+        let count: Int
+
+        /// True when the week is clipped — either still running, or cut off by
+        /// the start of the selected range.
+        let isPartial: Bool
+
+        /// Change in leaked amount against the week before, as a fraction.
+        /// `nil` when there's no comparable week: the previous week is outside
+        /// the range, one of the two is partial, or the previous week leaked
+        /// nothing (dividing by zero produces an infinity, not an insight).
+        let change: Double?
+
+        var id: Date { start }
+        var kept: Double { max(spent - leaked, 0) }
+        var leakShare: Double { spent > 0 ? leaked / spent : 0 }
+
+        func end(_ calendar: Calendar = .current) -> Date {
+            calendar.date(byAdding: .day, value: 6, to: start) ?? start
+        }
+
+        /// "Aug 3 – 9", or "Aug 31 – Sep 6" across a month boundary.
+        func label(_ calendar: Calendar = .current) -> String {
+            let finish = end(calendar)
+            let sameMonth = calendar.isDate(start, equalTo: finish, toGranularity: .month)
+            let from = start.formatted(.dateTime.month(.abbreviated).day())
+            let to = sameMonth
+                ? finish.formatted(.dateTime.day())
+                : finish.formatted(.dateTime.month(.abbreviated).day())
+            return "\(from) – \(to)"
+        }
+    }
+
+    /// Each week in the range, newest first.
+    ///
+    /// The trend chart already shows daily bars, but a day is too small a unit
+    /// to feel responsible for — one expensive Saturday looks like an accident.
+    /// A week is the shortest span where a pattern is legible and still recent
+    /// enough to do something about.
+    ///
+    /// Weeks with no spending are omitted rather than shown as zero. A zero week
+    /// in this app almost always means "didn't open it", and drawing that as a
+    /// flat bar next to real weeks invites the wrong conclusion.
+    static func weekBreakdown(
+        _ transactions: [Transaction],
+        range: Range,
+        limit: Int = 6,
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> [WeekTotal] {
+
+        let counted = counted(transactions, in: range, now: now, calendar: calendar)
+        guard !counted.isEmpty else { return [] }
+
+        let interval = range.interval(endingAt: now, calendar: calendar)
+        let horizon = min(interval.end, now)
+
+        var spent: [Date: Double] = [:]
+        var leaked: [Date: Double] = [:]
+        var counts: [Date: Int] = [:]
+
+        for transaction in counted {
+            guard let key = calendar.dateInterval(of: .weekOfYear, for: transaction.date)?.start
+            else { continue }
+            spent[key, default: 0] += transaction.amount
+            counts[key, default: 0] += 1
+            if transaction.verdict == .leak {
+                leaked[key, default: 0] += transaction.amount
+            }
+        }
+
+        // Oldest first while the comparison is being built, so each week can see
+        // the one before it. Reversed at the end.
+        let ordered = spent.keys.sorted()
+
+        var results: [WeekTotal] = []
+        for (index, start) in ordered.enumerated() {
+            let weekEnd = calendar.date(byAdding: .day, value: 7, to: start) ?? start
+            let isPartial = start < interval.start || weekEnd > horizon
+
+            // Only compare against the immediately preceding week. A gap in the
+            // data means the "previous" entry might be a month ago, and calling
+            // that a week-over-week change would be a lie.
+            var change: Double?
+            if index > 0, !isPartial {
+                let previousStart = ordered[index - 1]
+                let expected = calendar.date(byAdding: .day, value: -7, to: start)
+                let isAdjacent = expected.map {
+                    calendar.isDate(previousStart, inSameDayAs: $0)
+                } ?? false
+                let previousEnd = calendar.date(byAdding: .day, value: 7, to: previousStart) ?? previousStart
+                let previousIsWhole = previousStart >= interval.start && previousEnd <= horizon
+                let previousLeaked = leaked[previousStart] ?? 0
+
+                if isAdjacent, previousIsWhole, previousLeaked > 0 {
+                    change = ((leaked[start] ?? 0) - previousLeaked) / previousLeaked
+                }
+            }
+
+            results.append(
+                WeekTotal(
+                    start: start,
+                    spent: spent[start] ?? 0,
+                    leaked: leaked[start] ?? 0,
+                    count: counts[start] ?? 0,
+                    isPartial: isPartial,
+                    change: change
+                )
+            )
+        }
+
+        return results.reversed().prefix(limit).map { $0 }
+    }
+
+    /// One sentence about the weeks, or silence.
+    ///
+    /// Only speaks when a *complete* week stands clearly above the others. Three
+    /// whole weeks is the floor — with two, "your worst week" is just "the
+    /// bigger of two numbers", and saying it costs more credibility than the
+    /// observation is worth.
+    static func weeklyNote(
+        _ weeks: [WeekTotal],
+        calendar: Calendar = .current
+    ) -> String? {
+
+        let whole = weeks.filter { !$0.isPartial && $0.spent > 0 }
+        guard whole.count >= 3, let worst = whole.max(by: { $0.leaked < $1.leaked }) else {
+            return nil
+        }
+
+        let others = whole.filter { $0.id != worst.id }.map(\.leaked).sorted()
+        guard !others.isEmpty else { return nil }
+
+        // Median rather than mean — one bad week shouldn't drag up the very
+        // baseline it's being measured against.
+        let median = others.count.isMultiple(of: 2)
+            ? (others[others.count / 2 - 1] + others[others.count / 2]) / 2
+            : others[others.count / 2]
+
+        guard median > 0, worst.leaked > median * 1.4 else { return nil }
+
+        let multiple = worst.leaked / median
+        return "\(worst.label(calendar)) leaked \(worst.leaked.currencyRounded) — \(String(format: "%.1f", multiple))× a typical week here."
+    }
+
     // MARK: Filtering
 
     /// Confirmed, not superseded, inside the range. Everything else here builds
