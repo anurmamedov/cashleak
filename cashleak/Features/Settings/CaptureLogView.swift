@@ -69,7 +69,11 @@ struct CaptureLogView: View {
         .navigationTitle("Capture log")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: Binding(
-            get: { exportText.map(ExportPayload.init) },
+            // An explicit closure rather than `.map(ExportPayload.init)`.
+            // Passing the initializer as a function value strips it out of the
+            // view's main-actor isolation, which Swift 6 warns about and will
+            // eventually reject.
+            get: { exportText.map { ExportPayload($0) } },
             set: { exportText = $0?.text }
         )) { payload in
             ShareSheet(items: [payload.text])
