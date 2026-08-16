@@ -384,3 +384,51 @@ Specifics worth keeping:
   amount digit by digit doesn't rewrite the month's totals on every character.
 
 **Reverse if:** never.
+
+---
+
+## D-016 · Spent and leaked need tightening
+
+**Open.**
+
+The two headline numbers are defined as:
+
+- **Spent** — every transaction where `isConfirmed && !isSuperseded`
+- **Leaked** — the subset the user marked `.leak` in the Sort queue
+
+That is precise about *provenance* and vague about *meaning*. Three problems,
+none of them bugs — the code does exactly what it says. The definitions are what
+need work.
+
+**Unsorted spend counts toward neither.** A purchase in the queue is real money
+that appears in no total. Both numbers therefore understate, and worse, the
+*ratio* between them moves with sorting habit rather than with spending: sort the
+regrettable ones first and the ratio inflates; sort the boring ones first and it
+collapses. The number the whole product rests on is currently sensitive to the
+order in which the user clears a queue.
+
+**The denominator includes fixed costs.** Rent and groceries sit in Spent, so the
+same €200 of regret reads as 8% for someone with a large mortgage and 30% for
+someone without. The ratio partly measures cost of living, which is not the thing
+being measured. `Support/DiscretionarySpend.swift` existed for this and was
+deleted in a1a88da alongside Trips — the machinery is gone and would need
+rebuilding, not restoring.
+
+**Refunds have no representation.** `amount` is positive everywhere. A returned
+purchase stays in Spent permanently, and if it was marked a leak, in Leaked too.
+
+Options, none chosen:
+
+1. Show a third figure — unsorted — beside Spent and Leaked, making the gap
+   visible rather than trying to close it
+2. Compute the ratio over discretionary categories only, and say so in the label
+3. Allow negative amounts as refunds, matched to an original transaction by the
+   dedup machinery
+4. Leave the definitions alone and fix it in copy — state what the number
+   excludes wherever it appears
+
+**Blocks:** any claim in marketing copy that the ratio is comparable between
+people. Right now it isn't, and LISTING.md should not imply otherwise.
+
+**Decide by:** before P3. A pricing page that quotes a number the number can't
+support is worse than no number.
