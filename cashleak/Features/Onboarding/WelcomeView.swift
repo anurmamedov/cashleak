@@ -84,15 +84,17 @@ struct WelcomeView: View {
         .sheet(isPresented: $isSigningIn) { SignInView() }
     }
 
+    /// The real mark, not a stand-in symbol.
+    ///
+    /// The asset has a transparent ground and a knocked-out coin, so it sits on
+    /// whatever is behind it — white here, the system background on the lock
+    /// screen — without a plate around it.
     private var dropMark: some View {
-        ZStack {
-            Circle()
-                .fill(Color(hex: "FAECE7"))
-                .frame(width: 88, height: 88)
-            Image(systemName: "drop.fill")
-                .font(.system(size: 40))
-                .foregroundStyle(Color(hex: "D85A30"))
-        }
+        Image("LogoMark")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 96, height: 96)
+            .accessibilityHidden(true)
     }
 
     // MARK: Apple

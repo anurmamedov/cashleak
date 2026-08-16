@@ -17,9 +17,11 @@ struct LockScreenView: View {
         VStack(spacing: 22) {
             Spacer()
 
-            Image(systemName: "drop.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(Color(hex: "D85A30"))
+            Image("LogoMark")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 72, height: 72)
+                .accessibilityHidden(true)
 
             Text("CashLeak is locked")
                 .font(.title3.weight(.medium))
