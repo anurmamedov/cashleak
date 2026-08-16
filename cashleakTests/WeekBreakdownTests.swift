@@ -8,8 +8,8 @@ import XCTest
 /// Monday, whether a partial week was compared against a whole one, or whether
 /// the "previous" week was actually a month earlier.
 ///
-/// Dates are pinned to a fixed Monday so the calendar's first weekday can't
-/// make the suite pass on one machine and fail on another.
+/// Dates are pinned to a fixed Wednesday, and the calendar's first weekday is
+/// forced to Sunday, so the suite can't pass on one machine and fail on another.
 final class WeekBreakdownTests: XCTestCase {
 
     /// Toronto, with the week starting Sunday — matching `Calendar.current` for
@@ -229,23 +229,95 @@ final class WeekBreakdownTests: XCTestCase {
 
     // MARK: Labels
 
-    func testLabelCollapsesTheMonthWithinOneMonth() {
-        let start = TestSupport.date(2026, 8, 2, calendar: calendar)
-        let week = AnalysisAggregates.WeekTotal(
-            start: start, spent: 0, leaked: 0, count: 0, isPartial: false, change: nil
+    /// Builds a week covering exactly `start` through `start + 6`.
+    private func whole(_ start: Date) -> AnalysisAggregates.WeekTotal {
+        AnalysisAggregates.WeekTotal(
+            start: start,
+            coveredStart: start,
+            coveredEnd: calendar.date(byAdding: .day, value: 6, to: start)!,
+            spent: 0, leaked: 0, count: 0,
+            isPartial: false, isCurrent: false, change: nil
         )
-        XCTAssertTrue(week.label(calendar).contains("–"))
-        XCTAssertEqual(week.label(calendar).components(separatedBy: "Aug").count - 1, 1)
+    }
+
+    func testLabelCollapsesTheMonthWithinOneMonth() {
+        let label = whole(TestSupport.date(2026, 8, 2, calendar: calendar)).label(calendar)
+        XCTAssertTrue(label.contains("–"))
+        XCTAssertEqual(label.components(separatedBy: "Aug").count - 1, 1)
     }
 
     func testLabelRepeatsTheMonthAcrossABoundary() {
-        let start = TestSupport.date(2026, 8, 30, calendar: calendar)
-        let week = AnalysisAggregates.WeekTotal(
-            start: start, spent: 0, leaked: 0, count: 0, isPartial: false, change: nil
-        )
-        let label = week.label(calendar)
+        let label = whole(TestSupport.date(2026, 8, 30, calendar: calendar)).label(calendar)
         XCTAssertTrue(label.contains("Aug"))
         XCTAssertTrue(label.contains("Sep"))
+    }
+
+    func testLabelIsASingleDateWhenOnlyOneDayIsInRange() {
+        let start = TestSupport.date(2026, 7, 26, calendar: calendar)
+        let onlyDay = TestSupport.date(2026, 8, 1, calendar: calendar)
+        let week = AnalysisAggregates.WeekTotal(
+            start: start, coveredStart: onlyDay, coveredEnd: onlyDay,
+            spent: 0, leaked: 0, count: 0,
+            isPartial: true, isCurrent: false, change: nil
+        )
+        XCTAssertFalse(
+            week.label(calendar).contains("–"),
+            "Naming six days the numbers don't cover is a claim, not a label"
+        )
+        XCTAssertTrue(week.label(calendar).contains("Aug"))
+    }
+
+    // MARK: Coverage
+
+    func testWeekClippedByRangeStartCoversOnlyTheDaysInRange() {
+        let firstOfMonth = TestSupport.date(2026, 8, 1, calendar: calendar)
+
+        let weeks = AnalysisAggregates.weekBreakdown(
+            [transaction(10, on: firstOfMonth)],
+            range: .month, now: now, calendar: calendar
+        )
+
+        let week = weeks[0]
+        XCTAssertTrue(calendar.isDate(week.coveredStart, inSameDayAs: firstOfMonth))
+        XCTAssertTrue(calendar.isDate(week.coveredEnd, inSameDayAs: firstOfMonth))
+        XCTAssertFalse(week.isCurrent, "August 1st is not this week")
+    }
+
+    func testCompleteWeekCoversSundayThroughSaturday() {
+        let midweek = TestSupport.date(2026, 8, 5, calendar: calendar)
+        let week = breakdown([transaction(10, on: midweek)])[0]
+
+        XCTAssertTrue(
+            calendar.isDate(week.coveredStart,
+                            inSameDayAs: TestSupport.date(2026, 8, 2, calendar: calendar))
+        )
+        XCTAssertTrue(
+            calendar.isDate(week.coveredEnd,
+                            inSameDayAs: TestSupport.date(2026, 8, 8, calendar: calendar)),
+            "The exclusive end is Aug 9 00:00; the last covered day is Aug 8"
+        )
+    }
+
+    func testCurrentWeekCoversUpToTodayOnly() {
+        let today = TestSupport.date(2026, 8, 12, hour: 9, calendar: calendar)
+        let week = breakdown([transaction(10, on: today)])[0]
+
+        XCTAssertTrue(week.isCurrent)
+        XCTAssertTrue(calendar.isDate(week.coveredEnd, inSameDayAs: today))
+    }
+
+    func testOnlyTheRunningWeekIsCurrent() {
+        let lastWeek = TestSupport.date(2026, 8, 4, calendar: calendar)
+        let thisWeek = TestSupport.date(2026, 8, 11, calendar: calendar)
+
+        let weeks = breakdown([
+            transaction(10, on: lastWeek),
+            transaction(10, on: thisWeek),
+        ])
+
+        XCTAssertTrue(weeks[0].isCurrent)
+        XCTAssertFalse(weeks[1].isCurrent)
+        XCTAssertTrue(weeks[1].isPartial == false, "A finished week isn't partial")
     }
 
     // MARK: Note
@@ -253,8 +325,11 @@ final class WeekBreakdownTests: XCTestCase {
     private func week(_ leaked: Double, start: Date, partial: Bool = false)
         -> AnalysisAggregates.WeekTotal {
         AnalysisAggregates.WeekTotal(
-            start: start, spent: leaked * 2, leaked: leaked,
-            count: 5, isPartial: partial, change: nil
+            start: start,
+            coveredStart: start,
+            coveredEnd: calendar.date(byAdding: .day, value: 6, to: start)!,
+            spent: leaked * 2, leaked: leaked,
+            count: 5, isPartial: partial, isCurrent: false, change: nil
         )
     }
 

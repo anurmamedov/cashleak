@@ -186,8 +186,17 @@ enum AnalysisAggregates {
     // MARK: Week by week
 
     struct WeekTotal: Identifiable {
-        /// Start of the calendar week, per the user's locale.
+        /// Start of the calendar week, per the user's locale. Identity, not
+        /// display — a week clipped by the range still belongs to its own week.
         let start: Date
+
+        /// First and last day of the week that actually fall inside the range.
+        /// These are what get shown: a week cut off by the 1st of the month is
+        /// one day of data, and labelling it "Jul 26 – Aug 1" claims six days
+        /// that aren't in the numbers beside it.
+        let coveredStart: Date
+        let coveredEnd: Date
+
         let spent: Double
         let leaked: Double
         let count: Int
@@ -195,6 +204,11 @@ enum AnalysisAggregates {
         /// True when the week is clipped — either still running, or cut off by
         /// the start of the selected range.
         let isPartial: Bool
+
+        /// The week containing today. Distinct from `isPartial`: both are
+        /// clipped, but only this one is still accumulating, and only this one
+        /// earns the words "so far".
+        let isCurrent: Bool
 
         /// Change in leaked amount against the week before, as a fraction.
         /// `nil` when there's no comparable week: the previous week is outside
@@ -206,18 +220,20 @@ enum AnalysisAggregates {
         var kept: Double { max(spent - leaked, 0) }
         var leakShare: Double { spent > 0 ? leaked / spent : 0 }
 
-        func end(_ calendar: Calendar = .current) -> Date {
-            calendar.date(byAdding: .day, value: 6, to: start) ?? start
-        }
-
-        /// "Aug 3 – 9", or "Aug 31 – Sep 6" across a month boundary.
+        /// "Aug 3 – 9", "Aug 31 – Sep 6" across a month boundary, or a bare
+        /// "Aug 1" when the range only includes one day of the week.
         func label(_ calendar: Calendar = .current) -> String {
-            let finish = end(calendar)
-            let sameMonth = calendar.isDate(start, equalTo: finish, toGranularity: .month)
-            let from = start.formatted(.dateTime.month(.abbreviated).day())
+            let from = coveredStart.formatted(.dateTime.month(.abbreviated).day())
+            guard !calendar.isDate(coveredStart, inSameDayAs: coveredEnd) else {
+                return from
+            }
+
+            let sameMonth = calendar.isDate(
+                coveredStart, equalTo: coveredEnd, toGranularity: .month
+            )
             let to = sameMonth
-                ? finish.formatted(.dateTime.day())
-                : finish.formatted(.dateTime.month(.abbreviated).day())
+                ? coveredEnd.formatted(.dateTime.day())
+                : coveredEnd.formatted(.dateTime.month(.abbreviated).day())
             return "\(from) – \(to)"
         }
     }
@@ -268,6 +284,16 @@ enum AnalysisAggregates {
         for (index, start) in ordered.enumerated() {
             let weekEnd = calendar.date(byAdding: .day, value: 7, to: start) ?? start
             let isPartial = start < interval.start || weekEnd > horizon
+            let isCurrent = start <= now && now < weekEnd
+
+            // The portion of the week the numbers actually cover. `weekEnd` and
+            // `horizon` are exclusive bounds, so step back a second before
+            // taking the day — otherwise a week ending Sunday 00:00 reports its
+            // last day as the following Monday.
+            let coveredStart = max(start, interval.start)
+            let coveredEnd = calendar.startOfDay(
+                for: min(weekEnd, horizon).addingTimeInterval(-1)
+            )
 
             // Only compare against the immediately preceding week. A gap in the
             // data means the "previous" entry might be a month ago, and calling
@@ -291,10 +317,13 @@ enum AnalysisAggregates {
             results.append(
                 WeekTotal(
                     start: start,
+                    coveredStart: coveredStart,
+                    coveredEnd: coveredEnd,
                     spent: spent[start] ?? 0,
                     leaked: leaked[start] ?? 0,
                     count: counts[start] ?? 0,
                     isPartial: isPartial,
+                    isCurrent: isCurrent,
                     change: change
                 )
             )

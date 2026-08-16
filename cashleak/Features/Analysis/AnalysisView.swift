@@ -150,7 +150,10 @@ struct AnalysisView: View {
                     .font(.subheadline)
                     .foregroundStyle(.primary)
 
-                if week.isPartial {
+                // Only the running week. A week cut off by the start of the
+                // range is also partial, but "so far" would read as "still
+                // going" — its label already narrows to the days in range.
+                if week.isCurrent {
                     Text("so far")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
