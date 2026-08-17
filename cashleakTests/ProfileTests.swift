@@ -2,11 +2,9 @@ import XCTest
 import SwiftData
 @testable import cashleak
 
-/// Registration validation and the local passcode.
-///
-/// Worth stating what these tests are *not* checking: there's no server, so
-/// nothing here authenticates anyone. The password gates this device and
-/// nothing else.
+/// Registration validation and the separate local app lock.
+/// Firebase integration is exercised by the app; these tests cover pure local
+/// validation and hashing behavior.
 final class ProfileTests: XCTestCase {
 
     private func failures(
@@ -70,8 +68,7 @@ final class ProfileTests: XCTestCase {
         }
     }
 
-    /// Deliberately permissive — the address is never sent anywhere, so
-    /// rejecting a valid-but-unusual one is worse than accepting a strange one.
+    /// Deliberately permissive — Firebase performs final validation.
     func testDoesNotOverReject() {
         XCTAssertTrue(ProfileValidator.isValidEmail("weird!but#legal@example.com"))
     }
@@ -126,6 +123,24 @@ final class ProfileTests: XCTestCase {
         let salts = (0..<20).map { _ in AppLock.makeSalt() }
         XCTAssertEqual(Set(salts).count, 20)
         XCTAssertTrue(salts.allSatisfy { $0.count == 32 })
+    }
+
+    // MARK: Sign in with Apple
+
+    func testAppleNonceHasRequestedLengthAndIsRandom() {
+        let first = AppleSignInNonce.make(length: 32)
+        let second = AppleSignInNonce.make(length: 32)
+
+        XCTAssertEqual(first.count, 32)
+        XCTAssertEqual(second.count, 32)
+        XCTAssertNotEqual(first, second)
+    }
+
+    func testAppleNonceHashUsesSHA256() {
+        XCTAssertEqual(
+            AppleSignInNonce.hash("abc"),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        )
     }
 }
 

@@ -1,10 +1,23 @@
 import SwiftUI
 import SwiftData
+import FirebaseAuth
+import FirebaseCore
+
+final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        FirebaseBootstrap.configureIfNeeded()
+        return true
+    }
+}
 
 @main
 struct CashLeakApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
         WindowGroup {
@@ -33,8 +46,10 @@ struct CashLeakApp: App {
 struct AppGate: View {
 
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.modelContext) private var context
     @Query private var profiles: [UserProfile]
 
+    @StateObject private var authentication = AuthenticationService()
     @State private var isLocked = AppLock.isEnabled
     /// When the app went to the background. Used to avoid re-locking on a
     /// momentary switch away — being asked for a password after glancing at a
@@ -45,15 +60,23 @@ struct AppGate: View {
 
     var body: some View {
         Group {
-            if profiles.isEmpty {
+            if !authentication.isReady {
+                ProgressView("Preparing CashLeak…")
+            } else if authentication.user == nil {
                 WelcomeView()
+            } else if profiles.isEmpty {
+                ProgressView("Restoring your profile…")
+                    .task(id: authentication.user?.uid) {
+                        createLocalProfileIfNeeded()
+                    }
             } else if isLocked {
                 LockScreenView { isLocked = false }
             } else {
                 RootTabView()
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: profiles.isEmpty)
+        .environmentObject(authentication)
+        .animation(.easeInOut(duration: 0.2), value: authentication.user?.uid)
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .background:
@@ -68,5 +91,24 @@ struct AppGate: View {
                 break
             }
         }
+    }
+
+    @MainActor
+    private func createLocalProfileIfNeeded() {
+        guard profiles.isEmpty, let user = authentication.user else { return }
+
+        let nameParts = (user.displayName ?? "")
+            .split(separator: " ", maxSplits: 1)
+            .map(String.init)
+        let providers = Set(user.providerData.map(\.providerID))
+        let profile = UserProfile(
+            firstName: nameParts.first ?? "",
+            lastName: nameParts.count > 1 ? nameParts[1] : "",
+            email: user.email ?? "",
+            signInMethod: providers.contains("apple.com") ? .apple : .email,
+            appleUserID: providers.contains("apple.com") ? user.uid : nil
+        )
+        context.insert(profile)
+        try? context.save()
     }
 }

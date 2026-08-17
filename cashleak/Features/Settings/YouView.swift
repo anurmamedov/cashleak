@@ -9,6 +9,7 @@ import SwiftData
 struct YouView: View {
 
     @Environment(\.modelContext) private var context
+    @EnvironmentObject private var authentication: AuthenticationService
 
     @Query private var transactions: [Transaction]
     @Query private var categories: [Category]
@@ -94,20 +95,19 @@ struct YouView: View {
                 }
 
                 Button(role: .destructive) {
-                    signOut(profile)
+                    signOut()
                 } label: {
                     Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
                 }
             }
         } footer: {
-            Text("Signing out clears your profile and passcode from this device. Your transactions stay — they live in your own iCloud, not in an account.")
+            Text("Signing out ends the Firebase session on this device. Your transactions remain in your private iCloud.")
         }
     }
 
-    private func signOut(_ profile: UserProfile) {
+    private func signOut() {
         AppLock.removePassword()
-        context.delete(profile)
-        try? context.save()
+        try? authentication.signOut()
     }
 
     // MARK: Capture
@@ -287,7 +287,7 @@ struct YouView: View {
         } header: {
             Text("Data")
         } footer: {
-            Text("Everything lives on this device and in your own iCloud. There is no CashLeak server.")
+            Text("Financial data lives on this device and in your private iCloud. Firebase is used only for account authentication.")
         }
     }
 
@@ -598,16 +598,15 @@ struct CategoryEditor: View {
     }
 }
 
-/// The privacy page. Short, because there's little to disclose — and that
-/// brevity is the selling point.
+/// The privacy page distinguishes account identity from financial data.
 struct PrivacyView: View {
     var body: some View {
         List {
             Section {
-                row("No account", "There's nothing to sign up for.")
-                row("No server", "CashLeak has no backend. Nothing you enter is sent anywhere.")
+                row("Firebase account", "Firebase Authentication handles your email/password or Apple identity.")
+                row("Financial data stays private", "Transactions, income, cards and goals are not sent to Firebase.")
                 row("No bank connection", "The app never asks for banking credentials and couldn't use them.")
-                row("No analytics", "No tracking SDK, no crash reporter, no usage telemetry.")
+                row("No analytics", "Firebase Analytics is disabled. There is no usage tracking or advertising SDK.")
                 row("Your iCloud", "Sync uses your own private CloudKit database. Apple can't read it and neither can we.")
             }
             Section {

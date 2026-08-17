@@ -1,103 +1,168 @@
 import SwiftUI
-import SwiftData
 import AuthenticationServices
 
-/// First run. Sign in with Apple, or continue with an email profile.
-///
-/// The copy has to do something unusual here: explain that signing in doesn't
-/// create an account anywhere. Users have been trained that a sign-in screen
-/// means a server, and this one doesn't — saying so up front is the difference
-/// between a trust-building screen and a trust-destroying one.
+/// Firebase-backed account entry. Financial data remains in private iCloud;
+/// Firebase receives only the identity information needed to authenticate.
 struct WelcomeView: View {
 
-    @Environment(\.modelContext) private var context
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var authentication: AuthenticationService
 
+    @State private var username = ""
+    @State private var password = ""
     @State private var isRegistering = false
+    @State private var isRecoveringPassword = false
     @State private var isSigningIn = false
+    @State private var signInError: String?
     @State private var appleError: String?
+    @State private var appleNonce: String?
+
+    @FocusState private var focusedField: Field?
+
+    private enum Field { case username, password }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        ScrollView {
+            VStack(spacing: 0) {
+                VStack(spacing: 12) {
+                    dropMark
 
-            VStack(spacing: 14) {
-                dropMark
-                Text("CashLeak")
-                    .font(.system(size: 32, weight: .medium))
-                Text("Most spending apps tell you where your money went. This one tells you what it cost you.")
-                    .font(.system(.subheadline, design: .serif))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            }
+                    Text("Welcome to CashLeak")
+                        .font(.system(size: 30, weight: .medium))
 
-            Spacer()
-
-            VStack(spacing: 12) {
-                SignInWithAppleButton(.signIn) { request in
-                    request.requestedScopes = [.fullName, .email]
-                } onCompletion: { result in
-                    handleApple(result)
-                }
-                .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                .frame(height: 50)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-                Button {
-                    isRegistering = true
-                } label: {
-                    Text("Continue with email")
-                        .font(.body.weight(.medium))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                        .background(Color(.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-                .buttonStyle(.plain)
-
-                Button("I've been here before") {
-                    isSigningIn = true
-                }
-                .font(.subheadline)
-                .padding(.top, 2)
-
-                if let appleError {
-                    Text(appleError)
-                        .font(.caption)
-                        .foregroundStyle(Color(hex: "993C1D"))
+                    Text("See what your spending really cost you.")
+                        .font(.system(.subheadline, design: .serif))
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
-            }
-            .padding(.horizontal, 24)
+                .padding(.top, 28)
+                .padding(.bottom, 30)
 
-            // The line that stops a sign-in screen from reading as a data grab.
-            Text("No account is created. Nothing is sent anywhere. Your name and email stay on this device and in your own iCloud.")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-                .padding(.top, 22)
-                .padding(.bottom, 28)
+                VStack(spacing: 14) {
+                    TextField("Username (email)", text: $username)
+                        .textContentType(.username)
+                        .keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.next)
+                        .focused($focusedField, equals: .username)
+                        .onSubmit { focusedField = .password }
+                        .welcomeFieldStyle()
+
+                    SecureField("Password", text: $password)
+                        .textContentType(.password)
+                        .submitLabel(.go)
+                        .focused($focusedField, equals: .password)
+                        .onSubmit(signIn)
+                        .welcomeFieldStyle()
+
+                    if let signInError {
+                        Text(signInError)
+                            .font(.caption)
+                            .foregroundStyle(Color(hex: "993C1D"))
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                    }
+
+                    Button(action: signIn) {
+                        HStack {
+                            if isSigningIn { ProgressView().tint(.white) }
+                            Text(isSigningIn ? "Signing in…" : "Sign in")
+                                .font(.body.weight(.semibold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 15)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color(hex: "E05A47"))
+                    .disabled(
+                        username.trimmingCharacters(in: .whitespaces).isEmpty
+                        || password.isEmpty
+                        || isSigningIn
+                    )
+
+                    Button("Click to register") {
+                        isRegistering = true
+                    }
+                    .font(.subheadline.weight(.medium))
+
+                    Button("Forgot password?") {
+                        isRecoveringPassword = true
+                    }
+                    .font(.subheadline)
+
+                    HStack(spacing: 12) {
+                        Divider()
+                        Text("or")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        Divider()
+                    }
+                    .padding(.vertical, 2)
+
+                    SignInWithAppleButton(.signIn) { request in
+                        let nonce = AppleSignInNonce.make()
+                        appleNonce = nonce
+                        request.requestedScopes = [.fullName, .email]
+                        request.nonce = AppleSignInNonce.hash(nonce)
+                    } onCompletion: { result in
+                        handleApple(result)
+                    }
+                    .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                    .frame(height: 50)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                    if let appleError {
+                        Text(appleError)
+                            .font(.caption)
+                            .foregroundStyle(Color(hex: "993C1D"))
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .padding(.horizontal, 24)
+
+                Text("Firebase securely handles sign-in. Your transactions remain in your private iCloud and are not sent to Firebase.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+                    .padding(.top, 24)
+                    .padding(.bottom, 28)
+            }
         }
+        .background(Color(.systemBackground))
         .sheet(isPresented: $isRegistering) { RegisterView() }
-        .sheet(isPresented: $isSigningIn) { SignInView() }
+        .sheet(isPresented: $isRecoveringPassword) { ForgotPasswordView() }
     }
 
-    /// The real mark, not a stand-in symbol.
-    ///
-    /// The asset has a transparent ground and a knocked-out coin, so it sits on
-    /// whatever is behind it — white here, the system background on the lock
-    /// screen — without a plate around it.
     private var dropMark: some View {
-        // Constrained by height, not into a square. The mark is portrait, so a
-        // square frame with `scaledToFit` sizes it by the *width* it never
-        // uses — which is what made it look tiny even at 96pt.
         Image("LogoMark")
             .resizable()
             .scaledToFit()
-            .frame(height: 140)
+            .frame(height: 112)
             .accessibilityHidden(true)
+    }
+
+    // MARK: Email sign-in
+
+    private func signIn() {
+        let normalizedUsername = username
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        isSigningIn = true
+        signInError = nil
+
+        Task {
+            do {
+                try await authentication.signIn(email: normalizedUsername, password: password)
+                password = ""
+            } catch {
+                signInError = AuthenticationService.message(for: error)
+                password = ""
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            }
+            isSigningIn = false
+        }
     }
 
     // MARK: Apple
@@ -109,28 +174,42 @@ struct WelcomeView: View {
                 appleError = "Couldn't read the Apple response."
                 return
             }
+            guard let nonce = appleNonce else {
+                appleError = "Sign in with Apple couldn't be verified. Please try again."
+                return
+            }
 
-            // Apple sends the name and email exactly once, on first
-            // authorisation. Every later sign-in returns only the user
-            // identifier — so if this is dropped, it's gone for good.
-            let first = credential.fullName?.givenName ?? ""
-            let last = credential.fullName?.familyName ?? ""
-            let email = credential.email ?? ""
-
-            let profile = UserProfile(
-                firstName: first,
-                lastName: last,
-                email: email,
-                signInMethod: .apple,
-                appleUserID: credential.user
-            )
-            context.insert(profile)
-            try? context.save()
+            appleError = nil
+            Task {
+                do {
+                    try await authentication.signInWithApple(
+                        credential: credential,
+                        rawNonce: nonce
+                    )
+                } catch {
+                    appleError = AuthenticationService.message(for: error)
+                }
+                appleNonce = nil
+            }
 
         case .failure(let error):
-            // Cancelling isn't an error worth reporting back to the user.
+            appleNonce = nil
             if (error as NSError).code == ASAuthorizationError.canceled.rawValue { return }
             appleError = "Sign in with Apple didn't complete."
         }
+    }
+}
+
+private extension View {
+    func welcomeFieldStyle() -> some View {
+        self
+            .padding(.horizontal, 14)
+            .frame(height: 52)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color(.separator).opacity(0.45), lineWidth: 0.5)
+            }
     }
 }

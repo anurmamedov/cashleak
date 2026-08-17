@@ -2,8 +2,8 @@ import Foundation
 
 /// Plain CSV export.
 ///
-/// The app promises no lock-in — no account, no server, your data on your
-/// phone. Export is what makes that true rather than rhetorical. It includes
+/// The app promises no financial-data lock-in — your data remains exportable
+/// from the phone. The export includes
 /// superseded rows with a flag, because hiding them would make the export
 /// disagree with the totals in the app.
 enum CSVExport {

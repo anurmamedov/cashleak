@@ -50,3 +50,9 @@ playground.xcworkspace
 .env.*
 Secrets.swift
 GoogleService-Info.plist
+
+# The selected Firebase iOS configuration ships inside the app bundle and is
+# not a credential. Keep this target's configuration and resolved SDK version
+# reproducible while continuing to ignore stray downloaded copies.
+!cashleak/GoogleService-Info.plist
+!cashleak.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved

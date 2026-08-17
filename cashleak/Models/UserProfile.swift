@@ -3,12 +3,10 @@ import SwiftData
 
 /// Who's using the app.
 ///
-/// **There is no account.** This profile exists only on the device and in the
-/// user's own iCloud — there's no CashLeak server to register with, nothing is
-/// transmitted, and no password is stored anywhere we can read. See D-012.
+/// Local profile details for the authenticated Firebase user.
 ///
-/// It exists to personalise the app and to hold the identity returned by Sign
-/// in with Apple, not to authenticate against anything.
+/// Firebase owns account authentication. This SwiftData model personalises the
+/// app and syncs through the user's private CloudKit database.
 @Model
 final class UserProfile {
 
@@ -122,9 +120,8 @@ enum ProfileValidator {
         return failures
     }
 
-    /// Deliberately permissive. The address is never sent anywhere, so the only
-    /// job here is catching typos — rejecting a valid but unusual address would
-    /// be worse than accepting a strange one.
+    /// Deliberately permissive. Firebase performs authoritative validation; the
+    /// local check only catches obvious typing mistakes before submission.
     static func isValidEmail(_ email: String) -> Bool {
         let trimmed = email.trimmingCharacters(in: .whitespaces)
         guard !trimmed.contains(" "), trimmed.count >= 5 else { return false }

@@ -1,3 +1,7 @@
+import Foundation
+import XCTest
+@testable import cashleak
+
 /// Goals and CSV export.
 final class GoalsAndExportTests: XCTestCase {
 

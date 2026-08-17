@@ -5,9 +5,9 @@ import Security
 
 /// Optional passcode for opening the app.
 ///
-/// **This is a lock, not an account.** There is no server to authenticate
-/// against, so the password proves nothing about identity — it only decides
-/// whether this device opens the app.
+/// **This is a device lock, not the Firebase account password.** It proves
+/// nothing about account identity — it only decides whether this device opens
+/// the app after the user is signed in.
 ///
 /// Because of that, the honest implementation is narrow: a salted SHA-256 hash
 /// in the Keychain, never the password itself, and never anything transmitted.

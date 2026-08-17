@@ -9,7 +9,7 @@ An iOS spending tracker that captures Apple Pay taps automatically, lets you
 label each purchase *worth it* or *leak*, and turns what you waste into
 something concrete — like the trip you could have taken instead.
 
-No account. No server. No subscription.
+Firebase account. No bank connection. No subscription.
 
 > **Status: pre-v1, core loop working.** Entry, Sort, Overview, Analysis, Trips
 > and settings are built and run on device. Capture, dedup and recurring posting
@@ -31,7 +31,9 @@ subscription that wants your bank credentials.
 
 CashLeak never connects to a bank. Apple Pay taps arrive through a Shortcuts
 automation, receipts are scanned on-device, everything else takes five seconds to
-enter. Data lives on your phone and syncs through your own iCloud.
+enter. Financial data lives on your phone and syncs through your own iCloud.
+Firebase Authentication handles account identity only; transactions are never
+sent to Firebase.
 
 No aggregator means no per-user cost. No per-user cost means no subscription.
 
@@ -75,13 +77,13 @@ none.
 **You** — profile, Apple Pay card automations and their status, accent picker,
 daily notification time, categories, recurring rules, trips, CSV export, privacy.
 
-**Welcome** — first run only. Sign in with Apple, or register with first name,
-last name, email and an optional passcode.
+**Welcome** — shown whenever there is no active Firebase session. Sign in with
+email and password or Apple, register with first name, last name, email and a
+required password, or request a password-reset email.
 
-This is a profile, not an account. Nothing is transmitted, nothing is created on
-a server, and there is no Google sign-in — it would need an SDK and a backend to
-verify a token against. See D-012. The screen says so in as many words, because
-users have been trained that a sign-in screen means a server.
+Firebase Authentication stores account identity and credentials. Spending,
+income, card labels, goals and analysis stay in the user's private CloudKit
+database and are not stored in Firebase.
 
 ### Navigation
 
