@@ -12,16 +12,16 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 
 | | Local | Production |
 |---|---|---|
-| Done | 16 | 0 |
-| Partial | 2 | 0 |
-| Not started | 3 | 10 |
+| Done | 18 | 0 |
+| Partial | 1 | 0 |
+| Not started | 2 | 10 |
 
 **Convenience pass done:** transaction editing and deletion, searchable history,
 category creation, backdating, recurring rule editing, Goals replacing Trips.
 See D-014 and D-015.
 
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
-**Tests:** target exists. 205 tests — confirm they run green after the Goals refactor.
+**Tests:** 244 tests pass on iPhone 17 Pro / iOS 26.1 Simulator.
 **Gates:** L2 is on hold. L1, L3 and L4 haven't run.
 
 ---
@@ -152,18 +152,18 @@ Outstanding — needs an Apple Developer account, not code:
       Simulator-only and sync stays local.
 - [ ] `aps-environment` is `development`; distribution needs `production` (P4)
 
-### L6 · Test target and fixtures — partial
+### L6 · Test target and fixtures — done
 
 Done:
 
 - [x] **Test target added to the project** — `⌘U` runs
-- [x] 205 tests across 16 files
+- [x] 239 tests across 18 files
 - [x] In-memory `ModelContainer` helper, CloudKit disabled
 - [x] Merchant fixture corpus
+- [x] Full suite runs green end to end
 
 Outstanding:
 
-- [ ] Confirm the suite runs green end to end
 - [ ] Fixtures are guesses at Canadian formats until L3 lands
 - [ ] Receipt images for v1.1
 
@@ -264,7 +264,7 @@ Not unit-testable. Needs two physical devices.
 - [x] Pause and resume
 - [x] 11 poster tests
 
-- [ ] `BGAppRefreshTask` registration — lands with L19
+- [x] `BGAppRefreshTask` registration — completed with L19
 
 ---
 
@@ -339,13 +339,20 @@ actually needs.
 
 - [ ] Index is 78 cities, not the ~150 the plan asked for
 
-### L19 · Notification and widget — not started
+### L19 · Notification and widget — done
 
-- [ ] Daily 21:00 notification, rescheduled on every write
-- [ ] `BGAppRefreshTask` in the afternoon
-- [ ] Copy carries meaning, not just a number
-- [ ] Tapping opens Sort
-- [ ] Home Screen widget with today's total
+- [x] Optional daily notification at the user's chosen time
+- [x] Reminder is rescheduled as the Sort count changes and removed at zero
+- [x] `BGAppRefreshTask` requests a 15:00 window for recurring posting
+- [x] Copy says how many purchases need judgement, not just a bare total
+- [x] Tapping opens Sort, including through sign-in and the app lock
+- [x] Permission denial and disabled states handled in You
+- [x] 8 reminder, routing and refresh-date tests
+- [x] Small and medium Home Screen widgets with today's total and Sort count
+- [x] Widget reads only a compact App Group snapshot, never SwiftData records
+- [x] Tapping the widget opens Sort through `cashleak://sort`
+- [x] Widget refreshes after app writes and clears yesterday's total at midnight
+- [x] 5 widget aggregate, midnight and routing tests
 
 ### L21 · Profile and app lock — done
 
@@ -467,25 +474,12 @@ renaming.
 
 ## Suggested order
 
-Only three local steps remain, and every one of them is blocked on something
-outside the code.
+The next useful order is:
 
-1. **Test target** — 2 minutes in Xcode. 131 tests have never executed, and four
-   features have now been built on top of them. If `MerchantNormalizer` is
-   wrong, dedup is wrong, the Analysis leaderboard groups wrong, and merchant
-   memory misfires — one bug wearing four costumes, none of it visible on screen.
-2. **L5 capabilities** — 5 minutes in Xcode. Unblocks L8 sync and L19
-   notifications. Until this lands, CloudKit is configured in code and does
-   nothing at runtime.
-3. **L1** — start the two-week clock today. Nothing depends on it and everything
-   is invalidated by it.
-4. **L3** — one evening, on the phone. Its merchant strings replace the guessed
-   dedup fixtures. L2 is parked.
-5. **L19** — the last unbuilt feature. Needs step 2 first.
-6. **L8** — two-device sync check. Needs step 2 and a second device.
-
-The pattern worth noticing: everything I can do alone is done. What's left needs
-Xcode, a phone, or two weeks.
+1. **L1** — start the two-week verdict-mechanic validation clock.
+2. **L3** — exercise the Wallet automation on a physical phone and replace the
+   guessed merchant fixtures with real strings.
+3. **L8** — run the two-device CloudKit conflict and offline tests.
 
 ---
 

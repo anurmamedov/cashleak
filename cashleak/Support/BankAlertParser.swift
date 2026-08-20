@@ -118,8 +118,8 @@ enum BankAlertParser {
     /// discipline as the Wallet merchant fixtures.
     static func extractMerchant(from message: String) -> String? {
         let patterns = [
-            #"(?:at|to)\s+([A-Z0-9][A-Za-z0-9&'.\-* ]{2,40}?)(?:\s+on\s|\s+for\s|[.,;]|$)"#,
-            #"merchant:?\s*([A-Za-z0-9&'.\-* ]{2,40}?)(?:[.,;]|$)"#,
+            #"(?:at|to)\s+([A-Z0-9][A-Za-z0-9&'#./\-* ]{2,40}?)(?:\s+on\s|\s+for\s|[.,;]|$)"#,
+            #"merchant:?\s*([A-Za-z0-9&'#./\-* ]{2,40}?)(?:[.,;]|$)"#,
         ]
 
         for pattern in patterns {

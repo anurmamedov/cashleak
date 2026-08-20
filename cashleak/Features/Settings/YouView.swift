@@ -24,6 +24,9 @@ struct YouView: View {
     @State private var accent = AppSettings.accentHex
     @State private var currency = AppSettings.currencyCode
     @State private var notificationTime = Date.now
+    @State private var remindersEnabled = AppSettings.notificationsEnabled
+    @State private var isUpdatingReminder = false
+    @State private var showNotificationSettingsAlert = false
 
     private var supersededCount: Int { transactions.filter(\.isSuperseded).count }
     private var activeCount: Int { transactions.count - supersededCount }
@@ -50,6 +53,11 @@ struct YouView: View {
                 Button("Add") { addCard() }
             } message: {
                 Text("Name it however you'll recognise it. CashLeak can't read your Wallet, so this is just a label.")
+            }
+            .alert("Notifications are off", isPresented: $showNotificationSettingsAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Allow notifications for CashLeak in Settings to use the daily reminder.")
             }
             .onAppear(perform: loadNotificationTime)
         }
@@ -220,12 +228,21 @@ struct YouView: View {
                 }
             }
 
-            DatePicker("Daily summary", selection: $notificationTime, displayedComponents: .hourAndMinute)
+            Toggle("Daily reminder", isOn: Binding(
+                get: { remindersEnabled },
+                set: { updateReminders(enabled: $0) }
+            ))
+            .disabled(isUpdatingReminder)
+
+            DatePicker("Reminder time", selection: $notificationTime, displayedComponents: .hourAndMinute)
                 .onChange(of: notificationTime) { _, newValue in
                     let parts = Calendar.current.dateComponents([.hour, .minute], from: newValue)
                     AppSettings.notificationHour = parts.hour ?? 21
                     AppSettings.notificationMinute = parts.minute ?? 0
+                    guard remindersEnabled else { return }
+                    Task { await DailyReminderScheduler.refresh(in: context) }
                 }
+                .disabled(!remindersEnabled)
 
             Picker("Currency", selection: $currency) {
                 ForEach(currencyOptions, id: \.self) { code in
@@ -397,6 +414,24 @@ struct YouView: View {
         parts.hour = AppSettings.notificationHour
         parts.minute = AppSettings.notificationMinute
         notificationTime = Calendar.current.date(from: parts) ?? .now
+        remindersEnabled = AppSettings.notificationsEnabled
+    }
+
+    private func updateReminders(enabled: Bool) {
+        if !enabled {
+            remindersEnabled = false
+            DailyReminderScheduler.disable()
+            return
+        }
+
+        remindersEnabled = true
+        isUpdatingReminder = true
+        Task {
+            let granted = await DailyReminderScheduler.enable(in: context)
+            remindersEnabled = granted
+            isUpdatingReminder = false
+            if !granted { showNotificationSettingsAlert = true }
+        }
     }
 }
 

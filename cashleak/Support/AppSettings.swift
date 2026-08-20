@@ -50,7 +50,7 @@ enum AppSettings {
         get {
             UserDefaults.standard.hasValue(Key.notificationsEnabled)
                 ? UserDefaults.standard.bool(forKey: Key.notificationsEnabled)
-                : true
+                : false
         }
         set { UserDefaults.standard.set(newValue, forKey: Key.notificationsEnabled) }
     }

@@ -13,21 +13,22 @@ No account. No server. No bank login. No subscription.
 
 ## Status
 
-Pre-v1. Builds and runs on iPhone 17 Pro / iOS 26.5. Fifteen of twenty local build
-steps done.
+Pre-v1. Builds and runs on iPhone 17 Pro. Eighteen local build steps are done;
+one is partial and two have not started.
 
 **Built** — SwiftData models, five-tab shell, number-pad entry, Sort queue with
 verdict swipe, Overview with the leak ratio ramp, Analysis with Swift Charts,
 a week-by-week breakdown and drill-downs, Goals for the trade-off line, full
 transaction history with edit and delete, and a settings screen covering capture
 status, the app lock, preferences, CSV export and privacy. Capture runs through a
-single ingest funnel with deduplication and recurring rule posting.
+single ingest funnel with deduplication and recurring rule posting. Daily Sort
+reminders and small/medium Home Screen widgets are built.
 
-**Not built** — daily notification, Home Screen widget, receipt scanning.
+**Not built** — receipt scanning. The optional daily Sort reminder, afternoon
+recurring-rule refresh and Home Screen widget are built.
 
-**Partly verified** — the test target is in place and 202 tests compile. CloudKit
-sync is configured in code but the capabilities aren't enabled, so it currently
-does nothing.
+**Verified locally** — 244 tests pass on the iPhone 17 Pro / iOS 26.1 Simulator.
+CloudKit sync still needs its physical two-device test.
 
 **The four gates haven't run.** L1 — two weeks of validating the verdict mechanic
 by hand — is the one step that can invalidate everything else here, and it was

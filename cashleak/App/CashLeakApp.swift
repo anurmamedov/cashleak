@@ -2,14 +2,34 @@ import SwiftUI
 import SwiftData
 import FirebaseAuth
 import FirebaseCore
+import UserNotifications
 
-final class AppDelegate: NSObject, UIApplicationDelegate {
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    let navigation = AppNavigation()
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         FirebaseBootstrap.configureIfNeeded()
+        UNUserNotificationCenter.current().delegate = self
+        BackgroundRefresh.register()
+        BackgroundRefresh.schedule()
         return true
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        [.banner, .list, .sound]
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        navigation.open(userInfo: response.notification.request.content.userInfo)
     }
 }
 
@@ -22,10 +42,14 @@ struct CashLeakApp: App {
     var body: some Scene {
         WindowGroup {
             AppGate()
+                .environmentObject(appDelegate.navigation)
+                .onOpenURL { appDelegate.navigation.open(url: $0) }
                 .task {
                     let context = AppModelContainer.shared.mainContext
                     SeedData.seedCategoriesIfNeeded(in: context)
                     RecurringPoster.postDue(in: context)
+                    await DailyReminderScheduler.refresh(in: context)
+                    WidgetSnapshotUpdater.refresh(in: context)
                 }
         }
         .modelContainer(AppModelContainer.shared)
@@ -33,8 +57,17 @@ struct CashLeakApp: App {
             // Also on foreground: someone who leaves the app open for days
             // would otherwise never see their rent post. Safe to call twice —
             // rules advance past `now` before returning.
-            guard phase == .active else { return }
-            RecurringPoster.postDue(in: AppModelContainer.shared.mainContext)
+            switch phase {
+            case .active:
+                let context = AppModelContainer.shared.mainContext
+                RecurringPoster.postDue(in: context)
+                Task { await DailyReminderScheduler.refresh(in: context) }
+                WidgetSnapshotUpdater.refresh(in: context)
+            case .background:
+                BackgroundRefresh.schedule()
+            default:
+                break
+            }
         }
     }
 }

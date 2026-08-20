@@ -375,8 +375,9 @@ Every one of these will be requested. Saying no is the strategy.
 
 ## Roadmap
 
-- [ ] **v1.0** — entry, Sort queue, verdicts, Overview, Analysis, recurring and
-      trips are **built**; daily notification and widget are **not**
+- [ ] **v1.0** — entry, Sort queue, verdicts, Overview, Analysis, recurring,
+  goals, the daily Sort reminder and Home Screen widget are **built**; device
+  validation gates remain
 - [ ] **v1.1** — receipt scan. Bank alert capture is **on hold** — see the
       capture section
 - [ ] **v1.2** — Reconcile, optional AI monthly summary (aggregates only, never

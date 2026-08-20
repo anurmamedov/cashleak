@@ -14,17 +14,16 @@ usually worth surfacing rather than silently resolving.
 
 ## Project state
 
-Pre-v1, builds and runs. Twelve of twenty local steps done — see BUILD_PLAN.md
-for per-step detail.
+Pre-v1, builds and runs. Eighteen local steps are done, one is partial and two
+have not started — see BUILD_PLAN.md for per-step detail.
 
 Built: models, tab shell, seed data, entry, Sort queue, Wallet App Intent,
 dedup, recurring posting, Overview, Analysis, Trips, and settings.
 
-Not built: capabilities (L5), CloudKit two-device verification (L8), the daily
-notification and widget (L19).
+Not built: CloudKit two-device verification (L8). Daily reminders, afternoon
+recurring-rule background refresh and the Home Screen widget are built.
 
-**117 tests exist and none have run** — the project still has no test target.
-Treat every "done" as provisional in that specific sense.
+**244 tests pass** on the iPhone 17 Pro / iOS 26.1 Simulator.
 
 **All four gates — L1 to L4 — are still unrun.** Code written ahead of them
 rests on assumptions, particularly the merchant fixtures in

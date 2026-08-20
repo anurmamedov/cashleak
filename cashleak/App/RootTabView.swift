@@ -12,6 +12,7 @@ import SwiftData
 struct RootTabView: View {
 
     @Environment(\.modelContext) private var context
+    @EnvironmentObject private var navigation: AppNavigation
     @State private var selection: Tab = .overview
     @State private var isAddPresented = false
 
@@ -22,6 +23,7 @@ struct RootTabView: View {
     /// Unconfirmed count, shown as a badge on Sort.
     @Query(filter: #Predicate<Transaction> { !$0.isConfirmed && !$0.isSuperseded })
     private var unsorted: [Transaction]
+    @Query private var widgetTransactions: [Transaction]
 
     var body: some View {
         TabView(selection: tabSelection) {
@@ -51,6 +53,16 @@ struct RootTabView: View {
         .sheet(isPresented: $isAddPresented) {
             AddTransactionSheet()
         }
+        .task(id: unsorted.count) {
+            await DailyReminderScheduler.refresh(in: context)
+        }
+        .task(id: widgetRevision) {
+            WidgetSnapshotUpdater.refresh(from: widgetTransactions)
+        }
+        .onAppear(perform: followPendingRoute)
+        .onChange(of: navigation.destination) { _, _ in
+            followPendingRoute()
+        }
     }
 
     /// Intercepts selection of the centre tab, presents the sheet, and restores
@@ -66,5 +78,29 @@ struct RootTabView: View {
                 }
             }
         )
+    }
+
+    private func followPendingRoute() {
+        guard let destination = navigation.destination else { return }
+        switch destination {
+        case .sort:
+            selection = .sort
+        }
+        navigation.consume(destination)
+    }
+
+    /// Includes every value the widget renders. A transaction edit that keeps
+    /// the same row count must still publish a new snapshot.
+    private var widgetRevision: Int {
+        var hasher = Hasher()
+        for transaction in widgetTransactions {
+            hasher.combine(transaction.persistentModelID)
+            hasher.combine(transaction.amount)
+            hasher.combine(transaction.date)
+            hasher.combine(transaction.isConfirmed)
+            hasher.combine(transaction.isSuperseded)
+        }
+        hasher.combine(AppSettings.currencyCode)
+        return hasher.finalize()
     }
 }

@@ -75,6 +75,8 @@ struct LogWalletTransaction: AppIntent {
             }(),
             in: context
         )
+        await DailyReminderScheduler.refresh(in: context)
+        WidgetSnapshotUpdater.refresh(in: context)
 
         // Dialog text is deliberately terse. It can surface as a banner while
         // the user is still at the till, so it states the outcome and stops.

@@ -7,7 +7,7 @@ this file is the technical view.
 
 ## Shape
 
-A single-target SwiftUI app plus a widget extension. No backend, no networking
+A SwiftUI app target plus a WidgetKit extension. No backend, no networking
 layer, no dependency graph to manage. SwiftData is the source of truth and
 CloudKit replicates it to the user's own private database.
 
@@ -55,9 +55,9 @@ cashleak/
 │   ├── History/          searchable list, edit and delete
 │   └── Settings/         capture status, preferences, export, privacy
 ├── Intents/              App Intents surface
-├── Support/              aggregates, dedup, ramp, formatting, settings
-├── Notifications/        not built — L19
-└── Widgets/              not built — L19
+├── Support/              aggregates, dedup, reminders, widget publishing
+├── cashleakWidget/       small and medium WidgetKit views
+└── Shared/               compact App Group widget snapshot
 ```
 
 Feature folders own their views, view models, and any feature-local helpers.
@@ -67,8 +67,8 @@ anticipation.
 `Support/` wasn't in the original plan; it emerged from that rule. It now holds
 `LeakRamp`, `MerchantNormalizer`, `DeduplicationMatcher`, `TransactionIngest`,
 `SpendingSummary`, `AnalysisAggregates`, `RecurringPoster`, `MerchantMemory`,
-`BankAlertParser`, `CSVExport`, `AppLock` and `AppSettings` — each promoted when
-a second feature reached for it.
+`BankAlertParser`, `CSVExport`, `AppLock`, `AppSettings`, `DailyReminder` and
+`BackgroundRefresh` — each promoted when a second feature reached for it.
 
 ## Data model
 
@@ -218,16 +218,31 @@ variance across receipts turns them into a permanent support burden.
 ## Notifications
 
 `UNNotificationContent` is frozen at schedule time, so a repeating trigger cannot
-carry a live total. The workaround:
+carry a live queue count. The implementation:
 
-1. Schedule a daily fallback at 21:00.
-2. On every `Transaction` write, recompute today's total, remove the pending
-   request by identifier, and re-add it with the fresh figure.
+1. The user explicitly enables a reminder and chooses its time; permission is
+   requested in context from You, never on first launch.
+2. As the Sort query changes, remove the pending request by identifier and re-add
+   it with the current unsorted count. Remove it entirely when the queue is empty.
 3. Register a `BGAppRefreshTask` in the afternoon so auto-posted recurring items
    land even when the app hasn't been opened.
 
-Copy carries meaning or it gets swiped away: `$67.40 today — $18 over your
-average`, not `$67.40`. Tapping opens the Sort queue.
+The count is actionable rather than decorative: `4 purchases are waiting. Worth
+it or leak?` Tapping opens the Sort queue, and the route waits behind Firebase
+authentication or the app lock if necessary.
+
+## Widget
+
+The extension does **not** open the SwiftData store. The app reduces its data to
+`todaySpent`, `unsortedCount`, `currencyCode` and `updatedAt`, then writes that
+small Codable snapshot to `group.anar.cashleak`. This keeps transaction records
+and merchant names out of the extension process while avoiding two SwiftData
+connections competing over the same CloudKit-backed store.
+
+The app asks WidgetKit to reload whenever the values rendered by the widget
+change. The timeline also refreshes at midnight and treats a snapshot from the
+previous day as a zero total, so yesterday's spending never appears as today's
+while the app is closed. Both widget sizes deep-link to `cashleak://sort`.
 
 ## Presentation rules
 
