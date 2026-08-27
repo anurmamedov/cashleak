@@ -6,6 +6,7 @@ import AuthenticationServices
 struct WelcomeView: View {
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var authentication: AuthenticationService
 
     @State private var username = ""
@@ -28,15 +29,17 @@ struct WelcomeView: View {
                     dropMark
 
                     Text("Welcome to CashLeak")
-                        .font(.system(size: 30, weight: .medium))
+                        .font(.title.weight(.medium))
+                        .multilineTextAlignment(.center)
 
                     Text("See what your spending really cost you.")
                         .font(.system(.subheadline, design: .serif))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
-                .padding(.top, 28)
-                .padding(.bottom, 30)
+                .padding(.top, dynamicTypeSize.isAccessibilitySize ? 16 : 28)
+                .padding(.bottom, dynamicTypeSize.isAccessibilitySize ? 20 : 30)
+                .padding(.horizontal, 24)
 
                 VStack(spacing: 14) {
                     TextField("Username (email)", text: $username)
@@ -109,7 +112,7 @@ struct WelcomeView: View {
                         handleApple(result)
                     }
                     .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                    .frame(height: 50)
+                    .frame(height: dynamicTypeSize.isAccessibilitySize ? 60 : 50)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                     if let appleError {
@@ -139,7 +142,7 @@ struct WelcomeView: View {
         Image("LogoMark")
             .resizable()
             .scaledToFit()
-            .frame(height: 112)
+            .frame(height: dynamicTypeSize.isAccessibilitySize ? 72 : 112)
             .accessibilityHidden(true)
     }
 
@@ -204,7 +207,8 @@ private extension View {
     func welcomeFieldStyle() -> some View {
         self
             .padding(.horizontal, 14)
-            .frame(height: 52)
+            .padding(.vertical, 14)
+            .frame(minHeight: 52)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay {

@@ -10,6 +10,7 @@ import Charts
 /// touch it, the screen has wasted your attention.
 struct AnalysisView: View {
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query private var transactions: [Transaction]
     @State private var range: AnalysisAggregates.Range = .month
 
@@ -90,7 +91,27 @@ struct AnalysisView: View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader("Spent vs leaked")
 
-            Chart(trend) { point in
+            trendChart
+                .frame(height: 160)
+        }
+    }
+
+    @ViewBuilder
+    private var trendChart: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            trendChartContent
+                .chartXAxis(.hidden)
+                .chartYAxis(.hidden)
+        } else {
+            trendChartContent
+                .chartYAxis {
+                    AxisMarks(position: .leading)
+                }
+        }
+    }
+
+    private var trendChartContent: some View {
+        Chart(trend) { point in
                 BarMark(
                     x: .value("Date", point.date, unit: range.bucket),
                     y: .value("Kept", point.kept)
@@ -103,11 +124,6 @@ struct AnalysisView: View {
                 )
                 .foregroundStyle(Color(hex: AppSettings.accentHex))
             }
-            .chartYAxis {
-                AxisMarks(position: .leading)
-            }
-            .frame(height: 160)
-        }
     }
 
     // MARK: Weeks
@@ -145,35 +161,22 @@ struct AnalysisView: View {
 
     private func weekRow(_ week: AnalysisAggregates.WeekTotal, maximum: Double) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(week.label())
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
-
-                // Only the running week. A week cut off by the start of the
-                // range is also partial, but "so far" would read as "still
-                // going" — its label already narrows to the days in range.
-                if week.isCurrent {
-                    Text("so far")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 4) {
+                    weekTitle(week)
+                    HStack(alignment: .firstTextBaseline) {
+                        if let change = week.change { changeBadge(change) }
+                        Spacer()
+                        weekAmount(week)
+                    }
                 }
-
-                Spacer()
-
-                // The change is deliberately absent on partial weeks. Three days
-                // measured against seven always looks like an improvement.
-                if let change = week.change {
-                    changeBadge(change)
+            } else {
+                HStack(alignment: .firstTextBaseline) {
+                    weekTitle(week)
+                    Spacer()
+                    if let change = week.change { changeBadge(change) }
+                    weekAmount(week)
                 }
-
-                Text(week.spent.currencyRounded)
-                    .font(.subheadline)
-                    .monospacedDigit()
-
-                Image(systemName: "chevron.right")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
             }
 
             // Full width is the week's spend against the biggest week shown;
@@ -196,6 +199,34 @@ struct AnalysisView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 9)
+    }
+
+    private func weekTitle(_ week: AnalysisAggregates.WeekTotal) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+                Text(week.label())
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+
+                // Only the running week. A week cut off by the start of the
+                // range is also partial, but "so far" would read as "still
+                // going" — its label already narrows to the days in range.
+                if week.isCurrent {
+                    Text("so far")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+        }
+    }
+
+    private func weekAmount(_ week: AnalysisAggregates.WeekTotal) -> some View {
+        HStack(spacing: 8) {
+            Text(week.spent.currencyRounded)
+                .font(.subheadline)
+                .monospacedDigit()
+            Image(systemName: "chevron.right")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
     }
 
     private func changeBadge(_ change: Double) -> some View {

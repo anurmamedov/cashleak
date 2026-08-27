@@ -172,6 +172,7 @@ struct SortQueueView: View {
 /// checking the figure against their memory of the purchase.
 private struct QueueRow: View {
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Bindable var transaction: Transaction
 
     var body: some View {
@@ -179,38 +180,34 @@ private struct QueueRow: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(transaction.merchant.isEmpty ? "Unknown" : transaction.merchant)
                     .font(.body.weight(.medium))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 Spacer()
                 Text(transaction.amount.currencyExact)
                     .font(.body.weight(.medium))
                     .monospacedDigit()
+                    .fixedSize(horizontal: true, vertical: false)
+                    .layoutPriority(1)
             }
 
-            HStack(spacing: 6) {
-                Text(transaction.source.badge)
-                    .font(.caption2)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color(.tertiarySystemFill))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-
-                Text(transaction.date.formatted(.relative(presentation: .named)))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                if let category = transaction.category {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        sourceBadge
+                        relativeDate
+                    }
+                    categoryText
+                        .lineLimit(1)
+                }
+            } else {
+                HStack(spacing: 6) {
+                    sourceBadge
+                    relativeDate
                     Text("·")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
-                    Text(category.name)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("·")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    Text("No category")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+                    categoryText
+                        .lineLimit(1)
                 }
             }
         }
@@ -219,6 +216,35 @@ private struct QueueRow: View {
         .accessibilityActions {
             Button("Worth it") { transaction.verdict = .worthIt; transaction.isConfirmed = true }
             Button("Leak") { transaction.verdict = .leak; transaction.isConfirmed = true }
+        }
+    }
+
+    private var sourceBadge: some View {
+        Text(transaction.source.badge)
+            .font(.caption2)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Color(.tertiarySystemFill))
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
+
+    private var relativeDate: some View {
+        Text(transaction.date.formatted(.relative(presentation: .named)))
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+    }
+
+    @ViewBuilder
+    private var categoryText: some View {
+        if let category = transaction.category {
+            Text(category.name)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } else {
+            Text("No category")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
         }
     }
 }

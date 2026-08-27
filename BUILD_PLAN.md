@@ -13,8 +13,8 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 | | Local | Production |
 |---|---|---|
 | Done | 18 | 0 |
-| Partial | 1 | 0 |
-| Not started | 2 | 10 |
+| Partial | 1 | 1 |
+| Not started | 2 | 9 |
 
 **Convenience pass done:** transaction editing and deletion, searchable history,
 category creation, backdating, recurring rule editing, Goals replacing Trips.
@@ -394,15 +394,21 @@ Resolved locally rather than with a backend — see D-012.
 
 # Production
 
-### P1 · Device matrix and regression — not started
+### P1 · Device matrix and regression — partial
 
-- [ ] Smallest and largest devices, both appearances
-- [ ] Largest Dynamic Type on every screen
+- [x] Smallest and largest simulators, both appearances — Welcome and all four
+      main tabs checked on iPhone 16e and iPhone 17 Pro Max
+- [x] Largest Dynamic Type — Welcome and all four main tabs
+- [ ] Largest Dynamic Type — remaining sheets and drill-down screens
 - [ ] VoiceOver through add → sort → overview
 - [ ] Two-device sync with a conflicting edit
 - [ ] Airplane mode and reconnect
 - [ ] Fresh install — every empty state
 - [ ] Upgrade install over existing data
+
+Simulator pass, 24 August 2026: fixed clipped onboarding fields, long merchant
+names colliding with amounts, Sort metadata wrapping, Overview summary-card
+truncation, and Analysis chart/weekly-row overlap at accessibility sizes.
 
 ### P2 · Polish — not started
 

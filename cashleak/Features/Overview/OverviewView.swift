@@ -5,6 +5,7 @@ import SwiftData
 struct OverviewView: View {
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query private var transactions: [Transaction]
     @Query private var goals: [Goal]
 
@@ -148,7 +149,17 @@ struct OverviewView: View {
     // MARK: Stats
 
     private var statsRow: some View {
-        HStack(spacing: 10) {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(spacing: 10) { stats }
+            } else {
+                HStack(spacing: 10) { stats }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var stats: some View {
             stat("Spent", summary.spent.currencyRounded, tint: .primary)
 
             // A month-end projection from three days of data is arithmetically
@@ -171,7 +182,6 @@ struct OverviewView: View {
             }
 
             stat("Kept", summary.kept.currencyRounded, tint: Color(hex: "0F6E56"))
-        }
     }
 
     private func stat(
