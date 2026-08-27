@@ -1,7 +1,7 @@
 # CashLeak — build plan
 
 **Local** is everything on your machine and your phone — 20 steps, ending with an
-app you use daily. **Production** is the 10 steps between "it works for me" and
+app you use daily. **Production** is the 11 steps between "it works for me" and
 "it's on the App Store."
 
 Each step lists what's **done** and what's **outstanding**. Update as you go.
@@ -13,7 +13,7 @@ Each step lists what's **done** and what's **outstanding**. Update as you go.
 | | Local | Production |
 |---|---|---|
 | Done | 18 | 0 |
-| Partial | 1 | 1 |
+| Partial | 1 | 2 |
 | Not started | 2 | 9 |
 
 **Convenience pass done:** transaction editing and deletion, searchable history,
@@ -394,6 +394,36 @@ Resolved locally rather than with a backend — see D-012.
 
 # Production
 
+### P0 · Apple Developer and release foundation — partial
+
+- [x] Apple Developer Program membership approved
+- [ ] Choose and verify the public developer/support email address
+- [ ] Register the developer website domain
+- [ ] Publish a support page with contact details
+- [ ] Publish the privacy policy at a permanent public URL
+- [ ] Decide whether to provide a separate marketing URL
+- [ ] Confirm the Apple Developer team name, Team ID and App Store seller name
+- [ ] Confirm App Store Connect access and roles for everyone who needs them
+- [ ] Complete Apple agreements, tax and banking information
+- [ ] Register the final app and widget bundle identifiers
+- [ ] Connect required Apple capabilities: iCloud/CloudKit, Sign in with Apple
+      and the widget App Group
+- [ ] Select the approved development team in Xcode and verify automatic signing
+      for the app, tests and widget targets
+- [ ] Connect Sign in with Apple to Firebase production authentication
+- [ ] Create the App Store Connect app record after the final app name is chosen
+- [ ] Archive a Release build and validate signing before TestFlight
+
+Items needed from the owner: the public email address, website/domain, desired
+seller/developer display name, Apple team details, and approval of the support
+and privacy-policy text. Never place Apple passwords, two-factor codes,
+certificates, private keys or recovery codes in this repository.
+
+Implementation work I can handle once those are supplied: project signing and
+capabilities, bundle identifiers, Firebase/Apple configuration, support and
+privacy-page content, Release archive validation, and documenting any remaining
+App Store Connect actions that require the account owner to click or approve.
+
 ### P1 · Device matrix and regression — partial
 
 - [x] Smallest and largest simulators, both appearances — Welcome and all four
@@ -442,12 +472,12 @@ renaming.
 - [ ] **Privacy manifest** — no `PrivacyInfo.xcprivacy`; required at submission
 - [ ] **Schema versioning** — unversioned today, so any model change wipes
       TestFlight users' data. Must land before P7
-- [ ] Support and privacy policy URLs
+- [ ] Verify the P0 support and privacy URLs in the Release build
 
 ### P6 · App Store Connect — not started
 
 - [ ] Resolve the name from L4
-- [ ] App record and bundle ID
+- [ ] Complete metadata in the P0 App Store Connect record
 - [ ] Privacy nutrition labels — nearly empty, which is the selling point
 
 ### P7 · TestFlight — not started
@@ -482,10 +512,12 @@ renaming.
 
 The next useful order is:
 
-1. **L1** — start the two-week verdict-mechanic validation clock.
-2. **L3** — exercise the Wallet automation on a physical phone and replace the
+1. **P0** — provide the developer email, website/domain and Apple team details,
+   then connect signing, capabilities, Firebase and App Store Connect.
+2. **L1** — start the two-week verdict-mechanic validation clock.
+3. **L3** — exercise the Wallet automation on a physical phone and replace the
    guessed merchant fixtures with real strings.
-3. **L8** — run the two-device CloudKit conflict and offline tests.
+4. **L8** — run the two-device CloudKit conflict and offline tests.
 
 ---
 
