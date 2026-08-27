@@ -432,3 +432,49 @@ people. Right now it isn't, and LISTING.md should not imply otherwise.
 
 **Decide by:** before P3. A pricing page that quotes a number the number can't
 support is worse than no number.
+
+---
+
+## D-017 · Firebase Auth for identity — supersedes D-012
+
+**Decided.** Reverses D-012, which held that the app would have "a profile, not
+an account."
+
+Sign-in, registration and password reset run through Firebase Authentication.
+Email and password, or Sign in with Apple. `FirebaseAuth` is the only linked
+product.
+
+**What changed the answer.** D-012 rejected accounts because email/password
+needs somewhere to store credentials, hash them, and handle resets — a server.
+That reasoning was correct and the conclusion was that we'd skip password reset
+entirely. In practice a lock with no recovery path is a lock that loses people
+their data, and a local-only profile can't survive a new phone.
+
+**What Firebase holds:** email, password hash, Apple credential, a UID.
+
+**What it never holds:** transactions, amounts, merchants, verdicts, goals,
+categories, card labels. All of that stays in SwiftData and the user's own
+private CloudKit database. This boundary is the whole reason the change is
+acceptable, and it should be treated as load-bearing rather than incidental.
+
+**Analytics stay out.** `GoogleAppMeasurement` and the on-device conversion SDK
+resolve as part of the Firebase package graph. Neither is linked. Linking either
+would put a tracker in an app whose pitch is that it has none.
+
+**What this costs, honestly:**
+
+- "No account. No server." is no longer true and can't be used in the listing
+- The privacy label now has an entry where it had none
+- Launch depends on a cached Firebase session. `AppGate` shows the welcome
+  screen whenever `authentication.user == nil`, so a user whose session is
+  missing while offline can't reach transactions stored on their own device.
+  That failure mode did not exist before and has no mitigation yet.
+- D-004's pricing argument still holds — Firebase Auth is free at this volume —
+  but it is no longer true that there is *no* per-user infrastructure
+
+**Rules out:** claiming zero third-party code. Any further Firebase product
+(Firestore, Analytics, Crashlytics, Storage) without a new decision.
+
+**Reverse if:** Apple ships a first-party identity service covering
+email/password with recovery, or the product drops email sign-in and keeps only
+Sign in with Apple — which would make the whole dependency unnecessary.

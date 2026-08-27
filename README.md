@@ -7,7 +7,8 @@ An iOS spending tracker that captures Apple Pay taps automatically, lets you
 label each purchase **worth it** or **leak**, and turns what you waste into
 something concrete — like the trip you could have taken instead.
 
-No account. No server. No bank login. No subscription.
+Firebase account for sign-in only. No bank login. No subscription.
+Your spending never leaves your phone and your own iCloud.
 
 ---
 
@@ -74,7 +75,7 @@ capture. Everything lands in a Sort queue unconfirmed, and one swipe confirms it
 | Platform | iOS 17.0+ |
 | Language | Swift 5.9+ |
 | Tooling | Xcode 15+ |
-| Dependencies | None |
+| Dependencies | Firebase Auth (sign-in only) |
 
 ```bash
 git clone https://github.com/anurmamedov/cashleak.git
@@ -83,14 +84,21 @@ open cashleak.xcodeproj
 ```
 
 Capabilities required on the target: iCloud + CloudKit, Background Modes
-(background fetch), Push Notifications, and an App Group shared with the widget.
+(background fetch), Push Notifications, Sign in with Apple, and an App Group
+shared with the widget. All of them need a paid Apple Developer account.
+
+`GoogleService-Info.plist` is committed deliberately — it holds client
+identifiers, not secrets.
 
 ## Stack
 
 SwiftUI · SwiftData · CloudKit (private database) · Swift Charts · App Intents ·
 VisionKit · Vision · UserNotifications · WidgetKit · StoreKit 2
 
-No backend. No analytics SDK. No third-party packages.
+Firebase Auth handles sign-in and nothing else. No analytics SDK — the
+measurement and ads SDKs resolve with the Firebase graph but are not linked.
+Transactions live in SwiftData and the user's private CloudKit database; none
+of it is sent to Firebase.
 
 ## Out of scope
 

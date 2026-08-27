@@ -53,12 +53,19 @@ a resolved gate, or a completed step always does.
 
 iOS 17.0+ · Swift 5.9+ · SwiftUI · SwiftData · CloudKit private database.
 
-**No third-party dependencies.** Not for networking, not for charts, not for
-utilities. If something seems to need a package, propose it and explain what
-platform API falls short — don't add it.
+**Firebase Auth is the only third-party dependency.** It handles sign-in,
+registration and password reset — see D-017, which supersedes D-012. Nothing
+else gets a package: not networking, not charts, not utilities. If something
+seems to need one, propose it and explain what platform API falls short.
 
-**No backend, no analytics SDK.** Everything on-device or in the user's own
-iCloud. A request that implies a server is a request to change the product.
+**No analytics SDK.** `GoogleAppMeasurement` and the ads SDK resolve as part of
+the Firebase graph but are deliberately *not* linked — only `FirebaseAuth` is.
+Keep it that way; linking one would put a tracker in a privacy-first app.
+
+**Financial data never leaves the device or the user's own iCloud.** Firebase
+holds identity only — email, password hash, Apple credential. No transaction,
+amount, merchant or verdict is ever sent to it. A request to sync spending
+through a server is a request to change the product.
 
 ## Conventions
 
