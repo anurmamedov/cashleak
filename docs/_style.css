@@ -1,0 +1,88 @@
+:root {
+  --brand: #C65A2E;
+  --ink: #2C2C2A;
+  --muted: #5F5E5A;
+  --line: #E4E1DA;
+  --wash: #FAECE7;
+  --page: #FFFFFF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand: #F0997B;
+    --ink: #F1EFE8;
+    --muted: #B4B2A9;
+    --line: #3A3937;
+    --wash: #2A1712;
+    --page: #171614;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 24px 80px;
+  background: var(--page);
+  color: var(--ink);
+  font: 400 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+.wrap { max-width: 680px; margin: 0 auto; }
+
+header {
+  border-bottom: 1px solid var(--line);
+  padding: 40px 0 24px;
+  margin-bottom: 36px;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.mark svg { display: block; }
+
+.mark span { font-size: 19px; font-weight: 500; letter-spacing: -0.01em; }
+
+h1 { font-size: 30px; font-weight: 500; letter-spacing: -0.02em; margin: 26px 0 6px; }
+h2 { font-size: 20px; font-weight: 500; margin: 38px 0 10px; }
+h3 { font-size: 17px; font-weight: 500; margin: 26px 0 6px; }
+
+.dateline { color: var(--muted); font-size: 15px; margin: 0; }
+
+p { margin: 0 0 16px; }
+
+ul { margin: 0 0 16px; padding-left: 22px; }
+li { margin-bottom: 7px; }
+
+a { color: var(--brand); text-underline-offset: 2px; }
+
+strong { font-weight: 500; }
+
+.lede {
+  background: var(--wash);
+  border-radius: 12px;
+  padding: 20px 22px;
+  margin: 0 0 30px;
+}
+
+.lede p:last-child { margin-bottom: 0; }
+
+table { width: 100%; border-collapse: collapse; margin: 0 0 20px; font-size: 16px; }
+th, td { text-align: left; padding: 11px 12px 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 500; color: var(--muted); font-size: 14px; }
+
+footer {
+  border-top: 1px solid var(--line);
+  margin-top: 56px;
+  padding-top: 22px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+footer a { margin-right: 18px; }
