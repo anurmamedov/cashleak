@@ -34,7 +34,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 }
 
 @main
-struct CashLeaksApp: App {
+struct CashLeakApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -94,7 +94,7 @@ struct AppGate: View {
     var body: some View {
         Group {
             if !authentication.isReady {
-                ProgressView("Preparing CashLeaks…")
+                ProgressView("Preparing CashLeak…")
             } else if authentication.user == nil {
                 WelcomeView()
             } else if profiles.isEmpty {

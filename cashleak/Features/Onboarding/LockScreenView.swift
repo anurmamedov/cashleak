@@ -23,7 +23,7 @@ struct LockScreenView: View {
                 .frame(height: 96)
                 .accessibilityHidden(true)
 
-            Text("CashLeaks is locked")
+            Text("CashLeak is locked")
                 .font(.title3.weight(.medium))
 
             VStack(spacing: 12) {

@@ -1,4 +1,4 @@
-# CashLeaks
+# CashLeak
 
 > Most spending apps tell you where your money went.
 > This one tells you what it cost you.
@@ -16,7 +16,7 @@ Firebase account. No bank connection. No subscription.
 > are built but unproven against a real card. See BUILD_PLAN.md for step detail
 > and GATES.md for what's still unverified.
 >
-> Name settled internally as CashLeaks (D-007). The App Store name is still open —
+> Name settled internally as CashLeak (D-007). The App Store name is still open —
 > it's descriptive, which reads clearly and defends poorly.
 
 ---
@@ -29,7 +29,7 @@ quietly drop Canadian bank support. Those aggregators also cost money per user
 per connected account, which is why every app in this category is a $10–20/month
 subscription that wants your bank credentials.
 
-CashLeaks never connects to a bank. Apple Pay taps arrive through a Shortcuts
+CashLeak never connects to a bank. Apple Pay taps arrive through a Shortcuts
 automation, receipts are scanned on-device, everything else takes five seconds to
 enter. Financial data lives on your phone and syncs through your own iCloud.
 Firebase Authentication handles account identity only; transactions are never

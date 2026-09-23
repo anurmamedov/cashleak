@@ -1,4 +1,4 @@
-# CashLeaks — build plan
+# CashLeak — build plan
 
 **Local** is everything on your machine and your phone — 20 steps, ending with an
 app you use daily. **Production** is the 11 steps between "it works for me" and
@@ -130,9 +130,9 @@ Done:
 - [x] Project builds and runs
 - [x] `cashleak/cashleak.entitlements` written and wired into both configs
 - [x] Sign in with Apple
-- [x] iCloud + CloudKit, container `iCloud.anar.cashleak`
+- [x] iCloud + CloudKit, container `iCloud.com.karasandlabs.cashleak`
 - [x] Push — not for messaging; CloudKit uses silent pushes to signal changes
-- [x] App Group `group.anar.cashleak` for the widget
+- [x] App Group `group.com.karasandlabs.cashleak` for the widget
 - [x] Background Modes via `INFOPLIST_KEY_UIBackgroundModes = fetch remote-notification`
 
 **The entitlement immediately broke launch, which is the point.** With no iCloud
@@ -396,20 +396,22 @@ Resolved locally rather than with a backend — see D-012.
 
 ### P0 · Apple Developer and release foundation — partial
 
-**Name is CashLeaks.** Display names, Swift types and docs all say it. The
-identifiers deliberately still say `cashleak` and are a separate decision:
+**Name is CashLeak. Identifiers are reverse-DNS on the domain we own.**
 
-- `anar.cashleak` — app bundle ID, registered in Firebase as the iOS app and
-  baked into `GoogleService-Info.plist`
-- `anar.cashleak.widget`, `anar.cashleak.refresh` — widget and background task
-- `iCloud.anar.cashleak`, `group.anar.cashleak` — CloudKit container, App Group
-- `com.cashleak.applock` — Keychain service holding the passcode hash
+- `com.karasandlabs.cashleak` — app
+- `com.karasandlabs.cashleak.widget` / `.tests` / `.refresh` / `.applock`
+- `iCloud.com.karasandlabs.cashleak`, `group.com.karasandlabs.cashleak`
 
-Changing the bundle ID means re-registering the iOS app in Firebase, creating a
-new CloudKit container (existing synced data does not follow), a new App Group,
-and updating the BGTask identifier in both code and Info.plist. Users are never
-shown any of these strings. Do it before the first submission or not at all —
-after release it is a new app, not a rename.
+Changed before anything was registered with Apple, which was the last cheap
+moment — after the first upload the bundle ID is permanent and a change means
+a new app with a new product page.
+
+**Outstanding because of it:** the Firebase iOS app is still registered as
+`anar.cashleak`. Add a new iOS app in the Firebase console with the new bundle
+ID and replace `GoogleService-Info.plist`; it is generated, never hand-edited.
+The App Store Connect record also still carries the old bundle ID and can only
+be changed while no build has been uploaded.
+
 
 - [x] Apple Developer Program membership approved
 - [x] Public support address: `support@karasandlabs.com`, with

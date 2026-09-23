@@ -52,12 +52,12 @@ struct YouView: View {
                 Button("Cancel", role: .cancel) { newCardLabel = "" }
                 Button("Add") { addCard() }
             } message: {
-                Text("Name it however you'll recognise it. CashLeaks can't read your Wallet, so this is just a label.")
+                Text("Name it however you'll recognise it. CashLeak can't read your Wallet, so this is just a label.")
             }
             .alert("Notifications are off", isPresented: $showNotificationSettingsAlert) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text("Allow notifications for CashLeaks in Settings to use the daily reminder.")
+                Text("Allow notifications for CashLeak in Settings to use the daily reminder.")
             }
             .onAppear(perform: loadNotificationTime)
         }

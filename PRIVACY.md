@@ -1,4 +1,4 @@
-# CashLeaks Privacy Policy
+# CashLeak Privacy Policy
 
 *Last updated 23 September 2026*
 
@@ -8,7 +8,7 @@ we have no access to. The only thing we handle is the account you sign in with.
 
 ## What we collect
 
-CashLeaks uses Firebase Authentication, a service from Google, to run sign-in. It
+CashLeak uses Firebase Authentication, a service from Google, to run sign-in. It
 holds the minimum needed to prove an account is yours:
 
 | Data | Why |
@@ -41,7 +41,7 @@ it, and neither can Apple.
 
 ## No bank connection
 
-CashLeaks never asks for banking credentials and has no technical ability to use
+CashLeak never asks for banking credentials and has no technical ability to use
 them. There is no aggregator, no screen-scraping and no read-only bank link.
 Purchases arrive through a Shortcuts automation you set up yourself, through
 on-device receipt scanning, through rules you define, or by typing them in.
@@ -65,9 +65,9 @@ server sends you anything.
 - **Delete your data.** Your spending data is yours to remove — delete the app,
   or clear it from within it. Because we never held a copy, there is nothing on
   our side to erase.
-- **Export your data.** CashLeaks exports everything to CSV from the You screen,
+- **Export your data.** CashLeak exports everything to CSV from the You screen,
   at any time, without asking us.
-- **Turn off sync.** Disable iCloud for CashLeaks in iOS Settings and the app
+- **Turn off sync.** Disable iCloud for CashLeak in iOS Settings and the app
   keeps working on that device alone.
 
 Depending on where you live you may have further rights over the account data
@@ -75,7 +75,7 @@ described above, including access and correction. Email us and we will act on it
 
 ## Children
 
-CashLeaks is not directed at children under 13 and we do not knowingly create
+CashLeak is not directed at children under 13 and we do not knowingly create
 accounts for them.
 
 ## Changes
@@ -85,7 +85,7 @@ change in the app before it takes effect.
 
 ## Contact
 
-CashLeaks is published by Karasand Software Inc., trading as Karasand Labs,
+CashLeak is published by Karasand Software Inc., trading as Karasand Labs,
 of Toronto, Ontario, Canada.
 
 Questions, deletion requests or anything else: support@karasandlabs.com.

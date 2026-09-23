@@ -1,6 +1,6 @@
 # Architecture
 
-How CashLeaks is put together and why. Product reasoning lives in [plan.md](plan.md);
+How CashLeak is put together and why. Product reasoning lives in [plan.md](plan.md);
 this file is the technical view.
 
 ---
@@ -235,7 +235,7 @@ authentication or the app lock if necessary.
 
 The extension does **not** open the SwiftData store. The app reduces its data to
 `todaySpent`, `unsortedCount`, `currencyCode` and `updatedAt`, then writes that
-small Codable snapshot to `group.anar.cashleak`. This keeps transaction records
+small Codable snapshot to `group.com.karasandlabs.cashleak`. This keeps transaction records
 and merchant names out of the extension process while avoiding two SwiftData
 connections competing over the same CloudKit-backed store.
 

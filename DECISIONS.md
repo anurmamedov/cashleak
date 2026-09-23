@@ -11,7 +11,7 @@ Add to the bottom. Don't edit history — supersede it with a new entry.
 
 **Decided.**
 
-CashLeaks never connects to a bank account. Data arrives via Shortcuts automations,
+CashLeak never connects to a bank account. Data arrives via Shortcuts automations,
 on-device receipt OCR, recurring rules, and manual entry.
 
 Canada has no real open banking, so aggregators screen-scrape; connections break
@@ -126,7 +126,7 @@ feature is something other than what it looks like.
 
 ---
 
-## D-007 · Working name is CashLeaks
+## D-007 · Working name is CashLeak
 
 **Decided internally. App Store name still open.**
 
@@ -135,7 +135,7 @@ the repository, Xcode project, and bundle ID said `cashleak`. That split produce
 documents that contradicted each other and code that matched neither
 consistently.
 
-Settled: **CashLeaks** everywhere — repo, bundle ID, module, documents. The cost
+Settled: **CashLeak** everywhere — repo, bundle ID, module, documents. The cost
 of the ambiguity was higher than the cost of picking.
 
 It's descriptive, which makes it clear to a user and weak as a trademark. That's
@@ -485,7 +485,7 @@ Sign in with Apple — which would make the whole dependency unnecessary.
 
 **Decided.** D-004 stands as the intent; this records what v1 actually ships as.
 
-CashLeaks launches **free**, with no in-app purchase. The $19.99 one-time price
+CashLeak launches **free**, with no in-app purchase. The $19.99 one-time price
 and the seven-day trial are deferred to P3.
 
 **Why.** The trial in D-004 is a StoreKit non-consumable behind a free download,

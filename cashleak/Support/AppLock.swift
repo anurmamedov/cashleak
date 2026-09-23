@@ -18,7 +18,7 @@ import Security
 /// and less annoying than typing.
 enum AppLock {
 
-    private static let service = "com.cashleak.applock"
+    private static let service = "com.karasandlabs.cashleak.applock"
     private static let hashAccount = "passwordHash"
     private static let saltAccount = "passwordSalt"
 
@@ -94,7 +94,7 @@ enum AppLock {
         do {
             return try await context.evaluatePolicy(
                 .deviceOwnerAuthenticationWithBiometrics,
-                localizedReason: "Open CashLeaks"
+                localizedReason: "Open CashLeak"
             )
         } catch {
             return false

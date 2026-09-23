@@ -3,13 +3,13 @@ import Foundation
 /// A deliberately small App Group payload. The widget never opens the user's
 /// SwiftData or CloudKit store; the app publishes only the two numbers the
 /// widget renders.
-struct CashLeaksWidgetSnapshot: Codable, Equatable {
+struct CashLeakWidgetSnapshot: Codable, Equatable {
     var todaySpent: Double
     var unsortedCount: Int
     var currencyCode: String
     var updatedAt: Date
 
-    static let empty = CashLeaksWidgetSnapshot(
+    static let empty = CashLeakWidgetSnapshot(
         todaySpent: 0,
         unsortedCount: 0,
         currencyCode: Locale.current.currency?.identifier ?? "CAD",
@@ -23,20 +23,20 @@ struct CashLeaksWidgetSnapshot: Codable, Equatable {
     }
 }
 
-enum CashLeaksWidgetSnapshotStore {
-    static let appGroup = "group.anar.cashleak"
+enum CashLeakWidgetSnapshotStore {
+    static let appGroup = "group.com.karasandlabs.cashleak"
     static let storageKey = "widget.snapshot"
 
-    static func save(_ snapshot: CashLeaksWidgetSnapshot) {
+    static func save(_ snapshot: CashLeakWidgetSnapshot) {
         guard let defaults = UserDefaults(suiteName: appGroup),
               let data = try? JSONEncoder().encode(snapshot) else { return }
         defaults.set(data, forKey: storageKey)
     }
 
-    static func load() -> CashLeaksWidgetSnapshot {
+    static func load() -> CashLeakWidgetSnapshot {
         guard let defaults = UserDefaults(suiteName: appGroup),
               let data = defaults.data(forKey: storageKey),
-              let snapshot = try? JSONDecoder().decode(CashLeaksWidgetSnapshot.self, from: data)
+              let snapshot = try? JSONDecoder().decode(CashLeakWidgetSnapshot.self, from: data)
         else { return .empty }
         return snapshot
     }

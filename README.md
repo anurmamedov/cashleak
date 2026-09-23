@@ -1,4 +1,4 @@
-# CashLeaks
+# CashLeak
 
 > Most spending apps tell you where your money went.
 > This one tells you what it cost you.
@@ -58,7 +58,7 @@ connections break constantly, and they charge per user per connected account —
 which is why every app in this category is a $10–20/month subscription that wants
 your bank credentials.
 
-CashLeaks never connects to a bank. Apple Pay taps arrive through a Shortcuts
+CashLeak never connects to a bank. Apple Pay taps arrive through a Shortcuts
 automation, receipts are scanned on-device, everything else takes five seconds to
 enter. Data lives on the phone and syncs through the user's own iCloud.
 
@@ -109,11 +109,11 @@ Every one of these will be requested. Saying no is the strategy.
 
 ## Naming
 
-The product is **CashLeaks** — repository, Xcode project, bundle identifier, and
+The product is **CashLeak** — repository, Xcode project, bundle identifier, and
 documents all agree. An earlier draft used "Kept"; that split is resolved in
 [DECISIONS.md](DECISIONS.md#d-007).
 
-The public App Store name isn't settled. "CashLeaks" is descriptive, which reads
+The public App Store name isn't settled. "CashLeak" is descriptive, which reads
 clearly but defends poorly as a trademark. Check the App Store, CIPO, and USPTO
 classes 9 and 42 before locking a bundle ID — step L4.
 

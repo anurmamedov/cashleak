@@ -47,7 +47,7 @@ final class WidgetSnapshotTests: XCTestCase {
     }
 
     func testYesterdayTotalBecomesZeroAtMidnight() {
-        let snapshot = CashLeaksWidgetSnapshot(
+        let snapshot = CashLeakWidgetSnapshot(
             todaySpent: 75,
             unsortedCount: 2,
             currencyCode: "CAD",

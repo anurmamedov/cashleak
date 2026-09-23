@@ -7,7 +7,7 @@ import SwiftData
 /// fallback and RecurringPoster is deliberately safe to call more than once.
 enum BackgroundRefresh {
 
-    static let identifier = "anar.cashleak.refresh"
+    static let identifier = "com.karasandlabs.cashleak.refresh"
 
     static func register() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: identifier, using: nil) { task in

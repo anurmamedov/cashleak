@@ -1,4 +1,4 @@
-# Git setup — CashLeaks
+# Git setup — CashLeak
 
 Everything needed to get the project onto GitHub, plus the day-to-day commands
 and the errors you'll actually hit.
@@ -23,7 +23,7 @@ and the errors you'll actually hit.
 
 Two deviations from the original plan, both harmless:
 
-- The project is named `cashleak` (lowercase), not `CashLeaks`. GitHub repo names
+- The project is named `cashleak` (lowercase), not `CashLeak`. GitHub repo names
   are case-insensitive, so the remote still resolves.
 - Xcode created the git repo despite the "uncheck" instruction, so `Initial
   Commit` predates `.gitignore`. Fixed with `git rm -r --cached xcuserdata`

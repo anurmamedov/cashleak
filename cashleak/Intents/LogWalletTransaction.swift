@@ -26,7 +26,7 @@ struct LogWalletTransaction: AppIntent {
     static var title: LocalizedStringResource = "Log transaction"
 
     static var description = IntentDescription(
-        "Records an Apple Pay transaction in CashLeaks. It arrives unconfirmed, ready to sort.",
+        "Records an Apple Pay transaction in CashLeak. It arrives unconfirmed, ready to sort.",
         categoryName: "Capture"
     )
 
@@ -95,7 +95,7 @@ struct LogWalletTransaction: AppIntent {
 
 /// Makes the intent discoverable in Shortcuts and by voice without the user
 /// having to search for it.
-struct CashLeaksShortcuts: AppShortcutsProvider {
+struct CashLeakShortcuts: AppShortcutsProvider {
 
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
