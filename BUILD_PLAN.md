@@ -397,10 +397,16 @@ Resolved locally rather than with a backend — see D-012.
 ### P0 · Apple Developer and release foundation — partial
 
 - [x] Apple Developer Program membership approved
-- [ ] Choose and verify the public developer/support email address
+- [x] Public support address: `support@karasandlabs.com`, with
+      `karasandlabs@gmail.com` as the fallback
 - [ ] Register the developer website domain
-- [ ] Publish a support page with contact details
-- [ ] Publish the privacy policy at a permanent public URL
+- [x] Support page written — `docs/support.html`
+- [ ] Enable GitHub Pages (Settings → Pages → `main` / `/docs`) to serve it
+- [x] Privacy policy written — `docs/privacy.html`
+- [ ] Paste its Pages URL into App Store Connect
+- [ ] **Fix the App Privacy declaration.** It currently says "Data Not
+      Collected", which stopped being true when Firebase landed. Declare
+      Email Address and User ID, both linked, neither used for tracking.
 - [ ] Decide whether to provide a separate marketing URL
 - [ ] Confirm the Apple Developer team name, Team ID and App Store seller name
 - [ ] Confirm App Store Connect access and roles for everyone who needs them
