@@ -441,7 +441,11 @@ be changed while no build has been uploaded.
 - [ ] Select the approved development team in Xcode and verify automatic signing
       for the app, tests and widget targets
 - [ ] Connect Sign in with Apple to Firebase production authentication
-- [ ] Create the App Store Connect app record after the final app name is chosen
+- [x] App Store Connect record created — Apple ID 6811486413, bundle ID
+      `com.karasandlabs.cashleak`
+- [ ] Set the category to Finance / Productivity — it was created as Business
+      (see LISTING.md)
+- [ ] SKU is stuck as `anar.cashleak`; it is internal-only and harmless
 - [ ] Archive a Release build and validate signing before TestFlight
 
 Items needed from the owner: the public email address, website/domain, desired

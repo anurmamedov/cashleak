@@ -14,6 +14,19 @@ rejects anything over.
 Only name, subtitle and keywords affect search ranking. The description sells to
 someone already on the page; it does nothing for discovery.
 
+## Category
+
+**Primary: Finance. Secondary: Productivity.**
+
+The record was first created as Business → Productivity, which is wrong. Category
+decides which top charts and browse sections the app appears in, and therefore
+who it is ranked against. In Business it competes with invoicing and CRM tools
+and is invisible to anyone looking for a spending tracker.
+
+Finance is also where the pricing argument lands. The apps beside us there are
+$10–20/month subscriptions funded by aggregator fees we do not pay — being on
+that shelf is the whole comparison.
+
 ---
 
 ## Name
