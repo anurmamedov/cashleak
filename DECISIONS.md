@@ -478,3 +478,40 @@ would put a tracker in an app whose pitch is that it has none.
 **Reverse if:** Apple ships a first-party identity service covering
 email/password with recovery, or the product drops email sign-in and keeps only
 Sign in with Apple — which would make the whole dependency unnecessary.
+
+---
+
+## D-018 · Free at launch — amends D-004
+
+**Decided.** D-004 stands as the intent; this records what v1 actually ships as.
+
+CashLeaks launches **free**, with no in-app purchase. The $19.99 one-time price
+and the seven-day trial are deferred to P3.
+
+**Why.** The trial in D-004 is a StoreKit non-consumable behind a free download,
+not a paid App Store price tier. StoreKit isn't built, so a paid tier at launch
+would have meant charging before anyone could open the app — the opposite of
+what D-004 argued for. The choice was pay-upfront-with-no-trial, or free now.
+
+**What this costs.** Everyone who installs v1 keeps it free permanently. Apple
+does not retroactively charge existing users when an app moves from free to
+paid, so the entire early cohort is a permanent free tier. That is the price of
+shipping before P3, and it is worth naming rather than discovering later.
+
+**Two ways to charge later, and they are not the same:**
+
+1. **Change the app to paid.** Simple, but only new downloads pay, and there is
+   no trial — which is the model D-004 rejected.
+2. **Keep it free and add a non-consumable unlock.** This is D-004's actual
+   model and the one P3 describes. Existing users can be grandfathered
+   deliberately rather than by accident.
+
+Option 2 is the one D-004's reasoning supports.
+
+**Also fixed here:** LISTING.md claimed "No account" and "Seven-day trial, then
+a single purchase". The first stopped being true at D-017, the second was never
+true. Both were in the App Store description, which is the most-read copy in
+the project.
+
+**Reverse if:** StoreKit lands before submission, in which case v1 ships on
+D-004's original terms.

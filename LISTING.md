@@ -144,20 +144,23 @@ WHAT'S INSIDE
 • CSV export, because data you can't take out isn't really yours
 
 
-ONE PRICE, ONCE
+FREE, AND NOT PAID FOR BY YOU
 
-No subscription. No free tier that nags. No ads, ever.
+No subscription. No ads, ever. Nothing about you is sold, because nothing about
+your spending ever reaches us.
 
 Most apps in this category charge monthly because they pay an aggregator for
-every bank connection. CashLeaks has no aggregator and no server, so it has no
-per-user cost to pass on.
-
-Seven-day trial, then a single purchase.
+every bank connection. CashLeaks has no aggregator and no server holding your
+data, so it has no per-user cost to pass on.
 
 
 PRIVACY
 
-No account. No analytics. No tracking SDK. No crash reporter.
+Sign in with an email address or with Apple — that account, and nothing else,
+is all we hold. No analytics. No tracking SDK. No crash reporter.
+
+Your purchases, amounts, merchants and judgements stay on your phone and sync
+through your own private iCloud, which we cannot read.
 
 Receipt scanning runs on-device with Apple's Vision framework — images never
 leave your phone.
