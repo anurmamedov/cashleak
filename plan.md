@@ -355,7 +355,9 @@ the promotion rule in CLAUDE.md working as intended.
 
 ## Pricing
 
-One-time purchase, $19.99 CAD. Seven-day StoreKit trial. No free tier, no ads.
+Free at launch, with no in-app purchase (D-018). The intended model is a
+one-time purchase around $19.99 CAD behind a seven-day StoreKit trial (D-004),
+deferred to P3 because StoreKit isn't built. No subscription, no ads, ever.
 
 Marginal cost per user is effectively zero, so this undercuts the category
 structurally rather than promotionally. Anything that genuinely costs money per

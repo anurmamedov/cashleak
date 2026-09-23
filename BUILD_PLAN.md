@@ -378,7 +378,7 @@ Resolved locally rather than with a backend — see D-012.
 
 - [x] Per-card automation status, self-reported, with staleness detection
 - [x] Apple Pay setup walkthrough
-- [x] Recurring rules and Trips
+- [x] Recurring rules and Goals
 - [x] Plain statement of what won't be captured
 - [x] Accent picker, four options
 - [x] Daily summary time
@@ -473,7 +473,7 @@ truncation, and Analysis chart/weekly-row overlap at accessibility sizes.
 ### P2 · Polish — not started
 
 - [ ] Haptics and animation timing
-- [ ] First-run onboarding, no account
+- [ ] First-run onboarding after sign-in
 - [ ] Fixes from P1
 
 ### P3 · StoreKit — not started

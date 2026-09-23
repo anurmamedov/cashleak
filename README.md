@@ -25,11 +25,12 @@ status, the app lock, preferences, CSV export and privacy. Capture runs through 
 single ingest funnel with deduplication and recurring rule posting. Daily Sort
 reminders and small/medium Home Screen widgets are built.
 
-**Not built** — receipt scanning. The optional daily Sort reminder, afternoon
-recurring-rule refresh and Home Screen widget are built.
+**Not built** — receipt scanning, and StoreKit.
 
-**Verified locally** — 244 tests pass on the iPhone 17 Pro / iOS 26.1 Simulator.
-CloudKit sync still needs its physical two-device test.
+**Partly verified** — 244 tests exist and last passed on the iPhone 17 Pro /
+iOS 26.1 Simulator, before the identifier change and the welcome screen rework.
+Re-run before trusting them. CloudKit sync has never had its two-device test,
+and no build has been archived for distribution.
 
 **The four gates haven't run.** L1 — two weeks of validating the verdict mechanic
 by hand — is the one step that can invalidate everything else here, and it was
@@ -62,8 +63,8 @@ CashLeak never connects to a bank. Apple Pay taps arrive through a Shortcuts
 automation, receipts are scanned on-device, everything else takes five seconds to
 enter. Data lives on the phone and syncs through the user's own iCloud.
 
-No aggregator means no per-user cost. No per-user cost means no subscription —
-one-time purchase instead.
+No aggregator means no per-user cost. No per-user cost means no subscription.
+v1 ships free; a one-time unlock arrives with StoreKit in P3 (D-018).
 
 The trade-off is honest and stated in the UI: expect roughly 40–60% automatic
 capture. Everything lands in a Sort queue unconfirmed, and one swipe confirms it.
@@ -113,9 +114,13 @@ The product is **CashLeak** — repository, Xcode project, bundle identifier, an
 documents all agree. An earlier draft used "Kept"; that split is resolved in
 [DECISIONS.md](DECISIONS.md#d-007).
 
-The public App Store name isn't settled. "CashLeak" is descriptive, which reads
-clearly but defends poorly as a trademark. Check the App Store, CIPO, and USPTO
-classes 9 and 42 before locking a bundle ID — step L4.
+Identifiers are `com.karasandlabs.cashleak`, reverse-DNS on the company domain.
+Fixed before the first upload, after which Apple treats a bundle ID change as a
+different app.
+
+The public App Store name still isn't settled. "CashLeak" is descriptive, which
+reads clearly but defends poorly as a trademark. Check the App Store, CIPO and
+USPTO classes 9 and 42 — step L4.
 
 ## License
 

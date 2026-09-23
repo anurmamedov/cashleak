@@ -109,8 +109,8 @@ Apple Pay taps arrive automatically through a Shortcuts automation you set up
 once. Recurring bills post themselves. Anything else takes five seconds on a
 number pad that opens ready to type.
 
-Your data lives on your phone and syncs through your own iCloud. There is no
-CashLeak server. There is no account to create.
+Your spending lives on your phone and syncs through your own iCloud. There is no
+CashLeak server holding it. Signing in stores an email address and nothing else.
 
 
 HONEST ABOUT WHAT IT CATCHES

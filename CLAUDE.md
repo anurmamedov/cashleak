@@ -18,7 +18,8 @@ Pre-v1, builds and runs. Eighteen local steps are done, one is partial and two
 have not started — see BUILD_PLAN.md for per-step detail.
 
 Built: models, tab shell, seed data, entry, Sort queue, Wallet App Intent,
-dedup, recurring posting, Overview, Analysis, Trips, and settings.
+dedup, recurring posting, Overview, Analysis, Goals, History, reminders, the
+Home Screen widget, and settings.
 
 Not built: CloudKit two-device verification (L8). Daily reminders, afternoon
 recurring-rule background refresh and the Home Screen widget are built.
