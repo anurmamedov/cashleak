@@ -402,7 +402,8 @@ Resolved locally rather than with a backend — see D-012.
 - [ ] Register the developer website domain
 - [x] Support page written — `docs/support.html`
 - [ ] Enable GitHub Pages (Settings → Pages → `main` / `/docs`) to serve it
-- [x] Privacy policy written — `docs/privacy.html`
+- [x] Privacy policy written — `PRIVACY.md` (single source; the HTML copy was
+      removed to stop the two drifting)
 - [ ] Paste its Pages URL into App Store Connect
 - [ ] **Fix the App Privacy declaration.** It currently says "Data Not
       Collected", which stopped being true when Firebase landed. Declare

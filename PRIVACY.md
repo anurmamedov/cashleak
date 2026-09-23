@@ -92,7 +92,8 @@ If that address ever bounces, use karasandlabs@gmail.com.
 
 ---
 
-**Note for maintainers:** `docs/privacy.html` is the version Apple links to and
-is the one that must stay live. This file is the same text in Markdown for
-reuse elsewhere. Change both together — a policy that contradicts itself across
-two published copies is worse than either copy alone.
+**Note for maintainers:** this file is the single source of the policy. The
+HTML copy that used to live at `docs/privacy.html` was removed so the two
+couldn't drift apart. Whatever URL App Store Connect points at must serve this
+text, and must keep serving it for as long as the app is listed — Apple checks
+that the link resolves.
