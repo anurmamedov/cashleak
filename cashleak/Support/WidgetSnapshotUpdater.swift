@@ -8,13 +8,13 @@ enum WidgetSnapshotBuilder {
         now: Date = .now,
         calendar: Calendar = .current,
         currencyCode: String = AppSettings.currencyCode
-    ) -> CashLeakWidgetSnapshot {
+    ) -> CashLeaksWidgetSnapshot {
         let todaySpent = transactions
             .filter { $0.countsTowardTotals && calendar.isDate($0.date, inSameDayAs: now) }
             .reduce(0) { $0 + $1.amount }
         let unsortedCount = transactions.filter(\.needsSorting).count
 
-        return CashLeakWidgetSnapshot(
+        return CashLeaksWidgetSnapshot(
             todaySpent: todaySpent,
             unsortedCount: unsortedCount,
             currencyCode: currencyCode,
@@ -31,7 +31,7 @@ enum WidgetSnapshotUpdater {
     }
 
     static func refresh(from transactions: [Transaction]) {
-        CashLeakWidgetSnapshotStore.save(WidgetSnapshotBuilder.make(from: transactions))
-        WidgetCenter.shared.reloadTimelines(ofKind: "CashLeakTodayWidget")
+        CashLeaksWidgetSnapshotStore.save(WidgetSnapshotBuilder.make(from: transactions))
+        WidgetCenter.shared.reloadTimelines(ofKind: "CashLeaksTodayWidget")
     }
 }

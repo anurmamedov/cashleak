@@ -19,7 +19,7 @@ someone already on the page; it does nothing for discovery.
 ## Name
 
 ```
-CashLeak
+CashLeaks
 ```
 
 8 characters. Pending the L4 trademark check — descriptive marks read clearly and
@@ -90,7 +90,7 @@ cost you.
 Tracking spending is easy and useless. You already know you spend too much. What
 you don't know is which of it you'd take back.
 
-CashLeak asks one question per purchase: worth it, or a leak?
+CashLeaks asks one question per purchase: worth it, or a leak?
 
 One swipe. You decide — never an algorithm, never a category rule. Coffee isn't a
 leak. The fourth coffee this week might be, and only you know that.
@@ -102,7 +102,7 @@ Then it turns what you'd take back into something you actually want:
 
 NO BANK LOGIN
 
-CashLeak never connects to your bank. It can't — there's no code in it that
+CashLeaks never connects to your bank. It can't — there's no code in it that
 could.
 
 Apple Pay taps arrive automatically through a Shortcuts automation you set up
@@ -110,7 +110,7 @@ once. Recurring bills post themselves. Anything else takes five seconds on a
 number pad that opens ready to type.
 
 Your data lives on your phone and syncs through your own iCloud. There is no
-CashLeak server. There is no account to create.
+CashLeaks server. There is no account to create.
 
 
 HONEST ABOUT WHAT IT CATCHES
@@ -149,7 +149,7 @@ ONE PRICE, ONCE
 No subscription. No free tier that nags. No ads, ever.
 
 Most apps in this category charge monthly because they pay an aggregator for
-every bank connection. CashLeak has no aggregator and no server, so it has no
+every bank connection. CashLeaks has no aggregator and no server, so it has no
 per-user cost to pass on.
 
 Seven-day trial, then a single purchase.

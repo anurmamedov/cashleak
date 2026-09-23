@@ -30,7 +30,7 @@ rests on assumptions, particularly the merchant fixtures in
 `cashleakTests/TestSupport.swift`, which are guesses until L3 supplies real
 strings.
 
-The product is called **CashLeak**. Repo, project, bundle ID, and docs all agree.
+The product is called **CashLeaks**. Repo, project, bundle ID, and docs all agree.
 See D-007 — the name isn't cleared for the App Store yet, but it's no longer
 ambiguous internally.
 

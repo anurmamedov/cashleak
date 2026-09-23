@@ -1,6 +1,6 @@
 # Architecture
 
-How CashLeak is put together and why. Product reasoning lives in [plan.md](plan.md);
+How CashLeaks is put together and why. Product reasoning lives in [plan.md](plan.md);
 this file is the technical view.
 
 ---

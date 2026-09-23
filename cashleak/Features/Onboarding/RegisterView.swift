@@ -56,7 +56,7 @@ struct RegisterView: View {
                 } header: {
                     Text("About you")
                 } footer: {
-                    Text("Your name and email are used for your Firebase account and to personalise CashLeak.")
+                    Text("Your name and email are used for your Firebase account and to personalise CashLeaks.")
                 }
 
                 Section {
@@ -73,7 +73,7 @@ struct RegisterView: View {
                 } header: {
                     Text("Account password")
                 } footer: {
-                    Text("Required for signing in. Firebase Authentication securely stores the credential; CashLeak never stores your password.")
+                    Text("Required for signing in. Firebase Authentication securely stores the credential; CashLeaks never stores your password.")
                 }
 
                 if !failures.isEmpty {

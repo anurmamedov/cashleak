@@ -11,7 +11,7 @@ Add to the bottom. Don't edit history — supersede it with a new entry.
 
 **Decided.**
 
-CashLeak never connects to a bank account. Data arrives via Shortcuts automations,
+CashLeaks never connects to a bank account. Data arrives via Shortcuts automations,
 on-device receipt OCR, recurring rules, and manual entry.
 
 Canada has no real open banking, so aggregators screen-scrape; connections break
@@ -126,7 +126,7 @@ feature is something other than what it looks like.
 
 ---
 
-## D-007 · Working name is CashLeak
+## D-007 · Working name is CashLeaks
 
 **Decided internally. App Store name still open.**
 
@@ -135,7 +135,7 @@ the repository, Xcode project, and bundle ID said `cashleak`. That split produce
 documents that contradicted each other and code that matched neither
 consistently.
 
-Settled: **CashLeak** everywhere — repo, bundle ID, module, documents. The cost
+Settled: **CashLeaks** everywhere — repo, bundle ID, module, documents. The cost
 of the ambiguity was higher than the cost of picking.
 
 It's descriptive, which makes it clear to a user and weak as a trademark. That's

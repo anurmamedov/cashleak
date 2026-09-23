@@ -1,16 +1,16 @@
 import SwiftUI
 import WidgetKit
 
-struct CashLeakWidgetEntry: TimelineEntry {
+struct CashLeaksWidgetEntry: TimelineEntry {
     let date: Date
-    let snapshot: CashLeakWidgetSnapshot
+    let snapshot: CashLeaksWidgetSnapshot
 }
 
-struct CashLeakWidgetProvider: TimelineProvider {
-    func placeholder(in context: Context) -> CashLeakWidgetEntry {
-        CashLeakWidgetEntry(
+struct CashLeaksWidgetProvider: TimelineProvider {
+    func placeholder(in context: Context) -> CashLeaksWidgetEntry {
+        CashLeaksWidgetEntry(
             date: .now,
-            snapshot: CashLeakWidgetSnapshot(
+            snapshot: CashLeaksWidgetSnapshot(
                 todaySpent: 48,
                 unsortedCount: 2,
                 currencyCode: "CAD",
@@ -19,13 +19,13 @@ struct CashLeakWidgetProvider: TimelineProvider {
         )
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (CashLeakWidgetEntry) -> Void) {
-        completion(CashLeakWidgetEntry(date: .now, snapshot: CashLeakWidgetSnapshotStore.load()))
+    func getSnapshot(in context: Context, completion: @escaping (CashLeaksWidgetEntry) -> Void) {
+        completion(CashLeaksWidgetEntry(date: .now, snapshot: CashLeaksWidgetSnapshotStore.load()))
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<CashLeakWidgetEntry>) -> Void) {
+    func getTimeline(in context: Context, completion: @escaping (Timeline<CashLeaksWidgetEntry>) -> Void) {
         let now = Date.now
-        let entry = CashLeakWidgetEntry(date: now, snapshot: CashLeakWidgetSnapshotStore.load())
+        let entry = CashLeaksWidgetEntry(date: now, snapshot: CashLeaksWidgetSnapshotStore.load())
         let nextMidnight = Calendar.current.nextDate(
             after: now,
             matching: DateComponents(hour: 0, minute: 0),
@@ -35,9 +35,9 @@ struct CashLeakWidgetProvider: TimelineProvider {
     }
 }
 
-struct CashLeakWidgetView: View {
+struct CashLeaksWidgetView: View {
     @Environment(\.widgetFamily) private var family
-    let entry: CashLeakWidgetEntry
+    let entry: CashLeaksWidgetEntry
 
     var body: some View {
         Group {
@@ -56,7 +56,7 @@ struct CashLeakWidgetView: View {
 
     private var small: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Label("CashLeak", systemImage: "drop.fill")
+            Label("CashLeaks", systemImage: "drop.fill")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(accent)
 
@@ -77,7 +77,7 @@ struct CashLeakWidgetView: View {
     private var medium: some View {
         HStack(spacing: 18) {
             VStack(alignment: .leading, spacing: 5) {
-                Label("CashLeak", systemImage: "drop.fill")
+                Label("CashLeaks", systemImage: "drop.fill")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(accent)
                 Spacer()
@@ -130,12 +130,12 @@ struct CashLeakWidgetView: View {
     }
 }
 
-struct CashLeakTodayWidget: Widget {
-    let kind = "CashLeakTodayWidget"
+struct CashLeaksTodayWidget: Widget {
+    let kind = "CashLeaksTodayWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: CashLeakWidgetProvider()) { entry in
-            CashLeakWidgetView(entry: entry)
+        StaticConfiguration(kind: kind, provider: CashLeaksWidgetProvider()) { entry in
+            CashLeaksWidgetView(entry: entry)
         }
         .configurationDisplayName("Today’s spending")
         .description("See today’s total and what is waiting in Sort.")
@@ -144,18 +144,18 @@ struct CashLeakTodayWidget: Widget {
 }
 
 @main
-struct CashLeakWidgetBundle: WidgetBundle {
+struct CashLeaksWidgetBundle: WidgetBundle {
     var body: some Widget {
-        CashLeakTodayWidget()
+        CashLeaksTodayWidget()
     }
 }
 
 #Preview(as: .systemSmall) {
-    CashLeakTodayWidget()
+    CashLeaksTodayWidget()
 } timeline: {
-    CashLeakWidgetEntry(
+    CashLeaksWidgetEntry(
         date: .now,
-        snapshot: CashLeakWidgetSnapshot(
+        snapshot: CashLeaksWidgetSnapshot(
             todaySpent: 48,
             unsortedCount: 2,
             currencyCode: "CAD",

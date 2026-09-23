@@ -1,4 +1,4 @@
-# CashLeak — build plan
+# CashLeaks — build plan
 
 **Local** is everything on your machine and your phone — 20 steps, ending with an
 app you use daily. **Production** is the 11 steps between "it works for me" and
@@ -395,6 +395,21 @@ Resolved locally rather than with a backend — see D-012.
 # Production
 
 ### P0 · Apple Developer and release foundation — partial
+
+**Name is CashLeaks.** Display names, Swift types and docs all say it. The
+identifiers deliberately still say `cashleak` and are a separate decision:
+
+- `anar.cashleak` — app bundle ID, registered in Firebase as the iOS app and
+  baked into `GoogleService-Info.plist`
+- `anar.cashleak.widget`, `anar.cashleak.refresh` — widget and background task
+- `iCloud.anar.cashleak`, `group.anar.cashleak` — CloudKit container, App Group
+- `com.cashleak.applock` — Keychain service holding the passcode hash
+
+Changing the bundle ID means re-registering the iOS app in Firebase, creating a
+new CloudKit container (existing synced data does not follow), a new App Group,
+and updating the BGTask identifier in both code and Info.plist. Users are never
+shown any of these strings. Do it before the first submission or not at all —
+after release it is a new app, not a rename.
 
 - [x] Apple Developer Program membership approved
 - [x] Public support address: `support@karasandlabs.com`, with

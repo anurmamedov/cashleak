@@ -26,7 +26,7 @@ struct WalletSetupView: View {
                 step(4, "Pick a card", "The one you tap with most. Repeat later for others.")
                 step(5, "Run Immediately", "Turn off Notify When Run, or you'll get two alerts per purchase.")
                 step(6, "Next, then New Blank Automation", "")
-                step(7, "Search 'Log transaction'", "Pick it from CashLeak.")
+                step(7, "Search 'Log transaction'", "Pick it from CashLeaks.")
                 step(8, "Set Amount and Merchant", "Tap each field and choose the matching Shortcut variable.")
             }
 

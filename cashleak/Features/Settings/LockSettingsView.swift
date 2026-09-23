@@ -56,7 +56,7 @@ struct LockSettingsView: View {
                 } else if AppLock.biometryIsAvailable {
                     Text("\(AppLock.biometryName) unlocks the app once a password is set. The password is the fallback.")
                 } else {
-                    Text("CashLeak asks for this when you open the app after backgrounding it.")
+                    Text("CashLeaks asks for this when you open the app after backgrounding it.")
                 }
             }
 

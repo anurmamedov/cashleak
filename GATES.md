@@ -173,7 +173,7 @@ Shortcuts → Automation → **+** → **Transaction** (called **Wallet** before
 iOS 26) → pick a card → Run Immediately, Notify When Run **off** → New Blank
 Automation → **Show Alert** with `Amount` and `Merchant` as content.
 
-Use Show Alert rather than the CashLeak intent for this test — you want to see
+Use Show Alert rather than the CashLeaks intent for this test — you want to see
 the raw values, not what the app made of them.
 
 ### Tap-pay for something small, then record

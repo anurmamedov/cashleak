@@ -94,7 +94,7 @@ enum AppLock {
         do {
             return try await context.evaluatePolicy(
                 .deviceOwnerAuthenticationWithBiometrics,
-                localizedReason: "Open CashLeak"
+                localizedReason: "Open CashLeaks"
             )
         } catch {
             return false
