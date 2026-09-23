@@ -89,11 +89,3 @@ CashLeak is published by Karasand Labs.
 
 Questions, deletion requests or anything else: support@karasandlabs.com.
 If that address ever bounces, use karasandlabs@gmail.com.
-
----
-
-**Note for maintainers:** this file is the single source of the policy. The
-HTML copy that used to live at `docs/privacy.html` was removed so the two
-couldn't drift apart. Whatever URL App Store Connect points at must serve this
-text, and must keep serving it for as long as the app is listed — Apple checks
-that the link resolves.

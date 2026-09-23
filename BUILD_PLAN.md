@@ -404,7 +404,13 @@ Resolved locally rather than with a backend — see D-012.
 - [ ] Enable GitHub Pages (Settings → Pages → `main` / `/docs`) to serve it
 - [x] Privacy policy written — `PRIVACY.md` (single source; the HTML copy was
       removed to stop the two drifting)
-- [ ] Paste its Pages URL into App Store Connect
+- [ ] Paste the GitHub URL into App Store Connect:
+      `https://github.com/anurmamedov/cashleak/blob/main/PRIVACY.md`
+- [ ] **The repo has to be public for that link to resolve.** It was created
+      private; Apple's reviewer would get a 404, and the link must keep
+      working for as long as the app is listed
+- [ ] Keep `PRIVACY.md` the only copy — a second one drifts and then the two
+      disagree about what the app collects
 - [ ] **Fix the App Privacy declaration.** It currently says "Data Not
       Collected", which stopped being true when Firebase landed. Declare
       Email Address and User ID, both linked, neither used for tracking.
