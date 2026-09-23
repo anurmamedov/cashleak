@@ -44,14 +44,19 @@
 
 /* Begin PBXFileReference section */
 		03144FFA302AC54D005BD554 /* cashleakTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cashleakTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A19000012E00000000000001 /* cashleakWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = cashleakWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		5529558E302934E900A062CC /* cashleak.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cashleak.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A19000012E00000000000001 /* cashleakWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = cashleakWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		03144FFB302AC54D005BD554 /* cashleakTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = cashleakTests;
+			sourceTree = "<group>";
+		};
+		55295590302934E900A062CC /* cashleak */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = cashleak;
 			sourceTree = "<group>";
 		};
 		A19000022E00000000000001 /* cashleakWidget */ = {
@@ -64,22 +69,10 @@
 			path = Shared;
 			sourceTree = "<group>";
 		};
-		55295590302934E900A062CC /* cashleak */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = cashleak;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		03144FF7302AC54D005BD554 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A19000052E00000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -91,6 +84,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				F1A000012E00000000000001 /* FirebaseAuth in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A19000052E00000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -121,29 +121,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A19000072E00000000000001 /* cashleakWidget */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A190000A2E00000000000001 /* Build configuration list for PBXNativeTarget "cashleakWidget" */;
-			buildPhases = (
-				A19000042E00000000000001 /* Sources */,
-				A19000052E00000000000001 /* Frameworks */,
-				A19000062E00000000000001 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				A19000022E00000000000001 /* cashleakWidget */,
-				A19000032E00000000000001 /* Shared */,
-			);
-			name = cashleakWidget;
-			packageProductDependencies = (
-			);
-			productName = cashleakWidget;
-			productReference = A19000012E00000000000001 /* cashleakWidget.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 		03144FF9302AC54D005BD554 /* cashleakTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 03145002302AC54D005BD554 /* Build configuration list for PBXNativeTarget "cashleakTests" */;
@@ -193,6 +170,29 @@
 			productReference = 5529558E302934E900A062CC /* cashleak.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A19000072E00000000000001 /* cashleakWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A190000A2E00000000000001 /* Build configuration list for PBXNativeTarget "cashleakWidget" */;
+			buildPhases = (
+				A19000042E00000000000001 /* Sources */,
+				A19000052E00000000000001 /* Frameworks */,
+				A19000062E00000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A19000022E00000000000001 /* cashleakWidget */,
+				A19000032E00000000000001 /* Shared */,
+			);
+			name = cashleakWidget;
+			packageProductDependencies = (
+			);
+			productName = cashleakWidget;
+			productReference = A19000012E00000000000001 /* cashleakWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -203,15 +203,15 @@
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
-					A19000072E00000000000001 = {
-						CreatedOnToolsVersion = 26.1.1;
-					};
 					03144FF9302AC54D005BD554 = {
 						CreatedOnToolsVersion = 26.1.1;
 						TestTargetID = 5529558D302934E900A062CC;
 					};
 					5529558D302934E900A062CC = {
 						CreatedOnToolsVersion = 26.6;
+					};
+					A19000072E00000000000001 = {
+						CreatedOnToolsVersion = 26.1.1;
 					};
 				};
 			};
@@ -240,13 +240,6 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A19000062E00000000000001 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		03144FF8302AC54D005BD554 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -261,16 +254,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXResourcesBuildPhase section */
-
-/* Begin PBXSourcesBuildPhase section */
-		A19000042E00000000000001 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
+		A19000062E00000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
 		03144FF6302AC54D005BD554 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -285,84 +278,36 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A19000042E00000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		A190000D2E00000000000001 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = A19000072E00000000000001 /* cashleakWidget */;
-			targetProxy = A190000E2E00000000000001 /* PBXContainerItemProxy */;
-		};
 		03144FFF302AC54D005BD554 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 5529558D302934E900A062CC /* cashleak */;
 			targetProxy = 03144FFE302AC54D005BD554 /* PBXContainerItemProxy */;
 		};
+		A190000D2E00000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A19000072E00000000000001 /* cashleakWidget */;
+			targetProxy = A190000E2E00000000000001 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		A19000082E00000000000001 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = Config/CashLeakWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Config/CashLeakWidget-Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.karasandlabs.cashleak.widget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		A19000092E00000000000001 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = Config/CashLeakWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Config/CashLeakWidget-Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.karasandlabs.cashleak.widget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 		03145000302AC54D005BD554 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JR623274WG;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -384,6 +329,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JR623274WG;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -523,12 +469,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = cashleak/cashleak.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = F7FN8GPY99;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Config/CashLeak-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Cashleak;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -543,8 +493,8 @@
 					"$(inherited)",
 					"-ObjC",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.karasandlabs.cashleak;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -561,12 +511,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = cashleak/cashleak.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = F7FN8GPY99;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Config/CashLeak-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Cashleak;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -581,8 +535,8 @@
 					"$(inherited)",
 					"-ObjC",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.karasandlabs.cashleak;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -594,18 +548,67 @@
 			};
 			name = Release;
 		};
+		A19000082E00000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Config/CashLeakWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JR623274WG;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/CashLeakWidget-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.karasandlabs.cashleak.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A19000092E00000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Config/CashLeakWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JR623274WG;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/CashLeakWidget-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.karasandlabs.cashleak.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A190000A2E00000000000001 /* Build configuration list for PBXNativeTarget "cashleakWidget" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A19000082E00000000000001 /* Debug */,
-				A19000092E00000000000001 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		03145002302AC54D005BD554 /* Build configuration list for PBXNativeTarget "cashleakTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -629,6 +632,15 @@
 			buildConfigurations = (
 				5529559C302934EA00A062CC /* Debug */,
 				5529559D302934EA00A062CC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A190000A2E00000000000001 /* Build configuration list for PBXNativeTarget "cashleakWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A19000082E00000000000001 /* Debug */,
+				A19000092E00000000000001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
