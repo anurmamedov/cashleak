@@ -406,9 +406,9 @@ Resolved locally rather than with a backend — see D-012.
       removed to stop the two drifting)
 - [ ] Paste the GitHub URL into App Store Connect:
       `https://github.com/anurmamedov/cashleak/blob/main/PRIVACY.md`
-- [ ] **The repo has to be public for that link to resolve.** It was created
-      private; Apple's reviewer would get a 404, and the link must keep
-      working for as long as the app is listed
+- [x] Repo is public, so the link resolves for Apple's reviewer. It has to
+      keep resolving for as long as the app is listed — making the repo
+      private later would silently break the store listing
 - [ ] Keep `PRIVACY.md` the only copy — a second one drifts and then the two
       disagree about what the app collects
 - [ ] **Fix the App Privacy declaration.** It currently says "Data Not

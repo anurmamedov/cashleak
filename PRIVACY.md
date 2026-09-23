@@ -85,7 +85,8 @@ change in the app before it takes effect.
 
 ## Contact
 
-CashLeak is published by Karasand Labs.
+CashLeak is published by Karasand Software Inc., trading as Karasand Labs,
+of Toronto, Ontario, Canada.
 
 Questions, deletion requests or anything else: support@karasandlabs.com.
 If that address ever bounces, use karasandlabs@gmail.com.
