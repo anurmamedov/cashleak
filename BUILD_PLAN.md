@@ -150,7 +150,10 @@ Outstanding — needs an Apple Developer account, not code:
 - [ ] **A free Apple ID can't do any of this.** CloudKit, Sign in with Apple,
       Push and App Groups all require the paid Program. Until then the app is
       Simulator-only and sync stays local.
-- [ ] `aps-environment` is `development`; distribution needs `production` (P4)
+- [x] `aps-environment` split per configuration — Debug keeps `development`,
+      Release uses `cashleak-Release.entitlements` with `production`. An App
+      Store build carrying development push entitlements fails at "Preparing
+      build for App Store Connect".
 
 ### L6 · Test target and fixtures — done
 
