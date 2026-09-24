@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>anar.cashleak</string>
+	<string>com.karasandlabs.cashleak</string>
 	<key>PROJECT_ID</key>
 	<string>cashleak-55fe5</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:837835010528:ios:5c64d94d2bf9cfedd83b85</string>
+	<string>1:837835010528:ios:ffe83f5e4ba0550bd83b85</string>
 </dict>
 </plist>
