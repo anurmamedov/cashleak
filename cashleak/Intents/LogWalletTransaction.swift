@@ -25,8 +25,11 @@ struct LogWalletTransaction: AppIntent {
 
     static var title: LocalizedStringResource = "Log transaction"
 
+    // ITMS-90626 rejects an App Intent description containing "Apple", so this
+    // says "card tap" instead of "Apple Pay transaction". The wording is the
+    // only thing that changed — this is still the Wallet capture path.
     static var description = IntentDescription(
-        "Records an Apple Pay transaction in CashLeak. It arrives unconfirmed, ready to sort.",
+        "Records a card tap in CashLeak. It arrives unconfirmed, ready to sort.",
         categoryName: "Capture"
     )
 
