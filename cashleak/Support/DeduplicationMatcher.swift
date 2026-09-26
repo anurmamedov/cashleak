@@ -17,7 +17,24 @@ import Foundation
 enum DeduplicationMatcher {
 
     /// Issuers settle slowly. Anything tighter misses real duplicates.
+    ///
+    /// This is the **cross-source** window: the Wallet trigger fires at the
+    /// terminal, the bank alert for the same purchase can arrive days later.
     static let window: TimeInterval = 72 * 60 * 60
+
+    /// The **same-source** window, and much tighter on purpose.
+    ///
+    /// Two Wallet captures of the same amount at the same merchant three hours
+    /// apart are not one purchase seen twice. They are two coffees. L3 showed
+    /// why this matters now and didn't before: Wallet delivers clean chain names
+    /// — `Tim Hortons`, `No Frills` — so a second visit matches the first on
+    /// merchant exactly, and small repeat purchases at a chain land on the same
+    /// amount constantly. Under the 72-hour rule the second coffee was silently
+    /// merged away and the user's total was quietly wrong.
+    ///
+    /// A source genuinely firing twice for one purchase does it within seconds.
+    /// Five minutes is generous and still nowhere near a second visit.
+    static let sameSourceWindow: TimeInterval = 5 * 60
 
     /// Floating point means amounts are never exactly equal — compare in cents.
     static let amountTolerance = 0.005
@@ -26,10 +43,15 @@ enum DeduplicationMatcher {
     ///
     /// Superseded records are skipped: once something is merged away it can't
     /// pull further records into the same collision.
+    /// - Parameter source: where the incoming record came from. Passing it
+    ///   narrows the window to `sameSourceWindow` for candidates from the same
+    ///   source, which is what stops two genuine visits to the same chain being
+    ///   merged. `nil` applies the full window to everything.
     static func matches(
         amount: Double,
         merchant: String,
         date: Date,
+        source: TransactionSource? = nil,
         among existing: [Transaction]
     ) -> [Transaction] {
 
@@ -39,7 +61,11 @@ enum DeduplicationMatcher {
             .filter { candidate in
                 guard !candidate.isSuperseded else { return false }
                 guard abs(candidate.amount - amount) < amountTolerance else { return false }
-                guard abs(candidate.date.timeIntervalSince(date)) <= window else { return false }
+
+                let sameSource = source != nil && candidate.source == source
+                let allowed = sameSource ? sameSourceWindow : window
+                guard abs(candidate.date.timeIntervalSince(date)) <= allowed else { return false }
+
                 return MerchantNormalizer.isFuzzyMatch(candidate.normalizedMerchant, normalized)
             }
             .sorted { lhs, rhs in
@@ -51,9 +77,12 @@ enum DeduplicationMatcher {
         amount: Double,
         merchant: String,
         date: Date,
+        source: TransactionSource? = nil,
         among existing: [Transaction]
     ) -> Transaction? {
-        matches(amount: amount, merchant: merchant, date: date, among: existing).first
+        matches(
+            amount: amount, merchant: merchant, date: date, source: source, among: existing
+        ).first
     }
 
     /// How much a record is worth keeping when two describe the same purchase.

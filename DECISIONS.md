@@ -515,3 +515,51 @@ the project.
 
 **Reverse if:** StoreKit lands before submission, in which case v1 ships on
 D-004's original terms.
+
+---
+
+## D-019 · Wallet delivers clean merchant names, and two things follow
+
+**Decided**, on evidence from the Wallet app's own transaction list.
+
+Wallet does not pass the payment processor's descriptor through. It resolves the
+merchant against Maps first and delivers a display name: `Tim Hortons`,
+`No Frills`, `Walmart Supercentre`. Apple states this in the transaction detail
+screen — *"Wallet uses Maps to provide merchant name, category, and location."*
+
+The project had assumed the opposite. `MerchantNormalizer` was built to strip
+`SQ *`, store numbers and `TORONTO ON`, and every merchant fixture was written
+in that shape. On the Apple Pay path there is nothing to strip.
+
+**1. Category suggestion becomes possible, so it ships.**
+
+`MerchantCategoryHints` maps a clean merchant name to one of the default
+categories. Sorting is the one thing the app asks of people daily, and choosing
+Coffee for the same shop for the fortieth time is the friction that makes them
+stop. Precedence: the user's own history for that merchant, then the table, then
+nothing.
+
+This does not reopen D-002. The table suggests a **category** and never a
+verdict, never `isConfirmed`. Where money went is a filing question; whether it
+was worth spending is the product, and remains the user's every time.
+`MerchantMemory` already established this line — the table sits behind it.
+
+**2. Dedup's flat 72-hour window was wrong, and was silently losing money.**
+
+Clean chain names match exactly, and small repeat purchases at a chain land on
+the same amount constantly. Two $4.19 coffees a day apart were being merged into
+one. Nothing on screen looked wrong; the monthly total was simply short.
+
+The window is now **5 minutes within a source, 72 hours across sources**. One
+source firing twice for one purchase happens in seconds. A Wallet tap and its
+bank alert are still days apart, which is what the 72 hours was always for.
+
+**What is still unknown.** Wallet *has* a category, a status and a card — the
+detail screen shows all three. Whether the Shortcuts trigger publishes them is
+unanswered, and the `details` parameter on `LogWalletTransaction` exists to
+answer it. Wallet displaying a field and Shortcuts exporting it are different
+questions; assuming otherwise produced the three findings before this one.
+
+**Reverse if:** the trigger turns out to publish a merchant category directly,
+in which case the table becomes a fallback for the paths that have no category —
+receipts, bank alerts, manual entry — rather than the primary source.

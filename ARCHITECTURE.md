@@ -65,7 +65,7 @@ Shared code moves up only once a second feature actually needs it — not in
 anticipation.
 
 `Support/` wasn't in the original plan; it emerged from that rule. It now holds
-`LeakRamp`, `MerchantNormalizer`, `DeduplicationMatcher`, `TransactionIngest`,
+`LeakRamp`, `MerchantNormalizer`, `MerchantCategoryHints`, `DeduplicationMatcher`, `TransactionIngest`,
 `SpendingSummary`, `AnalysisAggregates`, `RecurringPoster`, `MerchantMemory`,
 `BankAlertParser`, `CSVExport`, `AppLock`, `AppSettings`, `DailyReminder` and
 `BackgroundRefresh` — each promoted when a second feature reached for it.
@@ -195,12 +195,31 @@ deep-links into the add sheet.
 Required from day one, not deferred. A single phone tap can fire the Wallet
 trigger *and* a bank alert, producing two records for one purchase.
 
-Match key: **`amount` exact** + **`date` within 72h** + **normalized fuzzy
-merchant match**.
+Match key: **`amount` exact** + **`date` within the window** + **normalized
+fuzzy merchant match**.
 
-The 72-hour window accommodates issuer settlement delay. Merchant normalization
-has to strip the noise real feeds carry — store numbers, city suffixes, `SQ *`
-and similar processor prefixes — before comparing.
+The window depends on whether the two records came from the same source:
+
+| | Window | Why |
+|---|---|---|
+| Different sources | 72 hours | Issuer settlement delay — the Wallet trigger fires at the terminal, the bank alert posts days later |
+| Same source | 5 minutes | One source firing twice for one purchase happens in seconds. Beyond that it is a second purchase |
+
+The same-source rule is not a refinement, it is a fix (D-019). Wallet delivers
+Maps-resolved chain names, so a second visit matches the first on merchant
+exactly, and small repeat purchases land on the same amount constantly. Under a
+flat 72-hour window the second coffee was merged away and the total was quietly
+short.
+
+Merchant normalization strips the noise the **noisy** feeds carry — store
+numbers, city suffixes, `SQ *` and similar processor prefixes. Apple Pay is not
+one of those feeds: Wallet resolves the merchant against Maps before handing it
+over, so a clean name arrives and normalization is close to a no-op. The
+stripping rules exist for receipts, bank alerts and manual entry.
+
+That clean name is also what makes `MerchantCategoryHints` viable — a category
+suggestion keyed on merchant, applied at ingest behind the user's own history.
+Category only. Never a verdict (D-002, D-019).
 
 When two records match, keep the richer one and mark the other superseded rather
 than deleting, so a wrong merge stays recoverable.

@@ -99,6 +99,85 @@ final class DeduplicationTests: XCTestCase {
         XCTAssertEqual(try active().count, 2)
     }
 
+    // MARK: Same source, same day — the L3 regression
+
+    /// Two coffees on consecutive mornings.
+    ///
+    /// This was silently broken and L3 is what exposed it. Wallet delivers
+    /// Maps-resolved chain names, so the second `Tim Hortons` matches the first
+    /// on merchant *exactly*, and a repeat purchase at a chain lands on the same
+    /// amount constantly. Under a flat 72-hour rule the second coffee was merged
+    /// away and the user's monthly total was quietly short.
+    ///
+    /// One source firing twice for one purchase happens in seconds, not hours.
+    func testTwoVisitsToTheSameChainStaySeparate() throws {
+        let tuesday = TestSupport.date(2026, 9, 22, hour: 8, minute: 15)
+        let wednesday = TestSupport.date(2026, 9, 23, hour: 8, minute: 20)
+
+        TransactionIngest.ingest(
+            amount: 4.19, merchant: "Tim Hortons", date: tuesday, source: .applePay, into: context
+        )
+        let second = TransactionIngest.ingest(
+            amount: 4.19, merchant: "Tim Hortons", date: wednesday, source: .applePay, into: context
+        )
+
+        XCTAssertEqual(second, .inserted)
+        XCTAssertEqual(try active().count, 2)
+    }
+
+    /// Same morning, three hours apart. Still two purchases — a coffee on the
+    /// way in and another after lunch is an ordinary day, not a double-fire.
+    func testSameSourceHoursApartStaysSeparate() throws {
+        let morning = TestSupport.date(2026, 9, 22, hour: 8)
+
+        TransactionIngest.ingest(
+            amount: 4.19, merchant: "Tim Hortons", date: morning, source: .applePay, into: context
+        )
+        let second = TransactionIngest.ingest(
+            amount: 4.19, merchant: "Tim Hortons",
+            date: morning.addingTimeInterval(3 * 3600), source: .applePay, into: context
+        )
+
+        XCTAssertEqual(second, .inserted)
+        XCTAssertEqual(try active().count, 2)
+    }
+
+    /// The case the tightening must not break: one automation genuinely firing
+    /// twice. That happens within seconds, and it is still one purchase.
+    func testSameSourceSecondsApartIsStillADuplicate() throws {
+        let tap = TestSupport.date(2026, 9, 22, hour: 8)
+
+        TransactionIngest.ingest(
+            amount: 4.19, merchant: "Tim Hortons", date: tap, source: .applePay, into: context
+        )
+        let second = TransactionIngest.ingest(
+            amount: 4.19, merchant: "Tim Hortons",
+            date: tap.addingTimeInterval(20), source: .applePay, into: context
+        )
+
+        XCTAssertEqual(second, .duplicate)
+        XCTAssertEqual(try active().count, 1)
+    }
+
+    /// The tightening is scoped to matching sources. A Wallet tap and a bank
+    /// alert a day apart are still one purchase — that's the whole reason the
+    /// 72-hour window exists, and narrowing it for everything would have traded
+    /// one silent error for the opposite one.
+    func testCrossSourceKeepsTheFullWindow() throws {
+        let tap = TestSupport.date(2026, 9, 22, hour: 8)
+
+        TransactionIngest.ingest(
+            amount: 4.19, merchant: "Tim Hortons", date: tap, source: .applePay, into: context
+        )
+        let second = TransactionIngest.ingest(
+            amount: 4.19, merchant: "Tim Hortons",
+            date: tap.addingTimeInterval(30 * 3600), source: .bankAlert, into: context
+        )
+
+        XCTAssertEqual(second, .duplicate)
+        XCTAssertEqual(try active().count, 1)
+    }
+
     func testDifferentAmountsNeverMatch() throws {
         let date = TestSupport.date(2026, 8, 4)
         TransactionIngest.ingest(amount: 6.75, merchant: "Blue Bottle", date: date, source: .applePay, into: context)

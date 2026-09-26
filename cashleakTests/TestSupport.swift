@@ -68,12 +68,43 @@ enum TestSupport {
         )
     }
 
-    /// Real merchant strings as capture sources tend to deliver them.
+    /// Merchant strings as **Wallet** delivers them.
     ///
-    /// These are placeholders until L3 runs. **Replace them with strings your
-    /// own card actually produces** — the dedup matcher is only as good as the
-    /// fixtures it was tuned against, and every bank formats differently.
-    static let merchantFixtures: [(raw: String, expected: String)] = [
+    /// Observed during L3, and not what this file used to assume. Wallet does
+    /// not pass the processor string through — it resolves the merchant against
+    /// Maps and hands over a clean display name. Apple says so in the
+    /// transaction detail screen: *Wallet uses Maps to provide merchant name,
+    /// category, and location.*
+    ///
+    /// So the normalizer's job on this path is almost nothing, and these
+    /// fixtures pin that down: a clean name must survive intact. The risk is no
+    /// longer under-stripping, it's a rule mangling a name that was already
+    /// correct.
+    ///
+    /// Still worth capturing your own — chains vary by region and these are one
+    /// Toronto card's worth.
+    static let walletMerchantFixtures: [(raw: String, expected: String)] = [
+        ("Tim Hortons",          "tim hortons"),
+        ("No Frills",            "no frills"),
+        ("Sobeys",               "sobeys"),
+        ("Canadian Tire",        "canadian tire"),
+        ("Walmart Supercentre",  "walmart supercentre"),
+        ("Hatsu Sushi",          "hatsu sushi"),
+        ("Apple",                "apple"),
+        ("Solmaz",               "solmaz"),
+    ]
+
+    /// Processor strings, as the noisier paths deliver them.
+    ///
+    /// These are **not** dead. Receipt scanning reads whatever is printed, bank
+    /// alerts quote the processor descriptor, and manual entry is whatever the
+    /// user types. The prefix and store-number stripping exists for these, and
+    /// removing it because Wallet doesn't need it would break the other three
+    /// capture paths.
+    ///
+    /// Unlike the Wallet set, these remain guesses until L2 supplies real bank
+    /// alert text.
+    static let processorMerchantFixtures: [(raw: String, expected: String)] = [
         ("SQ *BLUE BOTTLE COFFEE",   "blue bottle coffee"),
         ("BLUE BOTTLE #4412",        "blue bottle"),
         ("BLUE BOTTLE TORONTO ON",   "blue bottle toronto"),
@@ -85,4 +116,8 @@ enum TestSupport {
         ("NETFLIX.COM",              "netflix com"),
         ("PRESTO/METROLINX",         "presto metrolinx"),
     ]
+
+    /// Both sets, for tests that don't care where a string came from.
+    static let merchantFixtures: [(raw: String, expected: String)] =
+        walletMerchantFixtures + processorMerchantFixtures
 }

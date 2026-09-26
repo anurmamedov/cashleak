@@ -76,6 +76,7 @@ enum TransactionIngest {
             amount: amount,
             merchant: cleanMerchant,
             date: date,
+            source: source,
             among: nearby
         ) {
             // Both records are kept. The weaker one is flagged, never deleted,
@@ -104,8 +105,51 @@ enum TransactionIngest {
             return .duplicate
         }
 
+        applySuggestedCategory(to: incoming, in: context)
+
         context.insert(incoming)
         try? context.save()
         return .inserted
+    }
+
+    /// Fills in a category so the Sort queue starts from a guess rather than a
+    /// blank.
+    ///
+    /// Sorting is the one thing the app asks of people every day, and picking
+    /// the same category for the same coffee shop forty times is the friction
+    /// that makes them stop. Wallet delivers clean Maps-resolved merchant names
+    /// (L3), which is what makes a guess possible at all.
+    ///
+    /// The category only. **Never a verdict, never `isConfirmed`** — a guess
+    /// about where money went is a filing convenience; a guess about whether it
+    /// was worth spending is the product making the user's judgement for them.
+    /// See D-002 and the verdict rule in CLAUDE.md.
+    ///
+    /// The user's own history outranks the table, so one correction sticks.
+    @MainActor
+    private static func applySuggestedCategory(
+        to transaction: Transaction,
+        in context: ModelContext
+    ) {
+        guard transaction.category == nil, !transaction.merchant.isEmpty else { return }
+
+        if let remembered = MerchantMemory.lastCategory(
+            forMerchant: transaction.merchant, in: context
+        ) {
+            transaction.category = remembered
+            return
+        }
+
+        guard let name = MerchantCategoryHints.categoryName(forMerchant: transaction.merchant)
+        else { return }
+
+        // Match the user's own categories by name. A renamed or deleted
+        // category simply yields no suggestion — the table never creates one,
+        // because inventing categories nobody asked for is how a tidy list
+        // turns into a mess.
+        let descriptor = FetchDescriptor<Category>(
+            predicate: #Predicate { $0.name == name }
+        )
+        transaction.category = (try? context.fetch(descriptor))?.first
     }
 }

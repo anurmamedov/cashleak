@@ -187,6 +187,37 @@ the raw values, not what the app made of them.
 | Fired for a watch payment? | |
 | Fired for in-app Apple Pay? | |
 
+### Observed 2026-09-26 — Wallet's own transaction list
+
+From the Wallet app on a CIBC Dividend Visa. **This is what Wallet displays, not
+proof of what the Shortcuts trigger publishes** — the two are separate questions
+and conflating them is what caused the last three findings. Still, it settles
+the merchant format.
+
+| | Finding |
+|---|---|
+| Merchant format | **Clean, Maps-resolved.** `Tim Hortons`, `No Frills`, `Walmart Supercentre`, `Hatsu Sushi` — not processor descriptors |
+| Why | Wallet states it: *"Wallet uses Maps to provide merchant name, category, and location"* |
+| Category | **Exists in Wallet.** Named in that sentence, and the row icons are category-derived — cart, fork, bag |
+| Status | `Status: Approved` on the detail screen, so declines are distinguishable |
+| Card | Shown as `Dividend Visa` |
+| Timestamp | Full date and time — `2026-09-19, 4:32 PM` |
+| Non-Apple-Pay rows | The `Apple` row has no "Apple Pay" subtitle. Wallet's feed is wider than what the automation fires on |
+
+**Acted on already** — the merchant format is observed, not inferred:
+
+- `MerchantCategoryHints` suggests a category from the clean name, because a
+  clean name is matchable and `SQ *BLUE BOTTLE #4412` is not. Category only,
+  never a verdict.
+- Dedup's window is now 5 minutes within a source, 72 hours across sources.
+  Clean chain names made repeat purchases match exactly, so two $4.19 coffees a
+  day apart were being merged.
+- `TestSupport` splits `walletMerchantFixtures` from `processorMerchantFixtures`.
+
+**Still unanswered, and only the Details capture answers it:** whether the
+trigger publishes the category, the status and the card, or only Amount and
+Merchant.
+
 ### What else is in the payload?
 
 Apple documents none of this, so the only way to know is to look. When you reach
