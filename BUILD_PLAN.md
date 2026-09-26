@@ -82,7 +82,24 @@ The sample alerts are **invented, not collected**. They're modelled on how banks
 tend to phrase things, which isn't the same as being right. Real alerts replace
 them when L2 runs — same discipline as the Wallet merchant fixtures.
 
-### L3 · Wallet trigger end to end — `gate` · not started
+### L3 · Wallet trigger end to end — `gate` · in progress
+
+First real-device attempt, 26 Sep: six Apple Pay purchases on a CIBC Costco
+Mastercard, **zero captured**. Cause was not a bug — no Shortcuts automation
+had been built, so `LogWalletTransaction.perform()` never ran. The capture log
+showing 0 is what proved it: that counter increments before anything
+interprets the payload.
+
+Findings so far, from Wallet rather than the trigger:
+
+- Wallet displays merchant names already cleaned — `Starbucks Coffee #23`,
+  `Walmart Supercentre`, `Osmow's Shawarma` — and states it sources them from
+  Maps. If the trigger delivers these rather than raw card descriptors, the
+  fixtures in `TestSupport.swift` are wrong in the opposite direction from the
+  assumption: `MerchantNormalizer` is built to strip noise that may never
+  arrive.
+- Setup is the whole failure mode. `WalletSetupView` now shows live capture
+  status so a missed step surfaces in seconds rather than days.
 
 Needs a card and a terminal. Not runnable in the Simulator — no Wallet, no NFC,
 no Shortcuts.
