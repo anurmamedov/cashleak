@@ -136,7 +136,9 @@ struct LogWalletTransaction: AppIntent {
         // the user is still at the till, so it states the outcome and stops.
         switch result {
         case .inserted:
-            return .result(dialog: "Logged \(amount.currencyExact)")
+            // The parsed value, not the raw text — `amount` is now whatever
+            // Wallet sent, symbol and all.
+            return .result(dialog: "Logged \(parsedAmount.currencyExact)")
         case .duplicate:
             return .result(dialog: "Already had that one")
         case .rejected:
