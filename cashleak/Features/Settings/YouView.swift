@@ -18,6 +18,9 @@ struct YouView: View {
     @Query private var rules: [RecurringRule]
     @Query private var profiles: [UserProfile]
 
+    @Query(sort: \CaptureLogEntry.receivedAt, order: .reverse)
+    private var captures: [CaptureLogEntry]
+
     @State private var isAddingCard = false
     @State private var newCardLabel = ""
     @State private var exportURL: URL?
@@ -120,8 +123,51 @@ struct YouView: View {
 
     // MARK: Capture
 
+    /// The setup entry point, and the most important row on this screen.
+    ///
+    /// It used to be reachable only by tapping a card — which meant someone who
+    /// had added no cards had **no route to it at all**, and the one step that
+    /// decides whether the product works was hidden behind a label for a card
+    /// the app can't read anyway.
+    ///
+    /// It also states the truth about itself. Either something has been captured
+    /// or it hasn't, and that's read from the capture log rather than from a
+    /// "configured" flag someone ticked hopefully.
+    private var walletSetupRow: some View {
+        NavigationLink {
+            WalletSetupView()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: lastCapture == nil ? "bolt.badge.clock" : "bolt.fill")
+                    .font(.title3)
+                    .foregroundStyle(lastCapture == nil ? Color(hex: "993C1D") : Color(hex: "1D9E75"))
+                    .frame(width: 28)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Apple Pay capture")
+                        .font(.subheadline.weight(.medium))
+                    Text(walletStatusText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    private var lastCapture: CaptureLogEntry? { captures.first }
+
+    private var walletStatusText: String {
+        guard let last = lastCapture else {
+            return "Not set up — about a minute in Shortcuts"
+        }
+        return "Working · last capture \(last.receivedAt.formatted(.relative(presentation: .named)))"
+    }
+
     private var captureSection: some View {
-        Section("Capture") {
+        Section {
+            walletSetupRow
+
             ForEach(cards) { card in
                 NavigationLink {
                     WalletSetupView()
@@ -179,6 +225,14 @@ struct YouView: View {
             } label: {
                 Label("Capture log", systemImage: "list.bullet.rectangle")
             }
+        } header: {
+            Text("Capture")
+        } footer: {
+            // Corrects the assumption this section was built on. The automation
+            // is per *trigger*, not per card — one covers everything in Wallet,
+            // and telling people to repeat the setup for each card is asking for
+            // work that achieves nothing (L3).
+            Text("One automation covers every card in Wallet. Cards listed here are your own labels — CashLeak can't read Wallet, so adding one changes nothing about what's captured.")
         }
     }
 
