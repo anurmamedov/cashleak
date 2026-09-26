@@ -169,8 +169,8 @@ The foundation of the product. Verify before designing further on top of it.
 
 ### Setup
 
-Shortcuts → Automation → **+** → **Transaction** (called **Wallet** before
-iOS 26) → pick a card → Run Immediately, Notify When Run **off** → New Blank
+Shortcuts → Automation → **+** → **Wallet** (called **Transaction** on iOS 25
+and earlier) → pick a card → Run Immediately, Notify When Run **off** → New Blank
 Automation → **Show Alert** with `Amount` and `Merchant` as content.
 
 Use Show Alert rather than the CashLeak intent for this test — you want to see

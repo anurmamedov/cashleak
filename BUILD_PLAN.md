@@ -100,6 +100,10 @@ Findings so far, from Wallet rather than the trigger:
   arrive.
 - Setup is the whole failure mode. `WalletSetupView` now shows live capture
   status so a missed step surfaces in seconds rather than days.
+- **The trigger's name was wrong in our own instructions.** Apple renamed it
+  from Transaction to **Wallet** in iOS 26; the app and GATES.md both said the
+  opposite, so anyone on current iOS was told to hunt for a name that no longer
+  exists. This alone would have made setup fail for every user on iOS 26.
 
 Needs a card and a terminal. Not runnable in the Simulator — no Wallet, no NFC,
 no Shortcuts.
