@@ -98,7 +98,7 @@ struct WalletSetupView: View {
         Section {
             step(1, "Automation tab, then +", "Bottom of the Shortcuts screen.")
             step(2, "Choose Wallet", "On iOS 25 and earlier it is called Transaction. Scroll — it is a long list.")
-            step(3, "Pick your card", "Choose Any Card if it's offered. Otherwise repeat this once per card.")
+            step(3, "Select every card", "Tick all of them — one automation covers everything in Wallet.")
             step(4, "Run Immediately", "And turn Notify When Run off, or every purchase alerts you twice.")
             step(5, "Next, then New Blank Automation", "")
             step(6, "Search 'Log transaction'", "Pick the one from CashLeak.")
