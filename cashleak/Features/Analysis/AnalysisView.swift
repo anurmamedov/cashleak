@@ -45,6 +45,7 @@ struct AnalysisView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
                     rangePicker
+                        .scrollToTopAnchor()
 
                     if hasData {
                         trendSection
@@ -60,6 +61,7 @@ struct AnalysisView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 32)
             }
+            .scrollsToTopOnTabChange()
             .navigationTitle("Analysis")
             .navigationDestination(for: AnalysisAggregates.MerchantTotal.self) { merchant in
                 MerchantDetailView(merchantName: merchant.merchant, range: range)

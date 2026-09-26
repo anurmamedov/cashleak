@@ -83,8 +83,10 @@ struct SortQueueView: View {
             } footer: {
                 Text("Swipe right for worth it, left for leak. Tap to edit.")
             }
+            .scrollToTopAnchor()
         }
         .listStyle(.plain)
+        .scrollsToTopOnTabChange()
     }
 
     /// The empty state is the reward for clearing the queue, not a blank slate.

@@ -26,6 +26,7 @@ struct OverviewView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     leakCard
+                        .scrollToTopAnchor()
                     if let comparison = weekComparison { weekBanner(comparison) }
                     statsRow
                     if !leaksByCategory.isEmpty { leakBreakdown }
@@ -34,6 +35,7 @@ struct OverviewView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 32)
             }
+            .scrollsToTopOnTabChange()
             .navigationTitle(Date.now.formatted(.dateTime.month(.wide)))
             .navigationBarTitleDisplayMode(.inline)
         }

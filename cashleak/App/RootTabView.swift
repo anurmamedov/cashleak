@@ -16,6 +16,10 @@ struct RootTabView: View {
     @State private var selection: Tab = .overview
     @State private var isAddPresented = false
 
+    /// Bumped on every tab bar interaction so each tab returns to the top.
+    /// See `ScrollToTop`.
+    @State private var scrollToTopSignal = 0
+
     enum Tab: Hashable {
         case overview, sort, add, analysis, you
     }
@@ -50,6 +54,7 @@ struct RootTabView: View {
                 .tabItem { Label("You", systemImage: "person") }
                 .tag(Tab.you)
         }
+        .environment(\.scrollToTopSignal, scrollToTopSignal)
         .sheet(isPresented: $isAddPresented) {
             AddTransactionSheet()
         }
@@ -75,6 +80,11 @@ struct RootTabView: View {
                     isAddPresented = true
                 } else {
                     selection = newValue
+                    // Outside the branch above deliberately: this fires when
+                    // the current tab is tapped again as well as on a switch,
+                    // which is what iOS does everywhere else. Add is excluded —
+                    // it opens a sheet and isn't a destination.
+                    scrollToTopSignal += 1
                 }
             }
         )

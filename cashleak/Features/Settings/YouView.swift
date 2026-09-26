@@ -38,6 +38,7 @@ struct YouView: View {
         NavigationStack {
             List {
                 profileSection
+                    .scrollToTopAnchor()
                 captureSection
                 coverageNote
                 preferencesSection
@@ -46,6 +47,7 @@ struct YouView: View {
                 debugSection
                 #endif
             }
+            .scrollsToTopOnTabChange()
             .navigationTitle("You")
             .sheet(item: $exportURL) { url in
                 ShareSheet(items: [url])
