@@ -36,8 +36,17 @@ struct LogWalletTransaction: AppIntent {
     /// Never bring the UI forward — this runs mid-checkout.
     static var openAppWhenRun: Bool = false
 
+    /// Text, not `Double`, and that is deliberate.
+    ///
+    /// The Wallet trigger hands `Amount` over as text — `$7.29`, currency
+    /// symbol included — and Shortcuts will not coerce that to a number. A
+    /// `Double` parameter makes every single capture fail with "couldn't
+    /// convert from Text to Number", which is exactly what happened on the
+    /// first real device: automation correct, trigger firing, intent called,
+    /// nothing captured. Taking text and parsing it here is the only way the
+    /// value survives the handoff.
     @Parameter(title: "Amount")
-    var amount: Double
+    var amount: String
 
     @Parameter(title: "Merchant")
     var merchant: String?
@@ -51,12 +60,54 @@ struct LogWalletTransaction: AppIntent {
         Summary("Log \(\.$amount) at \(\.$merchant)")
     }
 
+    /// Pulls a number out of whatever the trigger sent.
+    ///
+    /// Handles the shapes seen in the wild and the plausible neighbours:
+    /// `$7.29`, `7.29`, `CA$7.29`, `US$1,234.56`, `7,29` (comma decimal),
+    /// `-7.29`, and stray whitespace or non-breaking spaces. Returns 0 when
+    /// there is no number at all, which `TransactionIngest` already rejects as
+    /// a non-positive amount rather than storing nonsense.
+    static func parseAmount(_ raw: String) -> Double {
+        let kept = raw.filter { $0.isNumber || $0 == "." || $0 == "," || $0 == "-" }
+        guard !kept.isEmpty else { return 0 }
+
+        let lastDot = kept.lastIndex(of: ".")
+        let lastComma = kept.lastIndex(of: ",")
+
+        let normalized: String
+        switch (lastDot, lastComma) {
+        case let (dot?, comma?):
+            // Both present: the rightmost is the decimal separator and the
+            // other is a thousands separator. "1,234.56" and "1.234,56".
+            if dot > comma {
+                normalized = kept.replacingOccurrences(of: ",", with: "")
+            } else {
+                normalized = kept
+                    .replacingOccurrences(of: ".", with: "")
+                    .replacingOccurrences(of: ",", with: ".")
+            }
+        case (nil, .some):
+            // A lone comma is a decimal separator in most of the world, but a
+            // thousands separator in "1,234". Two digits after it means cents.
+            let tail = kept.split(separator: ",").last.map(String.init) ?? ""
+            normalized = tail.count == 2
+                ? kept.replacingOccurrences(of: ",", with: ".")
+                : kept.replacingOccurrences(of: ",", with: "")
+        default:
+            normalized = kept
+        }
+
+        return Double(normalized) ?? 0
+    }
+
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let context = AppModelContainer.shared.mainContext
 
+        let parsedAmount = Self.parseAmount(amount)
+
         let result = TransactionIngest.ingest(
-            amount: amount,
+            amount: parsedAmount,
             merchant: merchant,
             date: date ?? .now,
             source: .applePay,
@@ -67,7 +118,7 @@ struct LogWalletTransaction: AppIntent {
         // This is L3's data collection — see `CaptureLogEntry`.
         CaptureLog.record(
             rawMerchant: merchant,
-            amount: amount,
+            amount: parsedAmount,
             source: .applePay,
             outcome: {
                 switch result {

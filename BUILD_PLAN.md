@@ -100,6 +100,14 @@ Findings so far, from Wallet rather than the trigger:
   arrive.
 - Setup is the whole failure mode. `WalletSetupView` now shows live capture
   status so a missed step surfaces in seconds rather than days.
+- **The Wallet trigger sends Amount as text, and the intent demanded a
+  number.** `@Parameter var amount: Double` meant Shortcuts failed with
+  "couldn't convert from Text to Number" on every single capture — automation
+  correct, trigger firing, intent invoked, nothing stored. Now takes `String`
+  and parses `$7.29`, `CA$83.26`, `1,234.56` and `7,29`.
+- **"Any Card" exists.** The automation reads "When I tap any of 6 Wallet
+  passes or payment cards", so one automation covers every card. The
+  one-per-card assumption in the setup copy was wrong.
 - **The trigger's name was wrong in our own instructions.** Apple renamed it
   from Transaction to **Wallet** in iOS 26; the app and GATES.md both said the
   opposite, so anyone on current iOS was told to hunt for a name that no longer
