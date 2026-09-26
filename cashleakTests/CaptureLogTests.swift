@@ -138,4 +138,88 @@ final class CaptureLogTests: XCTestCase {
         let export = CaptureLog.fixtureExport([entry])
         XCTAssertFalse(export.contains("(\"\", "))
     }
+
+    // MARK: Raw payload
+    //
+    // The temporary L3 collection field. These tests exist because the value of
+    // the whole exercise is that nothing touches the string — a helpful trim or
+    // a truncated display would hide the field we're looking for.
+
+    func testRecordStoresDetailsVerbatim() throws {
+        let payload = "Card: Visa •••• 4412\nType: Purchase\n  trailing spaces  "
+        CaptureLog.record(
+            rawMerchant: "SQ *BLUE BOTTLE",
+            amount: 6.75,
+            source: .applePay,
+            outcome: "inserted",
+            rawDetails: payload,
+            in: context
+        )
+
+        let entry = try XCTUnwrap(try entries().first)
+        XCTAssertEqual(entry.rawDetails, payload)
+        XCTAssertTrue(entry.hasDetails)
+    }
+
+    /// An automation built before the Details field existed sends nothing, and
+    /// must keep working.
+    func testRecordWithoutDetailsIsUnchanged() throws {
+        CaptureLog.record(
+            rawMerchant: "LOBLAWS #1043", amount: 12, source: .applePay, outcome: "inserted", in: context
+        )
+
+        let entry = try XCTUnwrap(try entries().first)
+        XCTAssertEqual(entry.rawDetails, "")
+        XCTAssertFalse(entry.hasDetails)
+    }
+
+    /// Whitespace-only is the shape of a Details field the user tapped but left
+    /// empty. It should read as absent, or the log claims a finding it doesn't
+    /// have.
+    func testWhitespaceOnlyDetailsCountAsAbsent() {
+        let entry = CaptureLogEntry(
+            rawMerchant: "A", amount: 1, source: .applePay, outcome: "inserted", rawDetails: "  \n "
+        )
+        XCTAssertFalse(entry.hasDetails)
+    }
+
+    func testPayloadExportIncludesEveryDetailedEntry() {
+        let entries = [
+            CaptureLogEntry(
+                rawMerchant: "SQ *BLUE BOTTLE", amount: 6.75, source: .applePay,
+                outcome: "inserted", rawDetails: "Card: Visa 4412"
+            ),
+            CaptureLogEntry(
+                rawMerchant: "LOBLAWS #1043", amount: 88.40, source: .applePay,
+                outcome: "inserted", rawDetails: "Card: Mastercard 9001"
+            ),
+        ]
+
+        let export = CaptureLog.payloadExport(entries)
+        XCTAssertTrue(export.contains("Card: Visa 4412"))
+        XCTAssertTrue(export.contains("Card: Mastercard 9001"))
+        XCTAssertTrue(export.contains("2 captures"))
+    }
+
+    /// A rejected capture is where the payload matters most — it's a decline, or
+    /// a parse that failed. Dropping it would discard the interesting cases.
+    func testPayloadExportIncludesRejectedCaptures() {
+        let entry = CaptureLogEntry(
+            rawMerchant: "", amount: 0, source: .applePay,
+            outcome: "rejected: nonPositiveAmount", rawDetails: "Amount: Device Details"
+        )
+        XCTAssertTrue(CaptureLog.payloadExport([entry]).contains("Device Details"))
+    }
+
+    /// An empty export has to say why, not just say nothing. "No details" with
+    /// no explanation looks like a bug in the app rather than a missing step in
+    /// the automation.
+    func testPayloadExportExplainsItselfWhenEmpty() {
+        let entry = CaptureLogEntry(
+            rawMerchant: "A", amount: 1, source: .applePay, outcome: "inserted"
+        )
+        let export = CaptureLog.payloadExport([entry])
+        XCTAssertTrue(export.contains("Details"))
+        XCTAssertTrue(export.contains("Apple Pay"))
+    }
 }

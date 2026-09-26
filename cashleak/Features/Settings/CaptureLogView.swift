@@ -58,6 +58,12 @@ struct CaptureLogView: View {
                         Label("Copy as test fixtures", systemImage: "doc.on.doc")
                     }
 
+                    Button {
+                        exportText = CaptureLog.payloadExport(entries)
+                    } label: {
+                        Label("Copy raw payload", systemImage: "text.alignleft")
+                    }
+
                     Button(role: .destructive) {
                         CaptureLog.clear(in: context)
                     } label: {
@@ -113,6 +119,20 @@ struct CaptureLogView: View {
                 Text(entry.receivedAt.formatted(date: .omitted, time: .standard))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
+            }
+
+            // The undocumented remainder of the payload. Shown in full and
+            // unstyled — the whole reason it's collected is to be read, and a
+            // truncated line would hide the field we're looking for.
+            if entry.hasDetails {
+                Text(entry.rawDetails)
+                    .font(.system(.caption2, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.tertiarySystemFill))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
             }
         }
         .padding(.vertical, 3)

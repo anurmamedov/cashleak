@@ -103,9 +103,15 @@ struct WalletSetupView: View {
             step(5, "Next, then New Blank Automation", "")
             step(6, "Search 'Log transaction'", "Pick the one from CashLeak.")
             step(7, "Fill Amount and Merchant", "Tap each field and choose the matching variable from the bar above the keyboard.")
-            step(8, "Done", "Then buy a coffee and check back here.")
+            step(8, "Put everything else in Details", "Tap Details and add every other variable the bar offers — card, type, whatever is there. They can all go in the one field.")
+            step(9, "Done", "Then buy a coffee and check back here.")
         } header: {
             Text("Build it")
+        } footer: {
+            // Step 8 is temporary and says so, because an instruction whose
+            // purpose is invisible looks like busywork and gets skipped — and
+            // this one is the only way to find out what Apple actually sends.
+            Text("Step 8 is diagnostic. Apple publishes no list of what the Wallet trigger sends, so CashLeak records it and reads it back — that's how the card, the timestamp and the category get supported, or ruled out. It goes into the capture log and nowhere near your totals.")
         }
     }
 

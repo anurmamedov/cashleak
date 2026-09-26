@@ -39,6 +39,26 @@ final class CaptureLogEntry {
     /// accepted one — it's how declines show up.
     var outcome: String = ""
 
+    /// Everything else the trigger offered, verbatim.
+    ///
+    /// Temporary, and deliberately unstructured. We know the Wallet trigger
+    /// publishes Amount and Merchant because those are the two we read. What
+    /// else is in the payload — the card, a transaction type, a timestamp, a
+    /// merchant category — is currently a matter of reasoning rather than
+    /// observation, and reasoning about an undocumented Apple payload is how
+    /// the last three L3 findings got missed.
+    ///
+    /// So the setup instructions ask the user to drop every remaining variable
+    /// Shortcuts offers into one field, and this stores whatever comes back. One
+    /// tap-pay then answers the question outright. Once the payload is known,
+    /// the real fields get named parameters and this comes out again.
+    var rawDetails: String = ""
+
+    /// Something arrived beyond amount and merchant.
+    var hasDetails: Bool {
+        !rawDetails.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     var source: TransactionSource {
         get { TransactionSource(rawValue: sourceRaw) ?? .applePay }
         set { sourceRaw = newValue.rawValue }
@@ -54,7 +74,8 @@ final class CaptureLogEntry {
         rawMerchant: String,
         amount: Double,
         source: TransactionSource,
-        outcome: String
+        outcome: String,
+        rawDetails: String = ""
     ) {
         self.rawMerchant = rawMerchant
         self.amount = amount
@@ -62,6 +83,7 @@ final class CaptureLogEntry {
         self.receivedAt = .now
         self.sourceRaw = source.rawValue
         self.outcome = outcome
+        self.rawDetails = rawDetails
     }
 }
 
@@ -79,13 +101,15 @@ enum CaptureLog {
         amount: Double,
         source: TransactionSource,
         outcome: String,
+        rawDetails: String? = nil,
         in context: ModelContext
     ) {
         let entry = CaptureLogEntry(
             rawMerchant: rawMerchant ?? "",
             amount: amount,
             source: source,
-            outcome: outcome
+            outcome: outcome,
+            rawDetails: rawDetails ?? ""
         )
         context.insert(entry)
 
@@ -121,6 +145,40 @@ enum CaptureLog {
         static let merchantFixtures: [(raw: String, expected: String)] = [
         \(lines.joined(separator: "\n"))
         ]
+        """
+    }
+
+    /// Dumps the unstructured payload field for every entry that has one.
+    ///
+    /// Not fixture code — this is for reading. It is how we find out what the
+    /// Wallet trigger actually publishes, which decides whether the card,
+    /// transaction type or a merchant category are worth named parameters.
+    static func payloadExport(_ entries: [CaptureLogEntry]) -> String {
+        let blocks = entries.filter(\.hasDetails).map { entry in
+            """
+            --- \(entry.receivedAt.formatted(date: .abbreviated, time: .standard))
+            merchant: \(entry.rawMerchant.isEmpty ? "(none)" : entry.rawMerchant)
+            amount:   \(entry.amount)
+            details:
+            \(entry.rawDetails)
+            """
+        }
+
+        guard !blocks.isEmpty else {
+            return """
+            No payload details recorded.
+
+            The automation is passing only Amount and Merchant. Add the Details
+            field — see Settings › Apple Pay, step 8 — and tap-pay once more.
+            """
+        }
+
+        return """
+        Wallet trigger payload, \(blocks.count) capture\(blocks.count == 1 ? "" : "s").
+        Field names and formats are whatever Shortcuts sent; nothing here has
+        been interpreted.
+
+        \(blocks.joined(separator: "\n\n"))
         """
     }
 

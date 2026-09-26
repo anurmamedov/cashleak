@@ -187,6 +187,38 @@ the raw values, not what the app made of them.
 | Fired for a watch payment? | |
 | Fired for in-app Apple Pay? | |
 
+### What else is in the payload?
+
+Apple documents none of this, so the only way to know is to look. When you reach
+the action's parameters, the variable bar above the keyboard lists everything the
+trigger publishes. **Write down every name it offers**, not just the two we read:
+
+```
+Amount      ✓ known
+Merchant    ✓ known
+___________________________  →  value delivered: _______________
+___________________________  →  value delivered: _______________
+___________________________  →  value delivered: _______________
+```
+
+The three that would change the product if they exist:
+
+| Field | Present? | Format |
+|---|---|---|
+| The card tapped | | |
+| A timestamp of its own | | |
+| A merchant category or MCC | | |
+
+The app collects this for you too. The `Details` field on **Log transaction**
+takes every remaining variable at once, stores it verbatim, and
+**Settings › Apple Pay › Capture log → Copy raw payload** hands it back. Use
+both: Show Alert tells you the variable *names*, the Details field proves what
+actually arrives when the automation runs unattended.
+
+A category would remove the guesswork from auto-categorisation. A timestamp
+would let us stop defaulting to `.now`. Absence is a finding too — record it
+either way, then delete the `details` parameter.
+
 ### Merchant strings — collect at least ten
 
 This is the real deliverable. Every string you record here becomes a fixture.

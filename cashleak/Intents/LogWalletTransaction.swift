@@ -56,6 +56,24 @@ struct LogWalletTransaction: AppIntent {
     @Parameter(title: "Date")
     var date: Date?
 
+    /// A catch-all for the rest of the payload, and a temporary one.
+    ///
+    /// Apple documents neither the Wallet trigger's variables nor their
+    /// formats. We read Amount and Merchant because those two are visibly
+    /// offered; whether the payload also carries the card, a transaction type,
+    /// its own timestamp or a merchant category is unknown, and guessing at an
+    /// undocumented payload is exactly what produced the first three L3
+    /// findings.
+    ///
+    /// So `WalletSetupView` asks the user to drop every remaining variable
+    /// Shortcuts offers into this one field. Nothing parses it — it lands in the
+    /// capture log verbatim and gets read. When the payload is known, the fields
+    /// worth having become named parameters and this is removed.
+    ///
+    /// Optional, so an automation built before this existed keeps working.
+    @Parameter(title: "Details")
+    var details: String?
+
     static var parameterSummary: some ParameterSummary {
         Summary("Log \(\.$amount) at \(\.$merchant)")
     }
@@ -127,6 +145,7 @@ struct LogWalletTransaction: AppIntent {
                 case .rejected(let reason): "rejected: \(reason.rawValue)"
                 }
             }(),
+            rawDetails: details,
             in: context
         )
         await DailyReminderScheduler.refresh(in: context)
