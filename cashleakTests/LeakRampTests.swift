@@ -120,3 +120,75 @@ final class LeakRampTests: XCTestCase {
         return Double(0.299 * r + 0.587 * g + 0.114 * b)
     }
 }
+
+// MARK: - Contrast
+
+/// The card's text has to be readable at every point on the ramp.
+///
+/// These exist because it wasn't. `color` honoured the minimum-data gate and
+/// `foreground` didn't, so a first week containing one leak produced ratio 1.0:
+/// the background held at the palest stop while the text switched to the
+/// light-on-dark branch. Both were `FAECE7`. The card looked empty on a real
+/// phone and every existing test passed.
+extension LeakRampTests {
+
+    private func rgb(_ c: Color) -> (r: CGFloat, g: CGFloat, b: CGFloat) {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(c).getRed(&r, green: &g, blue: &b, alpha: &a)
+        return (r, g, b)
+    }
+
+    /// Rough perceptual distance. Not WCAG — just enough to catch "identical".
+    private func distance(_ a: Color, _ b: Color) -> CGFloat {
+        let x = rgb(a), y = rgb(b)
+        return abs(x.r - y.r) + abs(x.g - y.g) + abs(x.b - y.b)
+    }
+
+    func testTextIsNeverTheSameColourAsTheCard() {
+        for scheme in [ColorScheme.light, .dark] {
+            for count in [0, 1, 5, 9, 10, 50] {
+                for days in [0, 1, 6, 7, 30] {
+                    for ratio in stride(from: 0.0, through: 1.0, by: 0.05) {
+                        let bg = LeakRamp.color(
+                            ratio: ratio, transactionCount: count,
+                            daysOfHistory: days, colorScheme: scheme
+                        )
+                        let fg = LeakRamp.foreground(
+                            ratio: ratio, transactionCount: count,
+                            daysOfHistory: days, colorScheme: scheme
+                        )
+                        XCTAssertGreaterThan(
+                            distance(bg, fg), 0.5,
+                            "\(scheme) ratio \(ratio) count \(count) days \(days): text too close to card"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /// The exact case from the device: one leak in the first few days.
+    func testFirstWeekWithEverythingLeakedStaysReadable() {
+        for scheme in [ColorScheme.light, .dark] {
+            let bg = LeakRamp.color(
+                ratio: 1.0, transactionCount: 2, daysOfHistory: 1, colorScheme: scheme
+            )
+            let fg = LeakRamp.foreground(
+                ratio: 1.0, transactionCount: 2, daysOfHistory: 1, colorScheme: scheme
+            )
+            XCTAssertNotEqual(rgb(bg).r, rgb(fg).r, accuracy: 0.0, "\(scheme): card and text identical")
+            XCTAssertGreaterThan(distance(bg, fg), 1.0, "\(scheme): needs strong contrast at the palest stop")
+        }
+    }
+
+    /// Once there is enough history, the text must flip with the card.
+    func testForegroundFlipsOnceTheRampIsLive() {
+        let pale = LeakRamp.foreground(
+            ratio: 0.10, transactionCount: 50, daysOfHistory: 30, colorScheme: .light
+        )
+        let deep = LeakRamp.foreground(
+            ratio: 0.70, transactionCount: 50, daysOfHistory: 30, colorScheme: .light
+        )
+        XCTAssertGreaterThan(distance(pale, deep), 1.0, "dark text on pale, light text on deep")
+    }
+}

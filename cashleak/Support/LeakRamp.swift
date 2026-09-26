@@ -70,7 +70,25 @@ enum LeakRamp {
     }
 
     /// Text colour that stays legible across the whole ramp.
-    static func foreground(ratio: Double, colorScheme: ColorScheme) -> Color {
+    ///
+    /// Takes the same data gate as `color(...)`, and that is the entire point.
+    /// Without it the two disagreed: a first week with one leak gives a ratio
+    /// of 1.0, so the background correctly held at the palest stop while the
+    /// foreground jumped to the light-on-dark branch. Both returned `FAECE7`
+    /// and the card rendered as an empty coral rectangle — the text was there,
+    /// painted in the background colour.
+    static func foreground(
+        ratio: Double,
+        transactionCount: Int,
+        daysOfHistory: Int,
+        colorScheme: ColorScheme
+    ) -> Color {
+        // The card is at its palest whatever the ratio says, so the text has to
+        // be the dark one in light mode and the light one in dark mode.
+        guard hasMeaningfulData(transactionCount: transactionCount, daysOfHistory: daysOfHistory) else {
+            return colorScheme == .dark ? Color(hex: "FAECE7") : Color(hex: "4A1B0C")
+        }
+
         if colorScheme == .dark {
             return ratio >= 0.40 ? Color(hex: "2C1109") : Color(hex: "FAECE7")
         }

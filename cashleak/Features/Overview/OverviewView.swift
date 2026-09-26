@@ -49,7 +49,12 @@ struct OverviewView: View {
             daysOfHistory: summary.daysOfHistory,
             colorScheme: colorScheme
         )
-        let foreground = LeakRamp.foreground(ratio: ratio, colorScheme: colorScheme)
+        let foreground = LeakRamp.foreground(
+            ratio: ratio,
+            transactionCount: summary.transactionCount,
+            daysOfHistory: summary.daysOfHistory,
+            colorScheme: colorScheme
+        )
 
         return VStack(alignment: .leading, spacing: 8) {
             Text("Leaked this month")
