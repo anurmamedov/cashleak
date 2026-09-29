@@ -48,7 +48,7 @@ struct YouView: View {
                 #endif
             }
             .scrollsToTopOnTabChange()
-            .navigationTitle("You")
+            .navigationTitle("Profile")
             .sheet(item: $exportURL) { url in
                 ShareSheet(items: [url])
             }
@@ -140,9 +140,9 @@ struct YouView: View {
             WalletSetupView()
         } label: {
             HStack(spacing: 12) {
-                Image(systemName: lastCapture == nil ? "bolt.badge.clock" : "bolt.fill")
+                Image(systemName: walletStatusIcon)
                     .font(.title3)
-                    .foregroundStyle(lastCapture == nil ? Color(hex: "993C1D") : Color(hex: "1D9E75"))
+                    .foregroundStyle(walletStatusTint)
                     .frame(width: 28)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -157,13 +157,36 @@ struct YouView: View {
         }
     }
 
-    private var lastCapture: CaptureLogEntry? { captures.first }
+    /// Same three-state reading as the setup screen, so the row and the screen
+    /// behind it never disagree. A capture without a merchant doesn't count as
+    /// working — manual test runs look exactly like that.
+    private var walletStatus: CaptureStatus { .from(captures) }
+
+    private var walletStatusIcon: String {
+        switch walletStatus {
+        case .notConnected: "bolt.badge.clock"
+        case .missingMerchant: "exclamationmark.triangle"
+        case .working: "bolt.fill"
+        }
+    }
+
+    private var walletStatusTint: Color {
+        switch walletStatus {
+        case .notConnected: Color(hex: "854F0B")
+        case .missingMerchant: Color(hex: "993C1D")
+        case .working: Color(hex: "1D9E75")
+        }
+    }
 
     private var walletStatusText: String {
-        guard let last = lastCapture else {
-            return "Not set up — about a minute in Shortcuts"
+        switch walletStatus {
+        case .notConnected:
+            "Not set up — about two minutes in Shortcuts"
+        case .missingMerchant:
+            "Merchant isn't coming through — check step 5"
+        case let .working(date, _):
+            "Working · last capture \(date.formatted(.relative(presentation: .named)))"
         }
-        return "Working · last capture \(last.receivedAt.formatted(.relative(presentation: .named)))"
     }
 
     private var captureSection: some View {

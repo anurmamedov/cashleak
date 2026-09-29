@@ -159,7 +159,7 @@ issuer delivers the transaction to Wallet late. Expect 40–60% automatic covera
 in practice.
 
 Mitigation: everything lands in the Sort queue unconfirmed. One swipe confirms.
-Declines and bad merchant strings never reach the dataset. The You tab lists each
+Declines and bad merchant strings never reach the dataset. The Profile tab lists each
 card's automation status and states plainly what won't appear — setting that
 expectation up front prevents the worst review you can get.
 

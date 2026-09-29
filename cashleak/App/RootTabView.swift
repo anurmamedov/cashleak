@@ -51,7 +51,7 @@ struct RootTabView: View {
                 .tag(Tab.analysis)
 
             YouView()
-                .tabItem { Label("You", systemImage: "person") }
+                .tabItem { Label("Profile", systemImage: "person") }
                 .tag(Tab.you)
         }
         .environment(\.scrollToTopSignal, scrollToTopSignal)

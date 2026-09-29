@@ -242,7 +242,7 @@ The three that would change the product if they exist:
 
 The app collects this for you too. The `Details` field on **Log transaction**
 takes every remaining variable at once, stores it verbatim, and
-**Settings › Apple Pay › Capture log → Copy raw payload** hands it back. Use
+**Profile › Capture log → Copy raw payload** hands it back. Use
 both: Show Alert tells you the variable *names*, the Details field proves what
 actually arrives when the automation runs unattended.
 

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Turn the app lock on, change it, or turn it off.
 ///
-/// Referenced from You › Passcode. The lock protects a local database on a
+/// Referenced from Profile › Passcode. The lock protects a local database on a
 /// device that already has a passcode, so the copy avoids implying more
 /// security than exists — and turning it off still asks for the current
 /// password, because a lock anyone can silently remove isn't one.

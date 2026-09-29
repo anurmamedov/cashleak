@@ -235,7 +235,7 @@ Not unit-testable. Needs two physical devices.
 - [x] 4 months of plausible transactions across 16 merchants
 - [x] Deterministic per seed, so charts and tests reproduce
 - [x] Recent items left unconfirmed so the queue has content
-- [x] Debug-only, exposed in the You tab
+- [x] Debug-only, exposed in the Profile tab
 
 ---
 

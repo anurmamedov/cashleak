@@ -169,7 +169,7 @@ enum CaptureLog {
             No payload details recorded.
 
             The automation is passing only Amount and Merchant. Add the Details
-            field — see Settings › Apple Pay, step 8 — and tap-pay once more.
+            field — see Profile › Apple Pay capture, step 5 — and tap-pay once more.
             """
         }
 
