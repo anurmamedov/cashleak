@@ -535,11 +535,22 @@ struct CategoryDetailView: View {
 
     let categoryName: String
     let range: AnalysisAggregates.Range
+    /// A specific calendar month, when opened from Overview on a past month.
+    /// Takes precedence over `range`, which always ends at today — without it,
+    /// tapping Dining out in August showed September's dining.
+    var month: Date? = nil
 
     @Query private var transactions: [Transaction]
 
+    private var counted: [Transaction] {
+        if let month, let interval = Calendar.current.dateInterval(of: .month, for: month) {
+            return transactions.filter { $0.countsTowardTotals && interval.contains($0.date) }
+        }
+        return AnalysisAggregates.counted(transactions, in: range)
+    }
+
     private var matching: [Transaction] {
-        AnalysisAggregates.counted(transactions, in: range)
+        counted
             .filter { ($0.category?.name ?? "Uncategorised") == categoryName }
             .sorted { $0.amount > $1.amount }
     }

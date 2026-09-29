@@ -334,6 +334,22 @@ Not unit-testable. Needs two physical devices.
 - [x] **Week-over-week banner** — the month figure blends a good week with a bad
       one and hides improvement. plan.md's "make it work in reverse"
 - [x] Trip card reads "Starts today" / "Tomorrow", not "In 0 days"
+- [x] **Month switcher** — arrows in the title and a horizontal swipe move
+      through history; past months show final totals and Per day in place of
+      pace, with a button back to the current month. Category rows follow the
+      selected month. `MonthNavigator`, 11 tests
+- [x] Spent / On pace / Kept always show a number, each with a one-line
+      caption. Early-month pace is shown with "Rough — only N days in" rather
+      than hidden — supersedes the suppression above
+- [x] "N in Sort, not counted yet" — the most common reason Overview looked
+      stale was an unsorted capture
+- [x] **iCloud sync status** — "Restoring from iCloud" / "Still syncing" /
+      "Up to date", from `NSPersistentCloudKitContainer` events via
+      `CloudSyncMonitor`. Silent when nothing is known
+- [x] Pull to refresh on Overview and Sort, sharing `AppRefresh.catchUp` with
+      foregrounding. It cannot make iCloud sync sooner; nothing can
+- [ ] Confirm on device that CloudKit events actually reach `CloudSyncMonitor`
+      under SwiftData — undocumented, widely relied on, unverified here
 
 ### L17 · Analysis — done
 

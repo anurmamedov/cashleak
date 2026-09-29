@@ -35,6 +35,15 @@ struct SpendingSummary {
         daysElapsed >= 7 && spent > 0
     }
 
+    /// Average spend per day over the days counted.
+    ///
+    /// For a finished month this is the whole month, which is why a past month
+    /// shows it in place of pace — projecting a month that has already ended
+    /// says nothing.
+    var perDay: Double {
+        spent / Double(max(daysElapsed, 1))
+    }
+
     var hasMeaningfulData: Bool {
         LeakRamp.hasMeaningfulData(
             transactionCount: transactionCount,

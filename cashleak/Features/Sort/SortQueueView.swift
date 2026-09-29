@@ -36,9 +36,16 @@ struct SortQueueView: View {
             ZStack(alignment: .bottom) {
                 Group {
                     if queue.isEmpty {
-                        emptyState
+                        // Scrollable only so it can be pulled. An empty queue is
+                        // exactly when someone who just paid pulls to check.
+                        ScrollView {
+                            emptyState
+                                .containerRelativeFrame(.vertical)
+                        }
+                        .refreshable { await AppRefresh.catchUp(in: context) }
                     } else {
                         list
+                            .refreshable { await AppRefresh.catchUp(in: context) }
                     }
                 }
 

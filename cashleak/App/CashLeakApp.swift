@@ -12,6 +12,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         FirebaseBootstrap.configureIfNeeded()
+        // Before the model container exists, so the first iCloud import on a
+        // fresh install is observed from its start rather than half-way through.
+        _ = CloudSyncMonitor.shared
         UNUserNotificationCenter.current().delegate = self
         BackgroundRefresh.register()
         BackgroundRefresh.schedule()
@@ -59,10 +62,8 @@ struct CashLeakApp: App {
             // rules advance past `now` before returning.
             switch phase {
             case .active:
-                let context = AppModelContainer.shared.mainContext
-                RecurringPoster.postDue(in: context)
-                Task { await DailyReminderScheduler.refresh(in: context) }
-                WidgetSnapshotUpdater.refresh(in: context)
+                // Same work as pull-to-refresh — see `AppRefresh`.
+                Task { await AppRefresh.catchUp(in: AppModelContainer.shared.mainContext) }
             case .background:
                 BackgroundRefresh.schedule()
             default:
