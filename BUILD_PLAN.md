@@ -113,16 +113,30 @@ Findings so far, from Wallet rather than the trigger:
   opposite, so anyone on current iOS was told to hunt for a name that no longer
   exists. This alone would have made setup fail for every user on iOS 26.
 
+- **The Amount and Merchant fields were never connected.** Second attempt, 28
+  Sep: eleven log entries, every one with no merchant. Ten were manual test runs
+  (a manual run has no Wallet payment behind it, so the fields are empty by
+  definition). The automation screenshot showed why a real tap couldn't have
+  worked either — both fields were faded placeholders, not variables. Fixed on
+  the phone the same day; the setup guide now has a dedicated step 5 screen
+  showing connected vs not connected side by side, and the status only turns
+  green on a capture that carries a merchant.
+
 Needs a card and a terminal. Not runnable in the Simulator — no Wallet, no NFC,
 no Shortcuts.
 
-- [ ] Build the Wallet automation on the card you tap with most
-- [ ] Tap-pay a few times, across several merchants
+- [x] Build the Wallet automation — all 6 cards, Run Immediately, Amount and
+      Merchant connected (28 Sep)
+- [ ] **First real tap-pay captured with a merchant** — the one that matters
+- [ ] Read the Details payload: does the trigger publish card, status,
+      timestamp, category? (GATES.md L3)
+- [ ] Tap-pay across ten distinct merchants, then export fixtures
 - [ ] Note the receipt time and compare against the log to get real latency
 - [ ] Trigger a decline deliberately and see whether it fires
 - [ ] Revisit one merchant twice — does it send the same string both times?
+- [ ] Clear the ten manual test entries out of Sort and the capture log
 
-**The app now collects the data itself.** You → Capture log records every Apple
+**The app now collects the data itself.** Profile → Capture log records every Apple
 Pay arrival verbatim: raw merchant string, what `MerchantNormalizer` made of it,
 and what the ingest funnel decided. It counts distinct merchants toward L3's
 target of ten and exports as Swift ready to paste into `TestSupport`.
