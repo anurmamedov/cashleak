@@ -384,7 +384,11 @@ Every one of these will be requested. Saying no is the strategy.
       capture section
 - [ ] **v1.2** — Reconcile, optional AI monthly summary (aggregates only, never
       raw transactions)
-- [ ] **v2.0** — evaluate FinanceKit for a US launch
+- [ ] ~~**v2.0** — evaluate FinanceKit for a US launch~~ — dropped. FinanceKit
+      covers Apple Card, Apple Cash and Apple Savings only, so a US launch would
+      still capture nothing for anyone paying with an ordinary bank card. The
+      region limit was never the binding constraint. Worth revisiting only if
+      Apple extends it to bank cards in Wallet.
 
 ## Open questions
 

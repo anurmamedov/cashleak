@@ -5,8 +5,11 @@ import Foundation
 /// The Apple Pay capture path.
 ///
 /// There is no API that reads Apple Pay transactions. `PassKit` only *accepts*
-/// payments; `FinanceKit` is US and UK only, entitlement-gated, and requires a
-/// Finance category listing. What exists instead is the Shortcuts **Wallet
+/// payments. `FinanceKit` looks like the answer and isn't: it covers Apple
+/// Card, Apple Cash and Apple Savings — Apple's own products — so a bank card
+/// in Wallet is invisible to it whatever the region or entitlement, because
+/// Wallet is the payment interface and the transaction data belongs to the
+/// bank. What exists instead is the Shortcuts **Wallet
 /// automation trigger**: the user creates a personal automation on a card, and
 /// Shortcuts hands `Amount` and `Merchant` to this intent when they tap to pay.
 ///

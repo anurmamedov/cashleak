@@ -137,11 +137,26 @@ constraint.
 
 ### Apple Pay — Shortcuts Wallet automation
 
-No public API reads Apple Pay transactions. `PassKit` only accepts payments;
-`FinanceKit` is US/UK-only, entitlement-gated, and requires a Finance category
-listing. The workable path is the Shortcuts Wallet automation trigger (iOS 17+,
-called "Transaction" before iOS 26), which passes `Amount` and `Merchant` into an
-exposed App Intent.
+No public API reads Apple Pay transactions.
+
+`PassKit` only *accepts* payments — it makes your app a merchant, not a reader.
+
+`FinanceKit` is the one people assume solves this, and it does not. The region
+limit and the managed entitlement are real, but they are not the reason. The
+reason is what it covers: **Apple Card, Apple Cash and Apple Savings** — Apple's
+own financial products. A CIBC Visa sitting in Wallet is invisible to it,
+because Wallet is only the payment interface and the transaction data belongs to
+CIBC. Region and entitlement are gates in front of a door that opens onto the
+wrong room.
+
+There is also no API to create a personal automation. Apple exposes shortcut
+*donation* and App Intents, but a personal automation is built by the user in
+Shortcuts and can't be installed on their behalf — which is why setup has a
+manual step that no amount of code removes.
+
+So the workable path is the Shortcuts Wallet automation trigger (iOS 17+, called
+"Transaction" before iOS 26), which passes `Amount` and `Merchant` into an
+exposed App Intent. It is the only path, not the convenient one.
 
 ```swift
 struct LogWalletTransaction: AppIntent {
