@@ -127,7 +127,15 @@ no Shortcuts.
 
 - [x] Build the Wallet automation — all 6 cards, Run Immediately, Amount and
       Merchant connected (28 Sep)
-- [ ] **First real tap-pay captured with a merchant** — the one that matters
+- [x] **First real tap-pay captured with a merchant** (30 Sep) — `Tim Hortons`
+      $1.92 and `Starbucks Coffee #23090` $5.93, both inserted. The
+      automation works end to end.
+- [x] Finding: Wallet names are mostly clean but **can carry a store number**
+      (`#23090`). The normalizer strips it — so it still earns its keep on the
+      Apple Pay path. Added to `walletMerchantFixtures`
+- [ ] Explain the `$0.00`, no-merchant rejections at night (11:25 PM,
+      12:30 AM). Likely a Wallet *pass* tap — the automation covers "passes
+      or payment cards" — or a decline. Harmless: rejected before Sort
 - [ ] Read the Details payload: does the trigger publish card, status,
       timestamp, category? (GATES.md L3)
 - [ ] Tap-pay across ten distinct merchants, then export fixtures

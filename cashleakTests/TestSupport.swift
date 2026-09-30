@@ -84,6 +84,10 @@ enum TestSupport {
     /// Still worth capturing your own — chains vary by region and these are one
     /// Toronto card's worth.
     static let walletMerchantFixtures: [(raw: String, expected: String)] = [
+        // Captured by the Wallet trigger itself, 30 Sep — the first real
+        // strings rather than ones read off the Wallet screen. Note the store
+        // number: Wallet's names are *mostly* clean, not always.
+        ("Starbucks Coffee #23090", "starbucks coffee"),
         ("Tim Hortons",          "tim hortons"),
         ("No Frills",            "no frills"),
         ("Sobeys",               "sobeys"),
