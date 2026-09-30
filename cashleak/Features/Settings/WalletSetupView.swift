@@ -301,12 +301,14 @@ struct ConnectFieldsView: View {
     /// real one at a glance.
     private func example(connected: Bool) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: "cup.and.saucer.fill")
-                .font(.caption)
-                .foregroundStyle(.white)
-                .frame(width: 22, height: 22)
-                .background(Color(hex: "C65A2E"))
-                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+            // The real app icon, scaled down — the same picture Shortcuts puts
+            // beside the action, so the drawing matches the phone.
+            Image("ShortcutIcon")
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 24, height: 24)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .accessibilityHidden(true)
             Text("Log")
             pill("Amount", connected: connected)
             Text("at")
