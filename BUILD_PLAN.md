@@ -350,6 +350,13 @@ Not unit-testable. Needs two physical devices.
       foregrounding. It cannot make iCloud sync sooner; nothing can
 - [ ] Confirm on device that CloudKit events actually reach `CloudSyncMonitor`
       under SwiftData — undocumented, widely relied on, unverified here
+- [x] **Redesign G3** (D-020) — summary card with a leaked / worth it split
+      bar, a Today card listing every purchase including unsorted captures,
+      and "Spending by category" showing all spending with the leaked share
+      in orange. White cards, orange accents. `SpendingSummary.byCategory` and
+      `purchases(on:)`, 9 tests
+- [ ] Decide whether "Spending by category" gets a Today / Week / Month switch;
+      the period is named in its subtitle for now
 
 ### L17 · Analysis — done
 

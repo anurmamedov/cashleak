@@ -563,3 +563,46 @@ questions; assuming otherwise produced the three findings before this one.
 **Reverse if:** the trigger turns out to publish a merchant category directly,
 in which case the table becomes a fallback for the paths that have no category —
 receipts, bank alerts, manual entry — rather than the primary source.
+
+---
+
+## D-020 · Overview shows where the money went, not only what leaked
+
+**Decided** (design G3, September 2026). Amends the Overview rules in `plan.md`
+and the leak-card rule in `CLAUDE.md`.
+
+**What was wrong.** Overview listed leaks only. Anything marked worth it
+vanished from the screen — fourteen coffees you were happy with appeared
+nowhere, and a capture still in Sort appeared nowhere either. The first real
+user asked, reasonably, where their coffee had gone.
+
+**What changed.**
+
+- A summary card: spent this month in large type, a bar split into leaked,
+  worth it and unrated, then the trade-off and pace in one line.
+- A **Today** card, set apart from the month by a wider gap: the date, the
+  day's total in large type, "4 purchases · $6.25 leaked · $47.95 worth it",
+  then up to eight purchases — including captures still in Sort, marked
+  "To sort" — each with a Leak / Worth it pill. The leaked and worth-it
+  figures count only sorted purchases, like every total.
+- **"Spending by category"**: every category's spending, not just leaks, with
+  the leaked share drawn in orange inside each bar. The line under the title
+  names the period — "This month · $2,813 across 8", "August · …" — because an
+  unlabelled list under "Today" read as today's, and a title containing "this
+  month" would be wrong on a past month.
+- White cards on a grouped background; CashLeak orange (`#C65A2E`) used only for
+  leaks, today, section titles and the month arrows.
+
+**The leak card.** The ratio-tinted hero card is gone. `CLAUDE.md` requires
+leak intensity to map to *ratio, never amount*; that still holds — the
+intensity is now the width of the orange segment in the split bar, which is the
+ratio drawn literally. What's lost is the palest-shade hold below ten
+transactions: a bar can't be "paler", so an early 100% leak shows as a fully
+orange bar. Worth watching in L1. `LeakRamp` is kept; nothing else uses it yet.
+
+**Not changed.** Verdicts still live on transactions, nothing is
+auto-classified, and totals still count only what a person has confirmed. The
+Today list shows unsorted captures; no total includes them.
+
+**Reverse if:** L1 shows the verdict mechanic weakens when the leak is one line
+inside a spending summary rather than the whole top third of the screen.

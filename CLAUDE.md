@@ -109,8 +109,10 @@ before a human has seen it.
 No capture path writes a confirmed transaction directly.
 
 **Leak intensity maps to ratio, never amount.** A dark card for a legitimate
-large purchase is a punishment. Interpolate continuously, hold the palest shade
-until 10 transactions or a week of data, and invert the direction in dark mode.
+large purchase is a punishment. On Overview this is now the width of the orange
+segment in the summary bar (D-020); `LeakRamp` — continuous interpolation,
+palest shade held until 10 transactions or a week, inverted in dark mode — is
+kept for any surface that tints by leak.
 
 **Dedup on every write**: `amount` exact + `date` within 72h + normalized fuzzy
 merchant. Mark superseded, don't delete.

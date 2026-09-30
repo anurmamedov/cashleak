@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 /// Month-to-date aggregates.
 ///
@@ -94,6 +95,67 @@ struct SpendingSummary {
             pace: pace,
             daysElapsed: elapsed
         )
+    }
+
+    /// All spending in one category for a month, with the part that leaked.
+    struct CategorySpend: Identifiable {
+        let category: Category?
+        let total: Double
+        let leaked: Double
+        let count: Int
+
+        var name: String { category?.name ?? "Uncategorised" }
+        /// The category's own identity, not its name — two categories can share
+        /// a name, and a list keyed on it would merge their rows on screen.
+        var id: PersistentIdentifier? { category?.persistentModelID }
+    }
+
+    /// Every category's spending for the month, largest first — not just
+    /// leaks.
+    ///
+    /// Overview used to list leaks only, so anything marked worth it vanished
+    /// from the screen: fourteen coffees you were happy with appeared nowhere.
+    /// This answers "where did my money go", with the leaked share carried
+    /// alongside so the verdict is still visible inside each row.
+    static func byCategory(
+        from transactions: [Transaction],
+        month: Date = .now,
+        calendar: Calendar = .current
+    ) -> [CategorySpend] {
+
+        guard let interval = calendar.dateInterval(of: .month, for: month) else { return [] }
+
+        let counted = transactions.filter {
+            $0.countsTowardTotals && interval.contains($0.date)
+        }
+
+        var totals: [Category?: (total: Double, leaked: Double, count: Int)] = [:]
+        for t in counted {
+            var entry = totals[t.category, default: (0, 0, 0)]
+            entry.total += t.amount
+            if t.verdict == .leak { entry.leaked += t.amount }
+            entry.count += 1
+            totals[t.category] = entry
+        }
+
+        return totals
+            .map { CategorySpend(category: $0.key, total: $0.value.total, leaked: $0.value.leaked, count: $0.value.count) }
+            .sorted { $0.total == $1.total ? $0.name < $1.name : $0.total > $1.total }
+    }
+
+    /// Purchases on one calendar day, newest first — sorted or not.
+    ///
+    /// Includes captures still waiting in Sort. The question this answers is
+    /// "did my coffee register?", and hiding an unsorted one would answer it
+    /// wrongly. Totals are separate; this is a list of what happened.
+    static func purchases(
+        on day: Date,
+        from transactions: [Transaction],
+        calendar: Calendar = .current
+    ) -> [Transaction] {
+        transactions
+            .filter { !$0.isSuperseded && calendar.isDate($0.date, inSameDayAs: day) }
+            .sorted { $0.date > $1.date }
     }
 
     /// Leak totals per category, largest first.

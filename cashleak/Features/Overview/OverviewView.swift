@@ -1,17 +1,21 @@
 import SwiftUI
 import SwiftData
 
-/// The screen that states the product thesis in its top third.
+/// Where the money went — the month, today, and by category.
 ///
-/// Shows one month at a time. The current month by default; arrows or a
-/// horizontal swipe move back through history. Everything on the page — the
-/// leak card, the stats, the category breakdown and where its rows lead —
-/// follows the selected month. Things that only make sense for *now* (the
-/// week-over-week line, the goal, the Sort reminder) appear only on the
+/// Design G3 (September 2026): white cards on a grouped background, with
+/// CashLeak orange used only where it means something — leaks, today, the
+/// section titles, the month arrows. It replaces a leaks-only screen on which
+/// anything marked worth it simply vanished: fourteen coffees you were happy
+/// with appeared nowhere. Now every purchase is visible somewhere, and the
+/// verdict is carried inside each view rather than filtering it.
+///
+/// Shows one month at a time. Arrows in the title or a horizontal swipe move
+/// through history. Things that only make sense for now — today, the
+/// week-over-week line, the goal, the Sort reminder — appear only on the
 /// current month.
 struct OverviewView: View {
 
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.modelContext) private var context
     @EnvironmentObject private var navigation: AppNavigation
@@ -25,14 +29,30 @@ struct OverviewView: View {
     /// even if no iCloud event was observed.
     @State private var lastChecked: Date?
 
+    // MARK: Palette
+
+    /// CashLeak orange, sampled from the logo. Reserved for leaks and for the
+    /// few things that need a glance — today, section titles, month arrows.
+    private let brand = Color(hex: "C65A2E")
+    private let worthIt = Color(hex: "1D9E75")
+    private let worthItBar = Color(hex: "5DCAA5")
+
+    /// Added to the stack spacing above Today and the categories — roughly
+    /// double the gap between cards that belong together.
+    private let sectionGap: CGFloat = 14
+
     // MARK: Derived
 
     private var summary: SpendingSummary {
         SpendingSummary.make(from: transactions, month: selectedMonth)
     }
 
-    private var leaksByCategory: [(category: Category?, total: Double)] {
-        Array(SpendingSummary.leaksByCategory(from: transactions, month: selectedMonth).prefix(4))
+    private var categories: [SpendingSummary.CategorySpend] {
+        SpendingSummary.byCategory(from: transactions, month: selectedMonth)
+    }
+
+    private var today: [Transaction] {
+        SpendingSummary.purchases(on: .now, from: transactions)
     }
 
     private var goal: Goal? {
@@ -67,8 +87,7 @@ struct OverviewView: View {
         selectedMonth.formatted(.dateTime.month(.wide))
     }
 
-    /// "this month" or "in August" — the leak card and trade-off line say
-    /// which month they mean.
+    /// "this month" or "in August".
     private var monthPhrase: String {
         isCurrentMonth ? "this month" : "in \(monthName)"
     }
@@ -78,14 +97,20 @@ struct OverviewView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 14) {
                     syncStatus
                         .scrollToTopAnchor()
-                    leakCard
+                    summaryCard
                     if isCurrentMonth, let comparison = weekComparison { weekBanner(comparison) }
-                    statsRow
                     if isCurrentMonth, unsortedCount > 0 { sortReminder }
-                    if !leaksByCategory.isEmpty { leakBreakdown }
+                    // Wider gaps around Today so it reads as its own section,
+                    // not a continuation of the month summary.
+                    if isCurrentMonth {
+                        todayCard
+                            .padding(.top, sectionGap)
+                    }
+                    categoryCard
+                        .padding(.top, sectionGap)
                     if isCurrentMonth {
                         goalCard
                     } else {
@@ -96,6 +121,7 @@ struct OverviewView: View {
                 .padding(.bottom, 32)
                 .animation(.easeInOut(duration: 0.25), value: selectedMonth)
             }
+            .background(Color(.systemGroupedBackground))
             .scrollsToTopOnTabChange()
             // Horizontal swipe changes month. Simultaneous, and only acted on
             // when clearly sideways, so vertical scrolling is never hijacked.
@@ -116,6 +142,27 @@ struct OverviewView: View {
                 }
             }
         }
+    }
+
+    // MARK: Card chrome
+
+    /// White in light mode, raised grey in dark — the system grouped pair, so
+    /// dark mode needs nothing of its own.
+    private func card<Content: View>(
+        padding: CGFloat = 14,
+        @ViewBuilder _ content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) { content() }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(padding)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(brand)
     }
 
     // MARK: Month header
@@ -143,15 +190,16 @@ struct OverviewView: View {
             if let target { select(target) }
         } label: {
             Image(systemName: symbol)
-                .font(.subheadline.weight(.semibold))
-                .frame(width: 32, height: 32)
-                .background(Color(.tertiarySystemFill))
+                .font(.footnote.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(width: 30, height: 30)
+                .background(brand)
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        // Greyed rather than hidden: a vanishing arrow shifts the month name
+        // Faded rather than hidden: a vanishing arrow shifts the month name
         // sideways every time you reach an end.
-        .opacity(target == nil ? 0.3 : 1)
+        .opacity(target == nil ? 0.25 : 1)
         .disabled(target == nil)
         .accessibilityLabel(label)
     }
@@ -183,20 +231,19 @@ struct OverviewView: View {
         } label: {
             Label("Back to \(Date.now.formatted(.dateTime.month(.wide)))", systemImage: "arrow.uturn.backward")
                 .font(.subheadline.weight(.medium))
+                .foregroundStyle(brand)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .padding(.vertical, 13)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
     // MARK: Sync status
 
-    /// Says whether the numbers below are complete.
-    ///
-    /// Hidden entirely when nothing is known — no iCloud event seen and no
-    /// manual refresh. An invented "up to date" would be worse than silence.
+    /// Says whether the numbers below are complete. Hidden entirely when
+    /// nothing is known — an invented "up to date" would be worse than silence.
     @ViewBuilder
     private var syncStatus: some View {
         if let line = syncLine {
@@ -223,74 +270,114 @@ struct OverviewView: View {
             return ("icloud.and.arrow.down", Color.secondary, text)
         }
         if sync.lastImportFailed {
-            return ("exclamationmark.icloud", Color(hex: "993C1D"), "iCloud sync hit a problem · pull to try again")
+            return ("exclamationmark.icloud", brand, "iCloud sync hit a problem · pull to try again")
         }
         let checked = [sync.lastImportFinished, lastChecked].compactMap { $0 }.max()
         if let checked {
-            return ("checkmark", Color(hex: "1D9E75"),
+            return ("checkmark", worthIt,
                     "Up to date · \(checked.formatted(.relative(presentation: .named)))")
         }
         return nil
     }
 
-    // MARK: Leak card
+    // MARK: Summary
 
-    private var leakCard: some View {
-        let ratio = summary.leakRatio
-        let background = LeakRamp.color(
-            ratio: ratio,
-            transactionCount: summary.transactionCount,
-            daysOfHistory: summary.daysOfHistory,
-            colorScheme: colorScheme
-        )
-        let foreground = LeakRamp.foreground(
-            ratio: ratio,
-            transactionCount: summary.transactionCount,
-            daysOfHistory: summary.daysOfHistory,
-            colorScheme: colorScheme
-        )
-
-        return VStack(alignment: .leading, spacing: 8) {
-            Text(isCurrentMonth ? "Leaked this month" : "Leaked in \(monthName)")
+    /// The month in one card: what was spent, how much of it leaked, and the
+    /// trade-off.
+    ///
+    /// Replaces the ratio-tinted leak card (D-020). Intensity still maps to
+    /// ratio, never amount — it's now the width of the orange segment in the
+    /// bar rather than the depth of a background colour.
+    private var summaryCard: some View {
+        card {
+            Text(isCurrentMonth ? "Spent this month" : "Spent in \(monthName)")
                 .font(.footnote)
-                .foregroundStyle(foreground.opacity(0.75))
+                .foregroundStyle(.secondary)
 
-            Text(summary.leaked.currencyRounded)
-                .font(.system(size: 46, weight: .medium, design: .default))
-                .foregroundStyle(foreground)
+            Text(summary.spent.currencyRounded)
+                .font(.system(size: 40, weight: .semibold))
                 .contentTransition(.numericText())
+                .padding(.top, 2)
 
-            Text(tradeOffLine)
-                .font(.callout.italic())
-                .foregroundStyle(foreground.opacity(0.9))
+            splitBar
+                .padding(.top, 10)
+
+            HStack(spacing: 0) {
+                Text("\(summary.leaked.currencyRounded) leaked")
+                    .fontWeight(.semibold)
+                    .foregroundStyle(brand)
+                Text("  ·  ")
+                    .foregroundStyle(.tertiary)
+                Text("\(summary.kept.currencyRounded) worth it")
+                    .foregroundStyle(worthIt)
+            }
+            .font(.subheadline)
+            .padding(.top, 8)
+
+            Text(summaryFootnote)
+                .font(.footnote.italic())
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
-        .background(background)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .animation(.easeInOut(duration: 0.4), value: ratio)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Leaked \(monthPhrase), \(summary.leaked.currencyRounded). \(tradeOffLine)")
     }
 
-    /// States the number and the trade-off, then stops. Never scolds.
-    private var tradeOffLine: String {
+    /// Leaked, worth it, and anything confirmed without a verdict, in that
+    /// order. Widths are shares of what was spent, so they read as a ratio.
+    private var splitBar: some View {
+        let spent = summary.spent
+        let unrated = max(spent - summary.leaked - summary.kept, 0)
+
+        return GeometryReader { geometry in
+            HStack(spacing: 2) {
+                if spent > 0 {
+                    segment(summary.leaked / spent, width: geometry.size.width, color: brand)
+                    segment(summary.kept / spent, width: geometry.size.width, color: worthItBar)
+                    segment(unrated / spent, width: geometry.size.width, color: Color(.systemGray4))
+                }
+                Spacer(minLength: 0)
+            }
+            .background(Color(.tertiarySystemFill))
+            .clipShape(Capsule())
+        }
+        .frame(height: 9)
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func segment(_ share: Double, width: CGFloat, color: Color) -> some View {
+        if share > 0 {
+            Rectangle()
+                .fill(color)
+                .frame(width: max(width * share - 2, 3))
+        }
+    }
+
+    /// The trade-off, then pace. States the number and stops; never scolds.
+    private var summaryFootnote: String {
         guard summary.transactionCount > 0 else {
-            return isCurrentMonth ? "Nothing sorted yet this month." : "Nothing sorted in \(monthName)."
+            return isCurrentMonth
+                ? "Nothing sorted yet this month."
+                : "Nothing sorted in \(monthName)."
         }
 
-        // The goal is what turns a number into a trade-off — but it's today's
-        // goal, so it only speaks for today's month.
+        let tradeOff: String
         if isCurrentMonth, let goal, let line = goal.tradeOffLine(leaked: summary.leaked) {
-            return line
+            tradeOff = line.hasSuffix(".") ? String(line.dropLast()) : line
+        } else if summary.leaked > 0 {
+            tradeOff = "\(Int((summary.leakRatio * 100).rounded()))% of what you spent \(monthPhrase)"
+        } else {
+            tradeOff = "Nothing you'd take back \(monthPhrase)"
         }
 
-        guard summary.leaked > 0 else {
-            return "Nothing you'd take back \(monthPhrase)."
+        if isCurrentMonth {
+            let pace = summary.paceIsMeaningful
+                ? "on pace for \(summary.pace.currencyRounded)"
+                : "on pace for \(summary.pace.currencyRounded), roughly — only \(summary.daysElapsed) day\(summary.daysElapsed == 1 ? "" : "s") in"
+            return "\(tradeOff) · \(pace)"
         }
-
-        let percent = Int((summary.leakRatio * 100).rounded())
-        return "\(percent)% of what you spent \(monthPhrase)."
+        return "\(tradeOff) · \(summary.perDay.currencyRounded) a day"
     }
 
     // MARK: Week over week
@@ -299,33 +386,29 @@ struct OverviewView: View {
         AnalysisAggregates.weekOverWeek(transactions)
     }
 
-    /// The improvement line.
-    ///
-    /// A month figure blends a good week with a bad one and shows an
-    /// unremarkable average. Someone who halved their leak on Tuesday should
-    /// find that out, or there's no reward for the behaviour the whole app is
-    /// trying to encourage. plan.md: "make it work in reverse".
+    /// A month figure blends a good week with a bad one. Someone who halved
+    /// their leak on Tuesday should find that out. plan.md: "make it work in
+    /// reverse".
     private func weekBanner(_ comparison: AnalysisAggregates.WeekComparison) -> some View {
         let improving = comparison.isImprovement
-        let tint = improving ? Color(hex: "0F6E56") : Color(hex: "993C1D")
+        let tint = improving ? worthIt : brand
 
         return HStack(spacing: 10) {
             Image(systemName: improving ? "arrow.down.right" : "arrow.up.right")
-                .font(.footnote.weight(.medium))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(tint)
-                .frame(width: 26, height: 26)
-                .background(tint.opacity(0.12))
+                .frame(width: 28, height: 28)
+                .background(tint.opacity(0.14))
                 .clipShape(Circle())
 
             Text(weekBannerText(comparison))
                 .font(.subheadline)
-                .foregroundStyle(.primary)
 
             Spacer(minLength: 0)
         }
         .padding(12)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 
@@ -344,75 +427,6 @@ struct OverviewView: View {
         return "Up \(points) points from last week."
     }
 
-    // MARK: Stats
-
-    private var statsRow: some View {
-        Group {
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(spacing: 10) { stats }
-            } else {
-                HStack(alignment: .top, spacing: 10) { stats }
-            }
-        }
-    }
-
-    /// Always three real numbers, each with one line saying what it is.
-    ///
-    /// Pace used to be replaced by "Day 3" for the first week, because an
-    /// early projection can look alarming. Showing no number read as broken
-    /// instead, so the number stays and its caption carries the caveat.
-    @ViewBuilder
-    private var stats: some View {
-        stat("Spent", summary.spent.currencyRounded, tint: Color.primary,
-             caption: isCurrentMonth ? "Everything you sorted" : "The whole month")
-
-        if isCurrentMonth {
-            stat("On pace", summary.pace.currencyRounded, tint: Color.primary, caption: paceCaption)
-        } else {
-            stat("Per day", summary.perDay.currencyRounded, tint: Color.primary,
-                 caption: "Average over \(summary.daysElapsed) days")
-        }
-
-        stat("Kept", summary.kept.currencyRounded, tint: Color(hex: "0F6E56"),
-             caption: "Marked worth it")
-    }
-
-    private var paceCaption: String {
-        guard summary.spent > 0 else { return "Sort a purchase to start" }
-        if summary.paceIsMeaningful {
-            let last = MonthNavigator.lastDay(of: selectedMonth)
-            return "By \(last.formatted(.dateTime.month(.abbreviated).day())) at this rate"
-        }
-        let days = summary.daysElapsed
-        return "Rough — only \(days) day\(days == 1 ? "" : "s") in"
-    }
-
-    private func stat(_ label: String, _ value: String, tint: Color, caption: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Text(value)
-                .font(.title3.weight(.medium))
-                .foregroundStyle(tint)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .contentTransition(.numericText())
-            Text(caption)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .accessibilityElement(children: .combine)
-    }
-
     // MARK: Sort reminder
 
     /// Says where a new payment went. Without this, paying and then opening
@@ -421,71 +435,281 @@ struct OverviewView: View {
         Button {
             navigation.destination = .sort
         } label: {
-            HStack {
-                Label(
-                    "\(unsortedCount) in Sort, not counted yet",
-                    systemImage: "tray.full"
-                )
-                .font(.subheadline)
+            HStack(spacing: 10) {
+                Image(systemName: "tray.full")
+                Text("\(unsortedCount) in Sort, not counted yet")
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .font(.caption.weight(.semibold))
             }
-            .foregroundStyle(Color(hex: "854F0B"))
-            .padding(12)
-            .background(Color(hex: "854F0B").opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .font(.subheadline)
+            .foregroundStyle(Color(hex: "993C1D"))
+            .padding(13)
+            .background(brand.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: Breakdown
+    // MARK: Today
 
-    private var leakBreakdown: some View {
-        let maximum = leaksByCategory.map(\.total).max() ?? 1
+    /// What was bought today, sorted or not — its own section, set apart from
+    /// the month above it.
+    ///
+    /// Includes captures still in Sort, marked "To sort". The question this card
+    /// answers is "did my coffee register?", and hiding an unsorted one would
+    /// answer it wrongly. The leaked and worth-it figures count only what has
+    /// been sorted, the same rule as every total in the app.
+    private var todayCard: some View {
+        let total = today.reduce(0) { $0 + $1.amount }
+        let sorted = today.filter(\.isConfirmed)
+        let leaked = sorted.filter { $0.verdict == .leak }.reduce(0) { $0 + $1.amount }
+        let worth = sorted.filter { $0.verdict == .worthIt }.reduce(0) { $0 + $1.amount }
+        let limit = 8
 
-        return VStack(alignment: .leading, spacing: 12) {
-            Text("Where it leaks")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        return card(padding: 16) {
+            HStack(alignment: .firstTextBaseline) {
+                sectionTitle("Today")
+                Spacer()
+                Text(Date.now.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
 
-            ForEach(Array(leaksByCategory.enumerated()), id: \.offset) { _, row in
-                NavigationLink {
-                    CategoryDetailView(
-                        categoryName: row.category?.name ?? "Uncategorised",
-                        range: .month,
-                        month: selectedMonth
-                    )
-                } label: {
-                    VStack(spacing: 5) {
-                        HStack {
-                            Text(row.category?.name ?? "Uncategorised")
-                                .font(.subheadline)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            Text(row.total.currencyRounded)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            Image(systemName: "chevron.right")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                        GeometryReader { geometry in
-                            ZStack(alignment: .leading) {
-                                Capsule()
-                                    .fill(Color(.tertiarySystemFill))
-                                Capsule()
-                                    .fill(Color(hex: row.category?.colorHex ?? "D85A30"))
-                                    .frame(width: geometry.size.width * (row.total / maximum))
-                            }
-                        }
-                        .frame(height: 6)
+            Text(total.currencyExact)
+                .font(.system(size: 30, weight: .semibold))
+                .contentTransition(.numericText())
+                .padding(.top, 4)
+
+            todaySummaryLine(count: today.count, leaked: leaked, worth: worth)
+                .padding(.top, 2)
+
+            Divider()
+                .padding(.top, 12)
+                .padding(.bottom, 2)
+
+            if today.isEmpty {
+                Text("Nothing yet today. Payments you tap with your phone appear here within seconds.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 12)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                ForEach(Array(today.prefix(limit).enumerated()), id: \.element.persistentModelID) { index, transaction in
+                    if index > 0 { Divider().padding(.leading, 52) }
+                    NavigationLink {
+                        TransactionDetailView(transaction: transaction)
+                    } label: {
+                        purchaseRow(transaction)
                     }
+                    .buttonStyle(.plain)
+                }
+                if today.count > limit {
+                    Text("\(today.count - limit) more today")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 4)
+                }
+            }
+
+            NavigationLink {
+                HistoryView()
+            } label: {
+                HStack(spacing: 4) {
+                    Text("See other days")
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(brand)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 11)
+                .background(brand.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 10)
+        }
+    }
+
+    /// "4 purchases · $6.25 leaked · $47.95 worth it". Parts with nothing in
+    /// them are left out rather than shown as $0.00.
+    private func todaySummaryLine(count: Int, leaked: Double, worth: Double) -> some View {
+        var parts: [Text] = [
+            Text("\(count) purchase\(count == 1 ? "" : "s")").foregroundStyle(.secondary)
+        ]
+        if leaked > 0 {
+            parts.append(Text("\(leaked.currencyExact) leaked").fontWeight(.semibold).foregroundStyle(brand))
+        }
+        if worth > 0 {
+            parts.append(Text("\(worth.currencyExact) worth it").foregroundStyle(worthIt))
+        }
+
+        let separator = Text("  ·  ").foregroundStyle(Color(.tertiaryLabel))
+        let line = parts.dropFirst().reduce(parts[0]) { $0 + separator + $1 }
+        return line
+            .font(.footnote)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func purchaseRow(_ transaction: Transaction) -> some View {
+        HStack(spacing: 12) {
+            categoryIcon(transaction.category, size: 40)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(transaction.merchant.isEmpty ? "Unknown" : transaction.merchant)
+                    .font(.body)
+                    .lineLimit(1)
+                Text(transaction.date.formatted(date: .omitted, time: .shortened))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(transaction.amount.currencyExact)
+                    .font(.body.weight(.semibold))
+                    .monospacedDigit()
+                verdictPill(transaction)
+            }
+        }
+        .padding(.vertical, 11)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Solid orange for a leak, solid green for worth it, grey for a capture
+    /// nobody has judged yet.
+    private func verdictPill(_ transaction: Transaction) -> some View {
+        let (text, fill): (String, Color) = {
+            guard transaction.isConfirmed else { return ("To sort", Color(.systemGray)) }
+            switch transaction.verdict {
+            case .leak: return ("Leak", brand)
+            case .worthIt: return ("Worth it", worthIt)
+            case .unrated: return ("Sorted", Color(.systemGray))
+            }
+        }()
+
+        return Text(text)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2)
+            .background(fill)
+            .clipShape(Capsule())
+    }
+
+    // MARK: Categories
+
+    /// Every category's spending for the selected month — not just leaks.
+    ///
+    /// The title stays fixed and the line under it names the period: "This
+    /// month · …" or "August · …". Under "Today" an unlabelled list read as
+    /// today's categories, and a title with "this month" in it would be wrong
+    /// the moment you switch to August.
+    private var categoryCard: some View {
+        let rows = categories
+        let shown = Array(rows.prefix(6))
+        let maximum = rows.map(\.total).max() ?? 1
+        let period = isCurrentMonth ? "This month" : monthName
+
+        return card {
+            sectionTitle("Spending by category")
+            Text(rows.isEmpty
+                 ? "\(period) · sorted purchases appear here."
+                 : "\(period) · \(summary.spent.currencyRounded) across \(rows.count)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.top, 2)
+                .padding(.bottom, rows.isEmpty ? 0 : 8)
+
+            ForEach(shown) { row in
+                NavigationLink {
+                    CategoryDetailView(categoryName: row.name, range: .month, month: selectedMonth)
+                } label: {
+                    categoryRow(row, maximum: maximum)
                 }
                 .buttonStyle(.plain)
             }
+
+            if rows.count > shown.count {
+                let rest = rows.dropFirst(shown.count)
+                let restTotal = rest.reduce(0) { $0 + $1.total }
+                NavigationLink {
+                    AllCategoriesView(rows: rows, month: selectedMonth, monthName: monthName)
+                } label: {
+                    HStack {
+                        Text("\(rest.count) more · \(restTotal.currencyRounded)")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption2.weight(.semibold))
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(brand)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 6)
+            }
         }
+    }
+
+    private func categoryRow(_ row: SpendingSummary.CategorySpend, maximum: Double) -> some View {
+        let tint = Color(hex: row.category?.colorHex ?? "888780")
+
+        return HStack(spacing: 11) {
+            categoryIcon(row.category, size: 32)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(row.name)
+                        .font(.subheadline)
+                    Spacer()
+                    Text(row.total.currencyRounded)
+                        .font(.subheadline.weight(.semibold))
+                        .monospacedDigit()
+                }
+
+                GeometryReader { geometry in
+                    let full = geometry.size.width * (row.total / maximum)
+                    let leaked = geometry.size.width * (row.leaked / maximum)
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color(.tertiarySystemFill))
+                        Capsule().fill(tint.opacity(0.45)).frame(width: max(full, 4))
+                        if row.leaked > 0 {
+                            Capsule().fill(brand).frame(width: max(leaked, 4))
+                        }
+                    }
+                }
+                .frame(height: 6)
+
+                if row.leaked > 0 {
+                    Text("\(row.leaked.currencyRounded) leaked · \(row.count) purchase\(row.count == 1 ? "" : "s")")
+                        .font(.caption2)
+                        .foregroundStyle(brand)
+                } else {
+                    Text("\(row.count) purchase\(row.count == 1 ? "" : "s")")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(.vertical, 6)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    /// The category's own symbol on a pale wash of its own colour. Uncategorised
+    /// gets a neutral question mark — it's a prompt, not a category.
+    private func categoryIcon(_ category: Category?, size: CGFloat) -> some View {
+        let tint = Color(hex: category?.colorHex ?? "888780")
+        return Image(systemName: category?.icon ?? "questionmark")
+            .font(.system(size: size * 0.45, weight: .medium))
+            .foregroundStyle(tint)
+            .frame(width: size, height: size)
+            .background(tint.opacity(0.15))
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
+            .accessibilityHidden(true)
     }
 
     // MARK: Goal
@@ -497,10 +721,14 @@ struct OverviewView: View {
                 GoalsView()
             } label: {
                 HStack {
+                    Image(systemName: "target")
+                        .foregroundStyle(brand)
+                        .frame(width: 32, height: 32)
+                        .background(brand.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     VStack(alignment: .leading, spacing: 2) {
                         Text(goal.name)
                             .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.primary)
                         Text("\(goal.targetAmount.currencyRounded) · saving for")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -511,16 +739,13 @@ struct OverviewView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .padding(14)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color(.separator), lineWidth: 0.5)
-                )
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
             .buttonStyle(.plain)
         } else if summary.leaked > 0 {
-            // The prompt only appears once there's a leak to compare against.
-            // Asking on an empty month is asking before the question means
-            // anything.
+            // Only once there's a leak to compare against. Asking on an empty
+            // month is asking before the question means anything.
             NavigationLink {
                 GoalsView()
             } label: {
@@ -528,22 +753,53 @@ struct OverviewView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("What would you rather have?")
                             .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.primary)
                         Text("Name something you're saving for")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Image(systemName: "plus.circle")
-                        .foregroundStyle(Color(hex: AppSettings.accentHex))
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(brand)
                 }
                 .padding(14)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color(.separator), lineWidth: 0.5)
-                )
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
             .buttonStyle(.plain)
         }
+    }
+}
+
+// MARK: - All categories
+
+/// Every category for a month, when there are more than fit on Overview.
+struct AllCategoriesView: View {
+
+    let rows: [SpendingSummary.CategorySpend]
+    let month: Date
+    let monthName: String
+
+    var body: some View {
+        List(rows) { row in
+            NavigationLink {
+                CategoryDetailView(categoryName: row.name, range: .month, month: month)
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(row.name)
+                        if row.leaked > 0 {
+                            Text("\(row.leaked.currencyRounded) leaked")
+                                .font(.caption)
+                                .foregroundStyle(Color(hex: "C65A2E"))
+                        }
+                    }
+                    Spacer()
+                    Text(row.total.currencyRounded)
+                        .monospacedDigit()
+                }
+            }
+        }
+        .navigationTitle("\(monthName) spending")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
