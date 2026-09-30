@@ -391,6 +391,10 @@ Not unit-testable. Needs two physical devices.
 - [x] Weekly note stays silent below three whole weeks and unless one week is
       1.4x the median of the others
 - [x] 30 aggregate and comparison tests, plus 20 for the week breakdown
+- [x] **Redesign** (D-023) — headline card, weekly / monthly bars with outlier
+      capping and a legend, Chart and Findings in one swipeable card, leak
+      rankings restyled. Findings split into facts (always) and patterns
+      (15+ sorted). `AnalysisSummary`, 11 tests
 
 ### L18 · Goals — done
 

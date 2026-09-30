@@ -14,7 +14,7 @@ enum AnalysisAggregates {
         var title: String {
             switch self {
             case .month: "Month"
-            case .quarter: "3M"
+            case .quarter: "3 months"
             case .year: "Year"
             }
         }

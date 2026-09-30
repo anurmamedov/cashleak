@@ -657,3 +657,41 @@ in — use Face ID?"* Asked once, never again whichever answer.
 Also fixed: the app had no `NSFaceIDUsageDescription`, so the first Face ID
 prompt — including the existing password lock's — would have terminated the
 app on a Face ID phone.
+
+---
+
+## D-023 · Analysis leads with the answer; findings split into facts and patterns
+
+**Decided.** Analysis is rebuilt as "option A with swipeable findings".
+
+**What was wrong.** The screen led with a daily chart in which one rent payment
+set the scale and flattened every other day. Grey and orange were never
+explained, the axis had no currency, most days were empty, and comparisons
+read as "↗ 279%" and "7.6× a typical week". Nothing answered "how much did I
+spend?"
+
+**What changed.**
+
+- A headline card: *Spent in September*, the leaked / worth-it split, and one
+  line of context — against **the same point** last month for Month (half of
+  September vs all of August would always read as "less"), an average per
+  month for 3 months and a year.
+- Bars are **weeks** for Month and **months** for 3 months and a year, never
+  days. Empty buckets stay, so a quiet month looks quiet rather than missing.
+  A bar more than 2.5× the next is drawn cut off with its real amount printed.
+  A legend names the colours.
+- **Chart and Findings share one card**, swiped or picked with the labels
+  above it; the next card's edge peeks in and two dots show the page. The last
+  page viewed is remembered.
+- "Where it leaked" and "Leaked by shop" stay ranked by leak, not spend.
+- The day-of-week chart is gone; its one useful sentence became a finding.
+
+**Findings: facts and patterns.** The 15-transaction rule stays, but it now
+applies only to **patterns** — claims about habits, like "Friday is your most
+expensive day", which ten purchases can't support. **Facts** are arithmetic —
+the comparison with last month, the leakiest week, the top category, a regular
+shop — and show from the first sorted purchase. Until 15, the Findings card
+says so and shows progress ("9 of 15") rather than staying blank.
+
+**Reverse if:** people never find the Findings page — then it stops being a
+second page and becomes a card under the chart.

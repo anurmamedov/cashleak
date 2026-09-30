@@ -1,21 +1,45 @@
 import SwiftUI
 import SwiftData
-import Charts
 
-/// Range selector, then five sections in order, then one plain-language
-/// finding in serif.
+/// How much, where it leaked, and what stood out — for a month, three months
+/// or a year.
 ///
-/// Every row navigates somewhere. Dead-end analytics is why people stop opening
-/// these screens — if a chart shows you something interesting and you can't
-/// touch it, the screen has wasted your attention.
+/// Design A with swipeable findings (D-023). The old screen led with a daily
+/// chart that one rent payment flattened into a single spike, left its colours
+/// unexplained, and phrased comparisons as "↗ 279%" and "7.6× a typical week".
+/// This one answers "how much did I spend?" first, draws weeks or months rather
+/// than days, and says what stood out in plain words.
+///
+/// Every row still navigates somewhere. Dead-end analytics is why people stop
+/// opening these screens.
 struct AnalysisView: View {
 
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query private var transactions: [Transaction]
     @State private var range: AnalysisAggregates.Range = .month
 
-    private var trend: [AnalysisAggregates.TrendPoint] {
-        AnalysisAggregates.trend(transactions, range: range)
+    /// Which page of the Chart / Findings card is showing. Remembered, so
+    /// someone who prefers Findings opens straight onto it.
+    @State private var page: Page? = .chart
+    @AppStorage("analysis.page") private var savedPage = Page.chart.rawValue
+
+    enum Page: String, Hashable { case chart, findings }
+
+    private let brand = Color(hex: "C65A2E")
+    private let worthIt = Color(hex: "1D9E75")
+    private let worthItBar = Color(hex: "9FE1CB")
+
+    // MARK: Derived
+
+    private var headline: AnalysisSummary.Headline {
+        AnalysisSummary.headline(transactions, range: range)
+    }
+
+    private var bars: [AnalysisSummary.Bar] {
+        AnalysisSummary.bars(transactions, range: range)
+    }
+
+    private var findings: [AnalysisSummary.Finding] {
+        AnalysisSummary.findings(transactions, range: range)
     }
 
     private var categories: [AnalysisAggregates.CategoryTotal] {
@@ -26,41 +50,45 @@ struct AnalysisView: View {
         AnalysisAggregates.merchantLeaderboard(transactions, range: range)
     }
 
-    private var weekdays: [AnalysisAggregates.WeekdayTotal] {
-        AnalysisAggregates.weekdayPattern(transactions, range: range)
+    private var hasData: Bool { headline.count > 0 }
+
+    private var periodTitle: String {
+        let interval = range.interval()
+        switch range {
+        case .month:
+            return "Spent in \(interval.start.formatted(.dateTime.month(.wide)))"
+        case .quarter:
+            return "Spent in \(interval.start.formatted(.dateTime.month(.abbreviated))) – \(Date.now.formatted(.dateTime.month(.abbreviated)))"
+        case .year:
+            return "Spent in the last 12 months"
+        }
     }
 
-    private var weeks: [AnalysisAggregates.WeekTotal] {
-        AnalysisAggregates.weekBreakdown(transactions, range: range)
-    }
-
-    private var finding: String? {
-        AnalysisAggregates.finding(transactions, range: range)
-    }
-
-    private var hasData: Bool { !trend.isEmpty }
+    // MARK: Body
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 26) {
+                VStack(alignment: .leading, spacing: 14) {
                     rangePicker
                         .scrollToTopAnchor()
 
                     if hasData {
-                        trendSection
-                        if !weeks.isEmpty { weekSection }
-                        if !categories.isEmpty { categorySection }
-                        if !merchants.isEmpty { merchantSection }
-                        weekdaySection
-                        if let finding { findingCard(finding) }
+                        headlineCard
+                        pagerTabs
+                        pager
+                        pageDots
+                        if !categories.isEmpty { categoryCard }
+                        if !merchants.isEmpty { merchantCard }
                     } else {
                         emptyState
                     }
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 32)
+                .animation(.easeInOut(duration: 0.2), value: range)
             }
+            .background(Color(.systemGroupedBackground))
             .scrollsToTopOnTabChange()
             .navigationTitle("Analysis")
             .navigationDestination(for: AnalysisAggregates.MerchantTotal.self) { merchant in
@@ -69,10 +97,30 @@ struct AnalysisView: View {
             .navigationDestination(for: AnalysisAggregates.CategoryTotal.self) { category in
                 CategoryDetailView(categoryName: category.name, range: range)
             }
-            .navigationDestination(for: AnalysisAggregates.WeekTotal.self) { week in
-                WeekDetailView(weekStart: week.start, title: week.label())
+            .onAppear { page = Page(rawValue: savedPage) ?? .chart }
+            .onChange(of: page) { _, newValue in
+                if let newValue { savedPage = newValue.rawValue }
             }
         }
+    }
+
+    // MARK: Card chrome
+
+    private func card<Content: View>(
+        minHeight: CGFloat = 0,
+        @ViewBuilder _ content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) { content() }
+            .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .topLeading)
+            .padding(14)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(brand)
     }
 
     // MARK: Range
@@ -87,170 +135,294 @@ struct AnalysisView: View {
         .padding(.top, 4)
     }
 
-    // MARK: Trend
+    // MARK: Headline
 
-    private var trendSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader("Spent vs leaked")
+    /// The answer first: how much, how much of it leaked, and against what.
+    private var headlineCard: some View {
+        card {
+            Text(periodTitle)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
 
-            trendChart
-                .frame(height: 160)
+            Text(headline.spent.currencyRounded)
+                .font(.system(size: 36, weight: .semibold))
+                .contentTransition(.numericText())
+                .padding(.top, 2)
+
+            splitBar
+                .padding(.top, 9)
+
+            (Text("\(headline.leaked.currencyRounded) leaked").fontWeight(.semibold).foregroundStyle(brand)
+             + Text("  ·  ").foregroundStyle(Color(.tertiaryLabel))
+             + Text("\(headline.kept.currencyRounded) worth it").foregroundStyle(worthIt))
+                .font(.subheadline)
+                .padding(.top, 7)
+
+            if let context = headline.context {
+                Text(context)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 3)
+            }
         }
+        .accessibilityElement(children: .combine)
     }
 
-    @ViewBuilder
-    private var trendChart: some View {
-        if dynamicTypeSize.isAccessibilitySize {
-            trendChartContent
-                .chartXAxis(.hidden)
-                .chartYAxis(.hidden)
-        } else {
-            trendChartContent
-                .chartYAxis {
-                    AxisMarks(position: .leading)
+    private var splitBar: some View {
+        let spent = max(headline.spent, 0.01)
+        return GeometryReader { geometry in
+            HStack(spacing: 2) {
+                if headline.leaked > 0 {
+                    Rectangle().fill(brand)
+                        .frame(width: max(geometry.size.width * headline.leaked / spent - 2, 3))
+                }
+                if headline.kept > 0 {
+                    Rectangle().fill(Color(hex: "5DCAA5"))
+                        .frame(width: max(geometry.size.width * headline.kept / spent - 2, 3))
+                }
+                Spacer(minLength: 0)
+            }
+            .background(Color(.tertiarySystemFill))
+            .clipShape(Capsule())
+        }
+        .frame(height: 8)
+        .accessibilityHidden(true)
+    }
+
+    // MARK: Chart / Findings pager
+
+    /// Labels above the card. Swiping is invisible on its own; the labels, the
+    /// peeking edge of the next card and the dots are what make it findable.
+    private var pagerTabs: some View {
+        HStack(spacing: 22) {
+            tab("Chart", .chart)
+            tab("Findings", .findings)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 4)
+    }
+
+    private func tab(_ title: String, _ target: Page) -> some View {
+        let isOn = (page ?? .chart) == target
+        return Button {
+            withAnimation(.easeInOut(duration: 0.25)) { page = target }
+        } label: {
+            Text(title)
+                .font(.subheadline.weight(isOn ? .semibold : .regular))
+                .foregroundStyle(isOn ? brand : Color.secondary)
+                .padding(.bottom, 4)
+                .overlay(alignment: .bottom) {
+                    if isOn { Capsule().fill(brand).frame(height: 2) }
                 }
         }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 
-    private var trendChartContent: some View {
-        Chart(trend) { point in
-                BarMark(
-                    x: .value("Date", point.date, unit: range.bucket),
-                    y: .value("Kept", point.kept)
-                )
-                .foregroundStyle(Color(.tertiarySystemFill))
-
-                BarMark(
-                    x: .value("Date", point.date, unit: range.bucket),
-                    y: .value("Leaked", point.leaked)
-                )
-                .foregroundStyle(Color(hex: AppSettings.accentHex))
+    /// Two cards side by side, snapping. Each takes 92% of the width so the
+    /// next one's edge shows — the cue that there is a next one.
+    private var pager: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(alignment: .top, spacing: 10) {
+                chartCard
+                    .containerRelativeFrame(.horizontal) { width, _ in width * 0.92 }
+                    .id(Page.chart)
+                findingsCard
+                    .containerRelativeFrame(.horizontal) { width, _ in width * 0.92 }
+                    .id(Page.findings)
             }
+            .scrollTargetLayout()
+        }
+        .scrollTargetBehavior(.viewAligned)
+        .scrollPosition(id: $page)
+        .scrollClipDisabled()
     }
 
-    // MARK: Weeks
-
-    /// Week by week, newest first.
-    ///
-    /// The trend chart above is daily, which is too fine a grain to feel
-    /// responsible for — one expensive Saturday reads as an accident. A week is
-    /// the shortest unit where a habit is visible and still recent enough to
-    /// change.
-    private var weekSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader("Week by week")
-
-            let maximum = weeks.map(\.spent).max() ?? 1
-
-            VStack(spacing: 0) {
-                ForEach(weeks) { week in
-                    NavigationLink(value: week) {
-                        weekRow(week, maximum: maximum)
-                    }
-                    .buttonStyle(.plain)
-
-                    if week.id != weeks.last?.id { Divider() }
-                }
+    private var pageDots: some View {
+        HStack(spacing: 6) {
+            ForEach([Page.chart, Page.findings], id: \.self) { item in
+                Capsule()
+                    .fill((page ?? .chart) == item ? brand : Color(.systemGray4))
+                    .frame(width: (page ?? .chart) == item ? 16 : 7, height: 7)
             }
+        }
+        .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.2), value: page)
+        .accessibilityHidden(true)
+    }
 
-            if let note = AnalysisAggregates.weeklyNote(weeks) {
-                Text(note)
+    // MARK: Chart
+
+    private var chartCard: some View {
+        let ceilingInfo = AnalysisSummary.chartCeiling(for: bars)
+        let showValues = bars.count <= 6
+
+        return card(minHeight: 236) {
+            sectionTitle(range == .month ? "Week by week" : "Month by month")
+
+            if ceilingInfo.isCapped {
+                Text("The tallest bar is cut off so the others stay readable.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .padding(.top, 2)
             }
+
+            HStack(alignment: .bottom, spacing: bars.count > 6 ? 5 : 9) {
+                ForEach(bars) { bar in
+                    if range == .month && bar.spent > 0 {
+                        // A week bar opens that week's purchases.
+                        NavigationLink {
+                            WeekDetailView(weekStart: bar.start, title: "Week of \(bar.label)")
+                        } label: {
+                            barColumn(bar, ceiling: ceilingInfo.ceiling, showValue: showValues)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        barColumn(bar, ceiling: ceilingInfo.ceiling, showValue: showValues)
+                    }
+                }
+            }
+            .frame(height: 150, alignment: .bottom)
+            .padding(.top, 10)
+
+            HStack(spacing: 14) {
+                legend("Leaked", brand)
+                legend("Worth it", worthItBar)
+            }
+            .padding(.top, 10)
         }
     }
 
-    private func weekRow(_ week: AnalysisAggregates.WeekTotal, maximum: Double) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 4) {
-                    weekTitle(week)
-                    HStack(alignment: .firstTextBaseline) {
-                        if let change = week.change { changeBadge(change) }
-                        Spacer()
-                        weekAmount(week)
-                    }
+    private func barColumn(_ bar: AnalysisSummary.Bar, ceiling: Double, showValue: Bool) -> some View {
+        let plotHeight: CGFloat = 112
+        let isCut = bar.spent > ceiling
+        let shown = min(bar.spent, ceiling)
+        let height = bar.spent > 0 ? max(plotHeight * shown / ceiling, 4) : 3
+        let leakedHeight = bar.spent > 0 ? height * min(bar.leaked / bar.spent, 1) : 0
+
+        return VStack(spacing: 4) {
+            if showValue {
+                Text(bar.spent > 0 ? compact(bar.spent) : "")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+
+            ZStack(alignment: .bottom) {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(bar.spent > 0 ? worthItBar : Color(.tertiarySystemFill))
+                    .frame(height: height)
+                if leakedHeight > 0 {
+                    UnevenRoundedRectangle(
+                        bottomLeadingRadius: 5,
+                        bottomTrailingRadius: 5,
+                        style: .continuous
+                    )
+                    .fill(brand)
+                    .frame(height: leakedHeight)
                 }
-            } else {
-                HStack(alignment: .firstTextBaseline) {
-                    weekTitle(week)
-                    Spacer()
-                    if let change = week.change { changeBadge(change) }
-                    weekAmount(week)
+            }
+            // A cut bar gets a break near its top, so it reads as "taller
+            // than this" rather than as the real height.
+            .overlay(alignment: .top) {
+                if isCut {
+                    Rectangle()
+                        .fill(Color(.secondarySystemGroupedBackground))
+                        .frame(height: 3)
+                        .rotationEffect(.degrees(-8))
+                        .offset(y: 8)
                 }
             }
 
-            // Full width is the week's spend against the biggest week shown;
-            // the coral portion is the part of it the user would take back.
-            GeometryReader { geometry in
-                let width = geometry.size.width * (maximum > 0 ? week.spent / maximum : 0)
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color(.tertiarySystemFill))
-                        .frame(width: width)
-                    Capsule()
-                        .fill(Color(hex: AppSettings.accentHex))
-                        .frame(width: width * week.leakShare)
-                }
-            }
-            .frame(height: 6)
+            Text(bar.label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(bar.label): \(bar.spent.currencyRounded) spent, \(bar.leaked.currencyRounded) leaked")
+    }
 
-            Text("\(week.leaked.currencyRounded) leaked · \(week.count) \(week.count == 1 ? "purchase" : "purchases")")
+    private func legend(_ title: String, _ color: Color) -> some View {
+        HStack(spacing: 5) {
+            RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 9, height: 9)
+            Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 9)
     }
 
-    private func weekTitle(_ week: AnalysisAggregates.WeekTotal) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-                Text(week.label())
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
+    /// "$820", "$1.7k" — the bar labels are glanceable, not accounting.
+    private func compact(_ value: Double) -> String {
+        guard value >= 1000 else { return value.currencyRounded }
+        return (value / 1000).currency(code: AppSettings.currencyCode, fractionDigits: 1) + "k"
+    }
 
-                // Only the running week. A week cut off by the start of the
-                // range is also partial, but "so far" would read as "still
-                // going" — its label already narrows to the days in range.
-                if week.isCurrent {
-                    Text("so far")
+    // MARK: Findings
+
+    private var findingsCard: some View {
+        let sorted = headline.count
+        let threshold = AnalysisSummary.patternThreshold
+
+        return card(minHeight: 236) {
+            sectionTitle("What stood out")
+
+            if findings.isEmpty {
+                Text("Nothing stands out yet. Findings appear as you sort purchases.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 10)
+            } else {
+                ForEach(Array(findings.enumerated()), id: \.element.id) { index, finding in
+                    if index > 0 { Divider().padding(.leading, 32) }
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: finding.icon)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(brand)
+                            .frame(width: 22)
+                        Text(markdown(finding.text))
+                            .font(.subheadline)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+
+            // Patterns wait for enough data, and say so rather than guessing.
+            if sorted < threshold {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Habits like your most expensive day appear after \(threshold) sorted purchases.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    ProgressView(value: Double(sorted), total: Double(threshold))
+                        .tint(brand)
+                    Text("\(sorted) of \(threshold)")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
+                .padding(.top, 10)
+            }
         }
     }
 
-    private func weekAmount(_ week: AnalysisAggregates.WeekTotal) -> some View {
-        HStack(spacing: 8) {
-            Text(week.spent.currencyRounded)
-                .font(.subheadline)
-                .monospacedDigit()
-            Image(systemName: "chevron.right")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
+    private func markdown(_ text: String) -> AttributedString {
+        (try? AttributedString(markdown: text)) ?? AttributedString(text)
     }
 
-    private func changeBadge(_ change: Double) -> some View {
-        let isUp = change > 0
-        let percent = Int((abs(change) * 100).rounded())
+    // MARK: Leak by category and merchant
 
-        return Label(
-            "\(percent)%",
-            systemImage: isUp ? "arrow.up.right" : "arrow.down.right"
-        )
-        .font(.caption2)
-        .labelStyle(.titleAndIcon)
-        .foregroundStyle(Color(hex: isUp ? "993C1D" : "0F6E56"))
-    }
+    /// Ranked by leak, not spend — a grocery bill is the biggest line on any
+    /// statement and almost never the answer to "what would I take back".
+    private var categoryCard: some View {
+        let maximum = categories.map(\.leaked).max() ?? 1
 
-    // MARK: Categories
-
-    private var categorySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader("Leaked by category")
-
-            let maximum = categories.map(\.leaked).max() ?? 1
+        return card {
+            sectionTitle("Where it leaked")
+                .padding(.bottom, 6)
 
             ForEach(categories) { category in
                 NavigationLink(value: category) {
@@ -258,140 +430,81 @@ struct AnalysisView: View {
                         HStack {
                             Text(category.name)
                                 .font(.subheadline)
-                                .foregroundStyle(.primary)
                             Spacer()
                             Text(category.leaked.currencyRounded)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .font(.subheadline.weight(.semibold))
+                                .monospacedDigit()
                             Image(systemName: "chevron.right")
-                                .font(.caption2)
+                                .font(.caption2.weight(.semibold))
                                 .foregroundStyle(.tertiary)
                         }
                         GeometryReader { geometry in
                             ZStack(alignment: .leading) {
                                 Capsule().fill(Color(.tertiarySystemFill))
                                 Capsule()
-                                    .fill(Color(hex: category.colorHex))
-                                    .frame(width: geometry.size.width * (category.leaked / maximum))
+                                    .fill(brand)
+                                    .frame(width: max(geometry.size.width * (category.leaked / maximum), 4))
                             }
                         }
                         .frame(height: 6)
                     }
+                    .padding(.vertical, 6)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
         }
     }
 
-    // MARK: Merchants
+    private var merchantCard: some View {
+        card {
+            sectionTitle("Leaked by shop")
+                .padding(.bottom, 4)
 
-    private var merchantSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            sectionHeader("Leaked by merchant")
-                .padding(.bottom, 6)
-
-            ForEach(merchants) { merchant in
+            ForEach(Array(merchants.enumerated()), id: \.element.id) { index, merchant in
+                if index > 0 { Divider() }
                 NavigationLink(value: merchant) {
                     HStack {
                         VStack(alignment: .leading, spacing: 1) {
                             Text(merchant.merchant)
                                 .font(.subheadline)
-                                .foregroundStyle(.primary)
                             Text("\(merchant.count) \(merchant.count == 1 ? "visit" : "visits")")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
                         Text(merchant.leaked.currencyRounded)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(brand)
+                            .monospacedDigit()
                         Image(systemName: "chevron.right")
-                            .font(.caption2)
+                            .font(.caption2.weight(.semibold))
                             .foregroundStyle(.tertiary)
                     }
                     .padding(.vertical, 9)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-
-                if merchant.id != merchants.last?.id {
-                    Divider()
-                }
             }
         }
-    }
-
-    // MARK: Weekday
-
-    private var weekdaySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader("By day of week")
-
-            // Stacked rather than conditionally tinted. The old version turned a
-            // bar coral only above a 40% leak share, so at any ordinary ratio
-            // every bar stayed grey — a spend chart sitting under a heading
-            // about leaks, encoding nothing.
-            Chart {
-                ForEach(weekdays) { day in
-                    BarMark(
-                        x: .value("Day", day.shortName),
-                        y: .value("Kept", max(day.spent - day.leaked, 0))
-                    )
-                    .foregroundStyle(Color(.tertiarySystemFill))
-
-                    BarMark(
-                        x: .value("Day", day.shortName),
-                        y: .value("Leaked", day.leaked)
-                    )
-                    .foregroundStyle(Color(hex: AppSettings.accentHex))
-                }
-            }
-            .chartYAxis(.hidden)
-            .frame(height: 110)
-
-            if let worst = weekdays.filter({ $0.spent > 0 }).max(by: { $0.leakShare < $1.leakShare }),
-               worst.leakShare > 0 {
-                Text("\(worst.fullName) leaks most — \(Int((worst.leakShare * 100).rounded()))% of what you spend that day.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    // MARK: Finding
-
-    /// Serif, because this is the app speaking rather than reporting.
-    private func findingCard(_ text: String) -> some View {
-        Text(text)
-            .font(.system(.body, design: .serif))
-            .foregroundStyle(.primary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: Empty
 
     private var emptyState: some View {
         VStack(spacing: 8) {
-            Image(systemName: "chart.line.uptrend.xyaxis")
+            Image(systemName: "chart.bar")
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(.tertiary)
             Text("Nothing to analyse yet")
                 .font(.headline)
-            Text("Sort a few purchases and patterns will show up here.")
+            Text("Sort a few purchases and your spending shows up here.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 60)
-    }
-
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
     }
 }
 
