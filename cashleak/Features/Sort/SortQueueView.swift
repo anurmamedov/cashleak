@@ -7,9 +7,10 @@ import SwiftData
 /// core loop. The two fields stay independent in the model, but at the point of
 /// judgement the user is saying both "this is real" and "here's my call".
 ///
-/// Tapping a row assigns a category without touching the verdict. Apple Pay
-/// capture arrives uncategorised, so without this every automatic transaction
-/// would sit outside the Overview breakdown forever.
+/// **Select** acts on several at once, in three taps: Select, tick (or Select
+/// all), then Worth it, Leak, Category or Remove. No hidden gestures and no
+/// confirmation pop-ups — every action, removal included, has Undo instead.
+/// Bulk verdicts go through the same `SortBatch.apply` as a swipe (D-021).
 struct SortQueueView: View {
 
     @Environment(\.modelContext) private var context
@@ -22,77 +23,154 @@ struct SortQueueView: View {
     private var queue: [Transaction]
 
     @State private var categorising: Transaction?
-    @State private var lastAction: SortAction?
+    @State private var choosingBulkCategory = false
 
-    /// Enough to put a transaction back exactly as it was.
-    private struct SortAction: Equatable {
-        let transaction: Transaction
-        let previousVerdict: Verdict
-        let previousConfirmed: Bool
+    @State private var editMode: EditMode = .inactive
+    @State private var selection = Set<PersistentIdentifier>()
+
+    @State private var pendingUndo: PendingUndo?
+    /// Removed but not yet deleted. Hidden from the list while Undo is on
+    /// screen and deleted when it goes — holding a deletion back is reliable,
+    /// resurrecting a deleted record is not.
+    @State private var removing: [Transaction] = []
+
+    /// What the Undo bar would reverse.
+    private struct PendingUndo: Equatable {
+        let id = UUID()
+        let message: String
+        /// Field snapshots to restore. Empty for a removal.
+        let snapshots: [SortBatch.Snapshot]
+        let isRemoval: Bool
     }
+
+    private var isEditing: Bool { editMode == .active }
+
+    /// The queue minus anything waiting to be deleted.
+    private var visible: [Transaction] {
+        let hidden = Set(removing.map(\.persistentModelID))
+        return queue.filter { !hidden.contains($0.persistentModelID) }
+    }
+
+    private var selected: [Transaction] {
+        visible.filter { selection.contains($0.persistentModelID) }
+    }
+
+    private let brand = Color(hex: "C65A2E")
+    private let worthIt = Color(hex: "1D9E75")
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
-                Group {
-                    if queue.isEmpty {
-                        // Scrollable only so it can be pulled. An empty queue is
-                        // exactly when someone who just paid pulls to check.
-                        ScrollView {
-                            emptyState
-                                .containerRelativeFrame(.vertical)
-                        }
-                        .refreshable { await AppRefresh.catchUp(in: context) }
-                    } else {
-                        list
-                            .refreshable { await AppRefresh.catchUp(in: context) }
+            Group {
+                if visible.isEmpty {
+                    // Scrollable only so it can be pulled. An empty queue is
+                    // exactly when someone who just paid pulls to check.
+                    ScrollView {
+                        emptyState
+                            .containerRelativeFrame(.vertical)
                     }
+                    .refreshable { await AppRefresh.catchUp(in: context) }
+                } else {
+                    list
+                        .refreshable { await AppRefresh.catchUp(in: context) }
                 }
-
-                if let action = lastAction {
-                    undoBanner(for: action)
+            }
+            .safeAreaInset(edge: .bottom) {
+                if isEditing {
+                    actionBar
+                } else if let pendingUndo {
+                    undoBanner(for: pendingUndo)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .navigationTitle("Sort")
+            .navigationTitle(isEditing ? "\(selection.count) selected" : "Sort")
+            .navigationBarTitleDisplayMode(isEditing ? .inline : .large)
+            .toolbar { toolbarContent }
+            .environment(\.editMode, $editMode)
             .sheet(item: $categorising) { transaction in
                 CategoryPickerSheet(transaction: transaction)
+            }
+            .sheet(isPresented: $choosingBulkCategory) {
+                BulkCategorySheet(count: selected.count) { category in
+                    assign(category, to: selected)
+                }
+            }
+            .onChange(of: visible.count) { _, count in
+                // Leave selection mode when there's nothing left to select.
+                if count == 0 { endEditing() }
             }
         }
     }
 
+    // MARK: Toolbar
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        if isEditing {
+            ToolbarItem(placement: .topBarLeading) {
+                let allSelected = !visible.isEmpty && selection.count == visible.count
+                Button(allSelected ? "Deselect all" : "Select all") {
+                    withAnimation {
+                        selection = allSelected ? [] : Set(visible.map(\.persistentModelID))
+                    }
+                }
+                .foregroundStyle(brand)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Done") { endEditing() }
+                    .fontWeight(.semibold)
+                    .foregroundStyle(brand)
+            }
+        } else if !visible.isEmpty {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Select") {
+                    finalizeRemoval()
+                    withAnimation {
+                        pendingUndo = nil
+                        editMode = .active
+                    }
+                }
+                .foregroundStyle(brand)
+            }
+        }
+    }
+
+    // MARK: List
+
     private var list: some View {
-        List {
+        List(selection: $selection) {
             Section {
-                ForEach(queue) { transaction in
+                ForEach(visible) { transaction in
                     NavigationLink {
                         TransactionDetailView(transaction: transaction)
                     } label: {
                         QueueRow(transaction: transaction)
                     }
-                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                            Button {
-                                apply(.worthIt, to: transaction)
-                            } label: {
-                                Label("Worth it", systemImage: "checkmark")
-                            }
-                            .tint(Color(hex: "1D9E75"))
+                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                        Button {
+                            apply(.worthIt, to: [transaction])
+                        } label: {
+                            Label("Worth it", systemImage: "checkmark")
                         }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button {
-                                apply(.leak, to: transaction)
-                            } label: {
-                                Label("Leak", systemImage: "drop")
-                            }
-                            .tint(Color(hex: "D85A30"))
+                        .tint(worthIt)
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button {
+                            apply(.leak, to: [transaction])
+                        } label: {
+                            Label("Leak", systemImage: "drop")
                         }
+                        .tint(Color(hex: "D85A30"))
+                    }
                 }
             } footer: {
-                Text("Swipe right for worth it, left for leak. Tap to edit.")
+                if !isEditing {
+                    Text("Swipe right for worth it, left for leak. Tap Select to act on several, or to remove some.")
+                }
             }
             .scrollToTopAnchor()
         }
         .listStyle(.plain)
+        .tint(brand)
         .scrollsToTopOnTabChange()
     }
 
@@ -101,7 +179,7 @@ struct SortQueueView: View {
         VStack(spacing: 10) {
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 40, weight: .light))
-                .foregroundStyle(Color(hex: "1D9E75"))
+                .foregroundStyle(worthIt)
             Text("All sorted")
                 .font(.title3.weight(.medium))
             Text("Nothing waiting on you.")
@@ -111,69 +189,214 @@ struct SortQueueView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // MARK: Action bar
+
+    /// The same four buttons every time. With nothing ticked they're faded and
+    /// do nothing — never hidden, so the bar doesn't change shape under a thumb.
+    private var actionBar: some View {
+        let empty = selected.isEmpty
+
+        return HStack(spacing: 0) {
+            barButton("Worth it", systemImage: "checkmark.circle", tint: worthIt) {
+                apply(.worthIt, to: selected)
+            }
+            barButton("Leak", systemImage: "drop", tint: brand) {
+                apply(.leak, to: selected)
+            }
+            barButton("Category", systemImage: "tag", tint: .primary) {
+                choosingBulkCategory = true
+            }
+            barButton("Remove", systemImage: "trash", tint: .red) {
+                remove(selected)
+            }
+        }
+        .opacity(empty ? 0.4 : 1)
+        .allowsHitTesting(!empty)
+        .padding(.vertical, 8)
+        .background(.bar)
+        .overlay(alignment: .top) { Divider() }
+    }
+
+    private func barButton(
+        _ title: String,
+        systemImage: String,
+        tint: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                Image(systemName: systemImage)
+                    .font(.title3)
+                Text(title)
+                    .font(.caption2.weight(.medium))
+            }
+            .foregroundStyle(tint)
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: Undo
 
-    /// The whole product is one gesture. An unforgiving version of that gesture
-    /// makes people hesitate, and hesitation is what kills a daily habit.
-    private func undoBanner(for action: SortAction) -> some View {
+    /// Every action can be taken back for a few seconds. An unforgiving version
+    /// of the core gesture makes people hesitate, and hesitation is what kills a
+    /// daily habit.
+    private func undoBanner(for undo: PendingUndo) -> some View {
         HStack {
-            Text(action.transaction.verdict == .leak ? "Marked as leak" : "Marked worth it")
+            Text(undo.message)
                 .font(.subheadline)
                 .foregroundStyle(.white)
             Spacer()
-            Button("Undo") { undo(action) }
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.white)
+            Button("Undo") { self.undo(undo) }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color(hex: "F0997B"))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(Color(hex: "2C2C2A"))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .padding(.horizontal)
         .padding(.bottom, 10)
     }
 
-    private func apply(_ verdict: Verdict, to transaction: Transaction) {
-        let action = SortAction(
-            transaction: transaction,
-            previousVerdict: transaction.verdict,
-            previousConfirmed: transaction.isConfirmed
-        )
+    // MARK: Actions
+
+    private func apply(_ verdict: Verdict, to transactions: [Transaction]) {
+        guard !transactions.isEmpty else { return }
+        finalizeRemoval()
+
+        let snapshots = SortBatch.snapshot(transactions)
+        let count = transactions.count
+        let label = verdict == .leak ? "leak" : "worth it"
+        let message = count == 1
+            ? (verdict == .leak ? "Marked as leak" : "Marked worth it")
+            : "\(count) marked \(label)"
 
         withAnimation {
-            transaction.verdict = verdict
-            transaction.isConfirmed = true
+            SortBatch.apply(verdict, to: transactions)
             try? context.save()
-            lastAction = action
+            endEditing()
+            show(PendingUndo(message: message, snapshots: snapshots, isRemoval: false))
         }
-
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        scheduleBannerDismissal(for: action)
     }
 
-    /// Restores both fields together. Undoing a verdict but leaving the
-    /// transaction confirmed would count it toward totals with no judgement
-    /// attached — the exact state the model is designed to prevent.
-    private func undo(_ action: SortAction) {
+    private func assign(_ category: Category, to transactions: [Transaction]) {
+        guard !transactions.isEmpty else { return }
+        finalizeRemoval()
+
+        let snapshots = SortBatch.snapshot(transactions)
         withAnimation {
-            action.transaction.verdict = action.previousVerdict
-            action.transaction.isConfirmed = action.previousConfirmed
+            SortBatch.assign(category, to: transactions)
             try? context.save()
-            lastAction = nil
+            endEditing()
+            show(PendingUndo(
+                message: "\(transactions.count) filed under \(category.name)",
+                snapshots: snapshots,
+                isRemoval: false
+            ))
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    private func remove(_ transactions: [Transaction]) {
+        guard !transactions.isEmpty else { return }
+        finalizeRemoval()
+
+        withAnimation {
+            removing = transactions
+            endEditing()
+            show(PendingUndo(
+                message: "\(transactions.count) removed",
+                snapshots: [],
+                isRemoval: true
+            ))
+        }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+    }
+
+    private func undo(_ undo: PendingUndo) {
+        withAnimation {
+            if undo.isRemoval {
+                removing = []
+            } else {
+                SortBatch.restore(undo.snapshots)
+                try? context.save()
+            }
+            pendingUndo = nil
         }
         UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
     }
 
-    private func scheduleBannerDismissal(for action: SortAction) {
+    private func show(_ undo: PendingUndo) {
+        pendingUndo = undo
         Task {
-            try? await Task.sleep(for: .seconds(4))
+            try? await Task.sleep(for: .seconds(5))
             await MainActor.run {
-                // Only clear if nothing newer has replaced it.
-                if lastAction == action {
-                    withAnimation { lastAction = nil }
+                // Only act if nothing newer has replaced it.
+                guard pendingUndo?.id == undo.id else { return }
+                if undo.isRemoval { finalizeRemoval() }
+                withAnimation { pendingUndo = nil }
+            }
+        }
+    }
+
+    /// Deletes whatever is waiting to be removed. Called when the Undo window
+    /// closes, and before any new action so an older removal is never lost
+    /// track of.
+    private func finalizeRemoval() {
+        guard !removing.isEmpty else { return }
+        SortBatch.remove(removing, in: context)
+        removing = []
+    }
+
+    private func endEditing() {
+        editMode = .inactive
+        selection = []
+    }
+}
+
+/// Picks one category for several purchases at once.
+private struct BulkCategorySheet: View {
+
+    let count: Int
+    let onPick: (Category) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @Query(sort: \Category.sortIndex) private var categories: [Category]
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(categories) { category in
+                        Button {
+                            onPick(category)
+                            dismiss()
+                        } label: {
+                            HStack {
+                                Image(systemName: category.icon)
+                                    .foregroundStyle(Color(hex: category.colorHex))
+                                    .frame(width: 26)
+                                Text(category.name)
+                                    .foregroundStyle(.primary)
+                            }
+                        }
+                    }
+                } footer: {
+                    Text("Files \(count) purchase\(count == 1 ? "" : "s"). They stay in Sort until you mark them worth it or leak.")
+                }
+            }
+            .navigationTitle("Category")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
                 }
             }
         }
+        .presentationDetents([.medium, .large])
     }
 }
 

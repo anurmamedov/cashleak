@@ -606,3 +606,31 @@ Today list shows unsorted captures; no total includes them.
 
 **Reverse if:** L1 shows the verdict mechanic weakens when the leak is one line
 inside a spending summary rather than the whole top third of the screen.
+
+---
+
+## D-021 · Sort can act on many at once, verdicts included
+
+**Decided.** Sort gains a Select mode: tick purchases or Select all, then Worth
+it, Leak, Category or Remove. Three taps, no hidden gestures, no confirmation
+pop-ups — every action, removal included, has Undo for five seconds.
+
+**The tension, stated.** `CLAUDE.md` says "the user decides, every time", and
+the whole product rests on judging purchases one by one. A bulk verdict lets
+someone mark forty purchases a leak with one tap, which is closer to filing
+than judging. That is what L1 is trying to measure.
+
+**Why allow it anyway.** The rule exists to stop the *app* deciding — no
+category-level waste flags, no auto-classification. A person ticking purchases
+and choosing a verdict is still a person deciding. A version that hid Worth it
+and Leak after Select all was considered and rejected: a button that
+sometimes disappears reads as broken, and simplicity was the explicit ask.
+
+**Remove deletes.** Unlike a dedup merge (superseded, recoverable), removing is
+a person discarding their own record — test runs, declines, things they don't
+want tracked. The deletion is held back while Undo is on screen, then made.
+The capture log is a separate model and keeps its entry.
+
+**Reverse if:** L1 shows people bulk-marking rather than judging — for example,
+most verdicts arriving in batches of ten or more. Then bulk verdicts go, and
+Select keeps only Category and Remove.

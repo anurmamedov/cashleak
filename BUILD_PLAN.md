@@ -277,6 +277,10 @@ Not unit-testable. Needs two physical devices.
 - [x] Undo banner for 4 seconds after each swipe
 - [x] Undo restores verdict and confirmation together
 - [x] 3 action tests
+- [x] **Select mode** (D-021) — Select, tick or Select all, then Worth it,
+      Leak, Category or Remove from a bar that never changes shape. Undo for
+      every action; removal is held back until Undo closes, then deleted.
+      `SortBatch` shared with swipes, 5 tests
 
 ### L13 · Wallet App Intent — done
 
