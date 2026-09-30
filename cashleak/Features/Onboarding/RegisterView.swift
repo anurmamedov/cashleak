@@ -17,6 +17,8 @@ struct RegisterView: View {
     @State private var isSaving = false
     @State private var authenticationError: String?
     @State private var failures: [ProfileValidator.Failure] = []
+    @State private var showsPassword = false
+    @State private var showsConfirmPassword = false
 
     @FocusState private var focused: Field?
 
@@ -60,16 +62,21 @@ struct RegisterView: View {
                 }
 
                 Section {
-                    SecureField("Password", text: $password)
-                        .textContentType(.newPassword)
-                        .focused($focused, equals: .password)
-                        .submitLabel(.next)
-                        .onSubmit { focused = .confirm }
+                    passwordField(
+                        "Password",
+                        text: $password,
+                        field: .password,
+                        isVisible: $showsPassword,
+                        submitLabel: .next
+                    ) { focused = .confirm }
 
-                    SecureField("Confirm password", text: $confirmPassword)
-                        .textContentType(.newPassword)
-                        .focused($focused, equals: .confirm)
-                        .submitLabel(.done)
+                    passwordField(
+                        "Confirm password",
+                        text: $confirmPassword,
+                        field: .confirm,
+                        isVisible: $showsConfirmPassword,
+                        submitLabel: .done
+                    ) { focused = nil }
                 } header: {
                     Text("Account password")
                 } footer: {
@@ -111,6 +118,54 @@ struct RegisterView: View {
                 }
             }
             .onAppear { focused = .first }
+        }
+    }
+
+    /// A password field with a show / hide eye inside it, on the right.
+    ///
+    /// Typos in a password nobody can see are the most common reason a new
+    /// account can't sign in again. The eye swaps a `SecureField` for a
+    /// `TextField`; that swap drops keyboard focus, so it's put straight back
+    /// when the field was the one being typed in.
+    private func passwordField(
+        _ title: String,
+        text: Binding<String>,
+        field: Field,
+        isVisible: Binding<Bool>,
+        submitLabel: SubmitLabel,
+        onSubmit: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 8) {
+            Group {
+                if isVisible.wrappedValue {
+                    TextField(title, text: text)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                } else {
+                    SecureField(title, text: text)
+                }
+            }
+            .textContentType(.newPassword)
+            .focused($focused, equals: field)
+            .submitLabel(submitLabel)
+            .onSubmit(onSubmit)
+
+            Button {
+                let wasTyping = focused == field
+                isVisible.wrappedValue.toggle()
+                if wasTyping {
+                    Task { @MainActor in focused = field }
+                }
+            } label: {
+                Image(systemName: isVisible.wrappedValue ? "eye.slash" : "eye")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
+            }
+            // Borderless so a tap on the eye doesn't also count as a tap on
+            // the whole Form row.
+            .buttonStyle(.borderless)
+            .accessibilityLabel(isVisible.wrappedValue ? "Hide password" : "Show password")
         }
     }
 
