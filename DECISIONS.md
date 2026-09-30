@@ -634,3 +634,26 @@ The capture log is a separate model and keeps its entry.
 **Reverse if:** L1 shows people bulk-marking rather than judging — for example,
 most verdicts arriving in batches of ten or more. Then bulk verdicts go, and
 Select keeps only Category and Remove.
+
+---
+
+## D-022 · Stay signed in; offer a Face ID lock once instead of "Remember me"
+
+**Decided.** No "Remember me" switch on sign-in. Firebase already keeps you
+signed in across launches and updates until you sign out, which is what iPhone
+apps are expected to do; a switch would only add a way to make it worse.
+
+Instead, right after the first signed-in launch, one question: *"You're signed
+in — use Face ID?"* Asked once, never again whichever answer.
+
+- **The Face ID lock uses the iPhone's own passcode as its fallback**, not an
+  app password. One tap to turn on, nothing new to remember. The original
+  app-password lock stays available under Profile › App lock.
+- Turning the Face ID lock on or off needs Face ID or the passcode first — a lock
+  anyone holding the phone can silently remove isn't one.
+- **Grace period raised from 1 to 5 minutes.** At one minute, a trip to Messages
+  and back asked for Face ID again, which read as being logged out constantly.
+
+Also fixed: the app had no `NSFaceIDUsageDescription`, so the first Face ID
+prompt — including the existing password lock's — would have terminated the
+app on a Face ID phone.

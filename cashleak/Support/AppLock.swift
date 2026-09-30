@@ -21,11 +21,32 @@ enum AppLock {
     private static let service = "com.karasandlabs.cashleak.applock"
     private static let hashAccount = "passwordHash"
     private static let saltAccount = "passwordSalt"
+    private static let deviceAccount = "deviceAuthentication"
 
     // MARK: State
 
+    /// Locked by either method. What the app checks before showing anything.
     static var isEnabled: Bool {
+        hasPassword || usesDeviceAuthentication
+    }
+
+    /// An app-specific password is set (the original lock, from Profile ›
+    /// Passcode). Face ID unlocks it too; the password is its fallback.
+    static var hasPassword: Bool {
         read(account: hashAccount) != nil
+    }
+
+    /// Face ID with the **iPhone's own passcode** as the fallback — no app
+    /// password to invent or forget. This is what the one-time offer after
+    /// sign-in turns on, because it's one tap and nothing to remember.
+    static var usesDeviceAuthentication: Bool {
+        read(account: deviceAccount) != nil
+    }
+
+    /// Whether this device can lock with Face ID or its passcode at all. False
+    /// only on a phone with no passcode set.
+    static var canUseDeviceAuthentication: Bool {
+        LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: nil)
     }
 
     static var biometryIsAvailable: Bool {
@@ -64,6 +85,19 @@ enum AppLock {
         delete(account: saltAccount)
     }
 
+    /// Turns on the Face ID lock — but only after Face ID (or the passcode)
+    /// succeeds once, so nobody ends up with a lock they can't open.
+    static func enableDeviceAuthentication() async -> Bool {
+        guard await authenticateWithDevice(reason: "Turn on \(biometryName) for CashLeak") else {
+            return false
+        }
+        return write(Data([1]), account: deviceAccount)
+    }
+
+    static func disableDeviceAuthentication() {
+        delete(account: deviceAccount)
+    }
+
     // MARK: Checking
 
     static func verify(_ password: String) -> Bool {
@@ -99,6 +133,37 @@ enum AppLock {
         } catch {
             return false
         }
+    }
+
+    /// Face ID, falling back to the iPhone passcode. Never fails for want of
+    /// biometrics — a passcode always works — which is what makes it safe to
+    /// offer as a one-tap lock.
+    static func authenticateWithDevice(reason: String = "Open CashLeak") async -> Bool {
+        let context = LAContext()
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: nil) else {
+            return false
+        }
+        do {
+            return try await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason)
+        } catch {
+            return false
+        }
+    }
+
+    // MARK: One-time offer
+
+    private static let offerKey = "appLock.deviceAuthenticationOffered"
+
+    /// Whether to ask, once, right after sign-in. Never again after an answer
+    /// either way — a question that keeps coming back is nagging.
+    static var shouldOfferDeviceAuthentication: Bool {
+        !isEnabled
+            && canUseDeviceAuthentication
+            && !UserDefaults.standard.bool(forKey: offerKey)
+    }
+
+    static func markDeviceAuthenticationOffered() {
+        UserDefaults.standard.set(true, forKey: offerKey)
     }
 
     // MARK: Hashing

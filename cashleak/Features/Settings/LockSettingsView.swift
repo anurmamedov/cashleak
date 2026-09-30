@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Turn the app lock on, change it, or turn it off.
 ///
-/// Referenced from Profile › Passcode. The lock protects a local database on a
+/// Referenced from Profile › App lock. The lock protects a local database on a
 /// device that already has a passcode, so the copy avoids implying more
 /// security than exists — and turning it off still asks for the current
 /// password, because a lock anyone can silently remove isn't one.
@@ -10,7 +10,10 @@ struct LockSettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var isEnabled = AppLock.isEnabled
+    /// An app password is set. Separate from the Face ID lock below, which
+    /// uses the iPhone passcode as its fallback instead.
+    @State private var isEnabled = AppLock.hasPassword
+    @State private var usesFaceID = AppLock.usesDeviceAuthentication
 
     @State private var current = ""
     @State private var new = ""
@@ -30,8 +33,35 @@ struct LockSettingsView: View {
         return isEnabled ? !current.isEmpty : true
     }
 
+    /// Turning the lock on or off both require Face ID or the passcode — a
+    /// lock anyone holding the phone can silently remove isn't one.
+    private var faceIDBinding: Binding<Bool> {
+        Binding(
+            get: { usesFaceID },
+            set: { wanted in
+                Task {
+                    if wanted {
+                        _ = await AppLock.enableDeviceAuthentication()
+                    } else if await AppLock.authenticateWithDevice(reason: "Turn off the lock") {
+                        AppLock.disableDeviceAuthentication()
+                    }
+                    usesFaceID = AppLock.usesDeviceAuthentication
+                }
+            }
+        )
+    }
+
     var body: some View {
         List {
+            if AppLock.canUseDeviceAuthentication {
+                Section {
+                    Toggle("\(AppLock.biometryName) lock", isOn: faceIDBinding)
+                        .tint(Color(hex: "C65A2E"))
+                } footer: {
+                    Text("Opening CashLeak takes a glance. Your iPhone passcode is the backup — there's no separate password to remember. You stay signed in either way.")
+                }
+            }
+
             if isEnabled {
                 Section {
                     SecureField("Current password", text: $current)
@@ -47,7 +77,7 @@ struct LockSettingsView: View {
                 SecureField("Confirm", text: $confirm)
                     .textContentType(.newPassword)
             } header: {
-                Text(isEnabled ? "Change" : "Set a password")
+                Text(isEnabled ? "Change app password" : "Or use an app password")
             } footer: {
                 if isTooShort {
                     Text("At least \(ProfileValidator.minimumPasswordLength) characters.")
@@ -86,7 +116,7 @@ struct LockSettingsView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .navigationTitle("Passcode")
+        .navigationTitle("App lock")
         .navigationBarTitleDisplayMode(.inline)
     }
 

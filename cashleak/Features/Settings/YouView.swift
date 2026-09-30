@@ -100,7 +100,7 @@ struct YouView: View {
                     LockSettingsView()
                 } label: {
                     HStack {
-                        Label("Passcode", systemImage: "lock")
+                        Label("App lock", systemImage: "lock")
                         Spacer()
                         Text(AppLock.isEnabled ? "On" : "Off")
                             .foregroundStyle(.secondary)

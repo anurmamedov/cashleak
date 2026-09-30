@@ -26,6 +26,57 @@ struct LockScreenView: View {
             Text("CashLeak is locked")
                 .font(.title3.weight(.medium))
 
+            if !AppLock.hasPassword {
+                deviceUnlock
+            } else {
+                passwordUnlock
+            }
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
+        .task {
+            // Face ID first, straight away. With no app password set, the
+            // system falls back to the iPhone passcode by itself.
+            if !AppLock.hasPassword {
+                if await AppLock.authenticateWithDevice() { onUnlock() }
+                return
+            }
+            // Password lock: try biometrics, then fall through to the field
+            // rather than sitting there doing nothing.
+            if AppLock.biometryIsAvailable {
+                if await AppLock.authenticateWithBiometrics() {
+                    onUnlock()
+                    return
+                }
+            }
+            passwordFocused = true
+        }
+    }
+
+    /// Face ID lock with no app password — one button, in case the automatic
+    /// attempt was cancelled.
+    private var deviceUnlock: some View {
+        Button {
+            Task { if await AppLock.authenticateWithDevice() { onUnlock() } }
+        } label: {
+            Label(
+                "Unlock with \(AppLock.biometryName)",
+                systemImage: AppLock.biometryName == "Touch ID" ? "touchid" : "faceid"
+            )
+            .font(.body.weight(.semibold))
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .background(Color(hex: "C65A2E"))
+            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 40)
+    }
+
+    private var passwordUnlock: some View {
             VStack(spacing: 12) {
                 SecureField("Password", text: $password)
                     .textContentType(.password)
@@ -58,22 +109,6 @@ struct LockScreenView: View {
                 }
             }
             .padding(.horizontal, 40)
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
-        .task {
-            // Try biometrics first. If it fails or isn't set up, fall through
-            // to the password field rather than sitting there doing nothing.
-            if AppLock.biometryIsAvailable {
-                if await AppLock.authenticateWithBiometrics() {
-                    onUnlock()
-                    return
-                }
-            }
-            passwordFocused = true
-        }
     }
 
     private func attempt() {

@@ -89,8 +89,11 @@ struct AppGate: View {
     /// momentary switch away — being asked for a password after glancing at a
     /// notification is how people turn locks off.
     @State private var backgroundedAt: Date?
+    @State private var offeringLock = false
 
-    private static let lockGracePeriod: TimeInterval = 60
+    /// Five minutes. A quick trip to Messages and back shouldn't need Face ID;
+    /// at one minute it felt like being asked to log in all the time.
+    private static let lockGracePeriod: TimeInterval = 5 * 60
 
     var body: some View {
         Group {
@@ -107,7 +110,27 @@ struct AppGate: View {
                 LockScreenView { isLocked = false }
             } else {
                 RootTabView()
+                    .task {
+                        // Asked once, the first time the app is open and
+                        // signed in. Signed in stays signed in; this only
+                        // decides whether opening the app needs a glance.
+                        guard AppLock.shouldOfferDeviceAuthentication else { return }
+                        try? await Task.sleep(for: .seconds(0.6))
+                        AppLock.markDeviceAuthenticationOffered()
+                        offeringLock = true
+                    }
             }
+        }
+        .alert(
+            "You're signed in",
+            isPresented: $offeringLock
+        ) {
+            Button("Use \(AppLock.biometryName)") {
+                Task { _ = await AppLock.enableDeviceAuthentication() }
+            }
+            Button("Not now", role: .cancel) {}
+        } message: {
+            Text("You'll stay signed in on this iPhone. \(AppLock.biometryName) keeps your spending private if someone else picks it up. You can change this in Profile › App lock.")
         }
         .environmentObject(authentication)
         .animation(.easeInOut(duration: 0.2), value: authentication.user?.uid)
