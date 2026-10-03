@@ -243,7 +243,7 @@ final class AppleReauthentication: NSObject {
     }
 }
 
-extension AppleReauthentication: @preconcurrency ASAuthorizationControllerDelegate {
+extension AppleReauthentication: ASAuthorizationControllerDelegate {
     func authorizationController(
         controller: ASAuthorizationController,
         didCompleteWithAuthorization authorization: ASAuthorization
@@ -260,7 +260,7 @@ extension AppleReauthentication: @preconcurrency ASAuthorizationControllerDelega
     }
 }
 
-extension AppleReauthentication: @preconcurrency ASAuthorizationControllerPresentationContextProviding {
+extension AppleReauthentication: ASAuthorizationControllerPresentationContextProviding {
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
