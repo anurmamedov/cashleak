@@ -9,13 +9,21 @@ final class DailyReminderTests: XCTestCase {
 
     func testSingularReminderCopy() throws {
         let plan = try XCTUnwrap(DailyReminder.plan(unsortedCount: 1, hour: 21, minute: 0))
-        XCTAssertEqual(plan.title, "1 purchase is waiting")
+        XCTAssertEqual(plan.title, "1 purchase waiting")
     }
 
     func testPluralReminderCopy() throws {
         let plan = try XCTUnwrap(DailyReminder.plan(unsortedCount: 4, hour: 21, minute: 0))
-        XCTAssertEqual(plan.title, "4 purchases are waiting")
+        XCTAssertEqual(plan.title, "4 purchases waiting")
         XCTAssertTrue(plan.body.contains("Worth it or leak?"))
+    }
+
+    /// The number earns the interruption (CLAUDE.md, Voice).
+    func testTitleCarriesTheTotal() throws {
+        let plan = try XCTUnwrap(DailyReminder.plan(unsortedCount: 3, total: 58.39, hour: 21, minute: 0))
+        XCTAssertTrue(plan.title.hasPrefix("3 purchases · "))
+        XCTAssertTrue(plan.title.contains("58.39"))
+        XCTAssertTrue(plan.title.hasSuffix("waiting"))
     }
 
     func testReminderTimeIsClampedToAValidClockTime() throws {

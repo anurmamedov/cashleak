@@ -24,14 +24,18 @@ enum DailyReminder {
 
     /// Pure so notification wording and time handling can be tested without
     /// asking the Simulator for notification permission.
-    static func plan(unsortedCount: Int, hour: Int, minute: Int) -> Plan? {
+    /// The title carries the number, per the voice rules: a notification has
+    /// to earn its interruption. "3 purchases · $58.39 waiting" does;
+    /// "3 purchases are waiting" barely does.
+    static func plan(unsortedCount: Int, total: Double = 0, hour: Int, minute: Int) -> Plan? {
         guard unsortedCount > 0 else { return nil }
 
         let safeHour = min(max(hour, 0), 23)
         let safeMinute = min(max(minute, 0), 59)
-        let title = unsortedCount == 1
-            ? "1 purchase is waiting"
-            : "\(unsortedCount) purchases are waiting"
+        let count = unsortedCount == 1 ? "1 purchase" : "\(unsortedCount) purchases"
+        let title = total > 0
+            ? "\(count) · \(total.currencyExact) waiting"
+            : "\(count) waiting"
 
         return Plan(
             title: title,
@@ -50,7 +54,9 @@ enum DailyReminderScheduler {
         let center = UNUserNotificationCenter.current()
 
         do {
-            let granted = try await center.requestAuthorization(options: [.alert, .badge, .sound])
+            // No badge: the app never sets one, so asking for it was asking
+            // for a permission it didn't use.
+            let granted = try await center.requestAuthorization(options: [.alert, .sound])
             AppSettings.notificationsEnabled = granted
             if granted {
                 await refresh(in: context)
@@ -96,9 +102,10 @@ enum DailyReminderScheduler {
         let descriptor = FetchDescriptor<Transaction>(
             predicate: #Predicate { !$0.isConfirmed && !$0.isSuperseded }
         )
-        let count = (try? context.fetchCount(descriptor)) ?? 0
+        let waiting = (try? context.fetch(descriptor)) ?? []
         guard let plan = DailyReminder.plan(
-            unsortedCount: count,
+            unsortedCount: waiting.count,
+            total: waiting.reduce(0) { $0 + $1.amount },
             hour: AppSettings.notificationHour,
             minute: AppSettings.notificationMinute
         ) else {
