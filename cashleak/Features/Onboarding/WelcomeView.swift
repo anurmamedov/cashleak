@@ -18,6 +18,17 @@ struct WelcomeView: View {
     @State private var appleError: String?
     @State private var appleNonce: String?
 
+    // Face ID sign-in (D-024). The orange button becomes "Sign in with Face ID"
+    // once a sign-in has been saved on this phone.
+    @State private var faceIDReady = SavedSignIn.isAvailable
+    @State private var usingPassword = false
+    @State private var rememberWithFaceID = true
+    @State private var showsPassword = false
+    @State private var didAutoTrigger = false
+
+    /// Face ID is the main way in, and the password field is tucked away.
+    private var faceIDMode: Bool { faceIDReady && !usingPassword }
+
     @FocusState private var focusedField: Field?
 
     private enum Field { case username, password }
@@ -42,6 +53,7 @@ struct WelcomeView: View {
         .tint(brand)
         .sheet(isPresented: $isRegistering) { RegisterView() }
         .sheet(isPresented: $isRecoveringPassword) { ForgotPasswordView() }
+        .onAppear(perform: prepareFaceID)
     }
 
     // MARK: Header
@@ -88,23 +100,38 @@ struct WelcomeView: View {
                 .focused($focusedField, equals: .username)
                 .onSubmit { focusedField = .password }
                 .welcomeFieldStyle()
+                .onChange(of: username) { _, newValue in
+                    // A different email can't use the saved sign-in.
+                    if faceIDReady,
+                       newValue.trimmingCharacters(in: .whitespaces).lowercased() != SavedSignIn.savedEmail {
+                        usingPassword = true
+                    }
+                }
 
-            SecureField("", text: $password, prompt: placeholder("Password"))
-                .textContentType(.password)
-                .submitLabel(.go)
-                .focused($focusedField, equals: .password)
-                .onSubmit(signIn)
-                .welcomeFieldStyle()
+            if !faceIDMode {
+                passwordField
 
-            // Beside the field it belongs to, rather than stacked under the
-            // primary button competing with it.
-            HStack {
-                Spacer()
-                Button("Forgot password?") { isRecoveringPassword = true }
-                    .font(.footnote)
-                    .foregroundStyle(brand)
+                // Beside the field it belongs to, rather than stacked under the
+                // primary button competing with it.
+                HStack {
+                    Spacer()
+                    Button("Forgot password?") { isRecoveringPassword = true }
+                        .font(.footnote)
+                        .foregroundStyle(brand)
+                }
+                .padding(.top, 2)
+
+                // Only before a sign-in is saved. On by default: the whole
+                // point is that this is the last time the password is typed.
+                if !faceIDReady && SavedSignIn.biometryIsAvailable {
+                    Toggle(isOn: $rememberWithFaceID) {
+                        Label("Use Face ID next time", systemImage: "faceid")
+                            .font(.subheadline)
+                    }
+                    .tint(brand)
+                    .padding(.horizontal, 2)
+                }
             }
-            .padding(.top, 2)
 
             if let signInError {
                 Text(signInError)
@@ -117,10 +144,21 @@ struct WelcomeView: View {
             // Drawn by hand rather than with `.borderedProminent`. That style
             // picks its own height and corner radius, which is why it never
             // matched the Apple button sitting under it.
-            Button(action: signIn) {
+            Button {
+                if faceIDMode {
+                    Task { await signInWithFaceID() }
+                } else {
+                    signIn()
+                }
+            } label: {
                 HStack(spacing: 8) {
-                    if isSigningIn { ProgressView().tint(.white) }
-                    Text(isSigningIn ? "Signing in…" : "Sign in")
+                    if isSigningIn {
+                        ProgressView().tint(.white)
+                    } else if faceIDMode {
+                        Image(systemName: "faceid")
+                            .font(.title3)
+                    }
+                    Text(primaryTitle)
                         .font(.body.weight(.semibold))
                 }
                 .foregroundStyle(.white)
@@ -131,6 +169,25 @@ struct WelcomeView: View {
             }
             .buttonStyle(.plain)
             .padding(.top, 6)
+
+            if faceIDReady {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        usingPassword.toggle()
+                        signInError = nil
+                    }
+                    if usingPassword { focusedField = .password }
+                } label: {
+                    Label(
+                        faceIDMode ? "Use password instead" : "Use Face ID instead",
+                        systemImage: faceIDMode ? "key" : "faceid"
+                    )
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(brand)
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 2)
+            }
 
             // No "or" divider. Two buttons stacked read as two ways in; a rule
             // between them implies a fork that isn't there.
@@ -189,6 +246,47 @@ struct WelcomeView: View {
             .padding(.horizontal, 32)
             .padding(.top, 22)
             .padding(.bottom, 30)
+    }
+
+    // MARK: Password field
+
+    /// The eye sits inside the field. Swapping SecureField for TextField drops
+    /// focus, so it's put straight back.
+    private var passwordField: some View {
+        HStack(spacing: 8) {
+            Group {
+                if showsPassword {
+                    TextField("", text: $password, prompt: placeholder("Password"))
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                } else {
+                    SecureField("", text: $password, prompt: placeholder("Password"))
+                }
+            }
+            .textContentType(.password)
+            .submitLabel(.go)
+            .focused($focusedField, equals: .password)
+            .onSubmit(signIn)
+
+            Button {
+                let wasTyping = focusedField == .password
+                showsPassword.toggle()
+                if wasTyping { Task { @MainActor in focusedField = .password } }
+            } label: {
+                Image(systemName: showsPassword ? "eye.slash" : "eye")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(showsPassword ? "Hide password" : "Show password")
+        }
+        .welcomeFieldStyle()
+    }
+
+    private var primaryTitle: String {
+        if isSigningIn { return "Signing in…" }
+        return faceIDMode ? "Sign in with Face ID" : "Sign in"
     }
 
     // MARK: Metrics
@@ -260,9 +358,19 @@ struct WelcomeView: View {
         isSigningIn = true
         signInError = nil
 
+        // Captured before the await: the screen is replaced the moment sign-in
+        // succeeds, and the save has to happen with the values that worked.
+        let typedPassword = password
+        let shouldSave = SavedSignIn.biometryIsAvailable
+            && (rememberWithFaceID || (faceIDReady && normalizedUsername == SavedSignIn.savedEmail))
+
         Task {
             do {
-                try await authentication.signIn(email: normalizedUsername, password: password)
+                try await authentication.signIn(email: normalizedUsername, password: typedPassword)
+                // Saved only after Firebase accepted it — a typo is never kept.
+                if shouldSave {
+                    SavedSignIn.save(email: normalizedUsername, password: typedPassword)
+                }
                 password = ""
             } catch {
                 signInError = AuthenticationService.message(for: error)
@@ -271,6 +379,57 @@ struct WelcomeView: View {
             }
             isSigningIn = false
         }
+    }
+
+    // MARK: Face ID sign-in
+
+    /// Fills the saved email and, once per appearance, starts Face ID by itself
+    /// — the screen is already saying "Sign in with Face ID", so making someone
+    /// tap first is a wasted step.
+    private func prepareFaceID() {
+        faceIDReady = SavedSignIn.isAvailable
+        guard faceIDReady, let email = SavedSignIn.savedEmail else { return }
+        username = email
+
+        guard !didAutoTrigger else { return }
+        didAutoTrigger = true
+        Task {
+            try? await Task.sleep(for: .milliseconds(450))
+            if faceIDMode { await signInWithFaceID() }
+        }
+    }
+
+    @MainActor
+    private func signInWithFaceID() async {
+        guard !isSigningIn else { return }
+        isSigningIn = true
+        signInError = nil
+
+        switch await SavedSignIn.load() {
+        case let .success(email, savedPassword):
+            do {
+                try await authentication.signIn(email: email, password: savedPassword)
+            } catch {
+                // Most likely the password was changed somewhere else. Keep the
+                // saved sign-in; a successful password sign-in replaces it.
+                withAnimation {
+                    usingPassword = true
+                    signInError = "Face ID couldn't sign you in — your password may have changed. Sign in with it once and Face ID will work again."
+                }
+                focusedField = .password
+            }
+        case .cancelled:
+            break
+        case .unavailable:
+            withAnimation {
+                faceIDReady = false
+                usingPassword = true
+                signInError = "Face ID changed on this iPhone, so it was turned off for sign-in. Sign in with your password to set it up again."
+            }
+            focusedField = .password
+        }
+
+        isSigningIn = false
     }
 
     // MARK: Apple

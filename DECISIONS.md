@@ -695,3 +695,32 @@ says so and shows progress ("9 of 15") rather than staying blank.
 
 **Reverse if:** people never find the Findings page — then it stops being a
 second page and becomes a card under the chart.
+
+---
+
+## D-024 · Sign in with Face ID on the existing sign-in screen
+
+**Decided.** Amends D-022, which declined a "Remember me" switch.
+
+The sign-in screen keeps its design. After the first password sign-in on a
+phone — with "Use Face ID next time", on by default — the orange button becomes
+**Sign in with Face ID**: the email is filled in, the password field is tucked
+behind "Use password instead", and Face ID starts by itself when the screen
+opens.
+
+**Why not Face ID from the very first sign-in.** Face ID proves the person
+holding the phone is its owner, not which account is theirs; on a fresh install
+there is nothing for it to unlock. The ways to get there were considered:
+Sign in with Apple already uses Face ID from the start; passkeys would, but
+Firebase Auth hadn't shipped them as of July 2026 and the workaround needs a
+server; dropping accounts entirely remains an open option, since the account
+protects no financial data.
+
+**How the password is kept.** In the Keychain, bound to the current Face ID
+enrolment (`.biometryCurrentSet`) and `WhenPasscodeSetThisDeviceOnly`: never in
+iCloud Keychain or backups, unreadable if a new face is added, gone if the
+passcode is removed. Saved only after Firebase accepts it. If it stops working
+— a changed password — the screen falls back to the password field, and the
+next successful password sign-in replaces it.
+
+The sign-in screen also gains the show-password eye, matching registration.
