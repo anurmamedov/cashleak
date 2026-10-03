@@ -894,3 +894,51 @@ changes. Stays on the device and in iCloud like everything else.
 **Decide after TestFlight.** If testers say they can't tell whether a month's
 spending is a lot, build it and supersede the out-of-scope line for this one
 figure. If nobody does, leave it.
+
+---
+
+## D-031 · Monthly take-home, used sparingly — closes D-030
+
+**Decided.** D-030's middle ground is built: one optional **monthly take-home**
+figure on the profile (Profile › Money). At zero — the default — nothing in the
+app mentions it. Income tracking stays out of scope; this is one reference
+number, not transactions.
+
+**Where it shows, and when.** At most one take-home sentence per screen, and
+only when something happened. Otherwise a quiet number.
+
+| Line | Where | Shows only when |
+|---|---|---|
+| "$214 over your take-home this month." | Overview | Spending passed take-home |
+| "On pace for 96% of your take-home." | Overview | Current month, pace ≥ 95% |
+| "$577 leaked — 3 days of take-home." | Overview | Leaks ≥ a day of take-home **and** no goal set |
+| "58% of take-home so far" | Overview | Otherwise — a number, not a sentence |
+| "43% of take-home" | Analysis headline | Always, quietly |
+| Dashed take-home line | Analysis, 3 months / Year | Monthly bars only |
+| One finding: all months over · Year's leaks in weeks · a standout month · all months under | Analysis Findings | First that applies, 3 months / Year |
+
+No sentences before the 7th of the month or before 5 sorted purchases. Never in
+notifications. Never "left" or "not spent": CashLeak only sees the purchases it
+knows about, so it doesn't imply money in the bank.
+
+**Before release:** `UserProfile.monthlyTakeHome` joins the CloudKit schema
+changes from D-026, D-027 and D-028 — one deploy covers all four.
+
+---
+
+## D-032 · A small hello on Overview
+
+**Decided.** Overview greets by first name, small and calm, in the status line
+that already sits under the month — so it costs no space: "☀ Morning, Anar ·
+✓ up to date".
+
+- **From the phone's clock and time zone**, refreshed each minute: Morning
+  (5–12), Afternoon (12–17), Evening (17–22), Late one (22–5), with a sun or
+  moon.
+- **First name from the profile.** No name, no comma: "Good morning".
+- **Status wins.** While iCloud is syncing or has a problem, that message takes
+  the line instead; a greeting never hides something worth knowing. "Up to
+  date" shows only when an iCloud import finished or a pull just checked.
+
+Larger options — a big title, a header with the photo — were considered and
+passed over for something quieter.

@@ -138,7 +138,8 @@ average` earns its interruption; `$67.40` doesn't.
 ## Out of scope
 
 Bank sync · net worth · investments · debt payoff · shared or household budgets ·
-envelope and zero-based budgeting · income tracking · Android, web, Mac.
+envelope and zero-based budgeting · income tracking (one optional take-home
+figure is in, used sparingly — D-031; tracking income is not) · Android, web, Mac.
 
 If asked to build one of these, point at this list first. Saying no is the
 strategy, not an oversight.

@@ -23,6 +23,7 @@ struct OverviewView: View {
 
     @Query private var transactions: [Transaction]
     @Query private var goals: [Goal]
+    @Query private var profiles: [UserProfile]
 
     @State private var selectedMonth = MonthNavigator.startOfMonth(.now)
     /// Set by pull-to-refresh, so the status line can say when it last checked
@@ -242,11 +243,13 @@ struct OverviewView: View {
 
     // MARK: Sync status
 
-    /// Says whether the numbers below are complete. Hidden entirely when
-    /// nothing is known — an invented "up to date" would be worse than silence.
+    /// The line under the month: a status when there's something to know, a
+    /// small greeting otherwise. "Up to date" is added only when it's known —
+    /// an invented one would be worse than silence.
     @ViewBuilder
     private var syncStatus: some View {
-        if let line = syncLine {
+        if let line = syncAlert {
+            // Something to know about wins over the greeting.
             HStack(spacing: 5) {
                 Image(systemName: line.icon)
                     .foregroundStyle(line.tint)
@@ -257,12 +260,38 @@ struct OverviewView: View {
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .combine)
         } else {
-            // Keeps a stable anchor for scroll-to-top when there's no line.
-            Color.clear.frame(height: 0)
+            greetingLine
         }
     }
 
-    private var syncLine: (icon: String, tint: Color, text: String)? {
+    /// "☀ Morning, Anar · ✓ up to date" — a small hello in the line that
+    /// already exists, so it costs no space (D-032). Re-evaluated each minute,
+    /// so it moves from morning to afternoon on its own.
+    private var greetingLine: some View {
+        TimelineView(.everyMinute) { timeline in
+            let moment = Greeting.moment(at: timeline.date)
+            HStack(spacing: 5) {
+                Image(systemName: moment.symbol)
+                    .foregroundStyle(moment.isDaytime ? Color(hex: "BA7517") : Color(hex: "7F77DD"))
+                Text(Greeting.text(for: moment, firstName: profiles.first?.firstName ?? ""))
+                    .foregroundStyle(.secondary)
+                if isUpToDate {
+                    Text("·")
+                        .foregroundStyle(.tertiary)
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(worthIt)
+                    Text("up to date")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .font(.caption)
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    /// Something the person should know about the data — it takes the line.
+    private var syncAlert: (icon: String, tint: Color, text: String)? {
         if sync.isImporting {
             let text = transactions.isEmpty
                 ? "Restoring your data from iCloud. This can take a minute on a new install."
@@ -272,12 +301,13 @@ struct OverviewView: View {
         if sync.lastImportFailed {
             return ("exclamationmark.icloud", brand, "iCloud sync hit a problem · pull to try again")
         }
-        let checked = [sync.lastImportFinished, lastChecked].compactMap { $0 }.max()
-        if let checked {
-            return ("checkmark", worthIt,
-                    "Up to date · \(checked.formatted(.relative(presentation: .named)))")
-        }
         return nil
+    }
+
+    /// Known to be current: an iCloud import finished, or a pull just checked.
+    /// With neither, the greeting shows alone rather than claim it.
+    private var isUpToDate: Bool {
+        sync.lastImportFinished != nil || lastChecked != nil
     }
 
     // MARK: Summary
@@ -319,7 +349,54 @@ struct OverviewView: View {
                 .foregroundStyle(.secondary)
                 .padding(.top, 4)
                 .fixedSize(horizontal: false, vertical: true)
+
+            if let line = takeHomeLine {
+                takeHomeBlock(line)
+            }
         }
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: Take-home
+
+    /// Only when a take-home figure is set (D-030). A quiet number most of the
+    /// time; one sentence only when something happened.
+    private var takeHomeLine: TakeHome.OverviewLine? {
+        let takeHome = profiles.first?.monthlyTakeHome ?? 0
+        return TakeHome.overview(
+            summary: summary,
+            takeHome: takeHome,
+            isCurrentMonth: isCurrentMonth,
+            hasGoal: goal != nil,
+            monthName: monthName,
+            dayOfMonth: Calendar.current.component(.day, from: .now)
+        )
+    }
+
+    private func takeHomeBlock(_ line: TakeHome.OverviewLine) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color(.tertiarySystemFill))
+                    Capsule()
+                        .fill(line.barShare >= 1 ? brand : Color.primary.opacity(0.55))
+                        .frame(width: max(geometry.size.width * line.barShare, 3))
+                }
+            }
+            .frame(height: 5)
+
+            if let sentence = line.sentence {
+                Text(sentence)
+                    .font(.footnote.weight(.medium))
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(line.label)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.top, 10)
+        .overlay(alignment: .top) { Divider().offset(y: 2) }
         .accessibilityElement(children: .combine)
     }
 

@@ -183,6 +183,7 @@ enum AnalysisSummary {
     static func findings(
         _ transactions: [Transaction],
         range: AnalysisAggregates.Range,
+        takeHome: Double = 0,
         now: Date = .now,
         calendar: Calendar = .current
     ) -> [Finding] {
@@ -238,7 +239,20 @@ enum AnalysisSummary {
             ))
         }
 
-        // 5. A habit — only with enough data. Reuses the existing gated finding.
+        // 5. Take-home, if set — at most one, and only when it says something
+        //    (D-030). Monthly bars only, so 3 months and Year.
+        if range != .month,
+           let line = TakeHome.finding(
+               monthBars: allBars,
+               leaked: total(counted.filter { $0.verdict == .leak }),
+               sortedCount: counted.count,
+               isYear: range == .year,
+               takeHome: takeHome
+           ) {
+            result.append(Finding(icon: "banknote", text: line, kind: .fact))
+        }
+
+        // 6. A habit — only with enough data. Reuses the existing gated finding.
         if counted.count >= patternThreshold,
            let pattern = AnalysisAggregates.finding(transactions, range: range, now: now, calendar: calendar) {
             result.append(Finding(icon: "sparkles", text: pattern, kind: .pattern))

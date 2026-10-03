@@ -15,7 +15,11 @@ import SwiftData
 struct AnalysisView: View {
 
     @Query private var transactions: [Transaction]
+    @Query private var profiles: [UserProfile]
     @State private var range: AnalysisAggregates.Range = .month
+
+    /// Optional; 0 when not set, and then nothing mentions it (D-030).
+    private var takeHome: Double { profiles.first?.monthlyTakeHome ?? 0 }
 
     /// Which page of the Chart / Findings card is showing. Remembered, so
     /// someone who prefers Findings opens straight onto it.
@@ -39,7 +43,7 @@ struct AnalysisView: View {
     }
 
     private var findings: [AnalysisSummary.Finding] {
-        AnalysisSummary.findings(transactions, range: range)
+        AnalysisSummary.findings(transactions, range: range, takeHome: takeHome)
     }
 
     private var categories: [AnalysisAggregates.CategoryTotal] {
@@ -164,6 +168,18 @@ struct AnalysisView: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 3)
             }
+
+            // A quiet share, never a sentence — sentences live in Findings.
+            if let share = TakeHome.headlineShare(
+                spent: headline.spent,
+                monthsWithSpending: range == .month ? 1 : bars.filter { $0.spent > 0 }.count,
+                takeHome: takeHome
+            ) {
+                Text(share)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 1)
+            }
         }
         .accessibilityElement(children: .combine)
     }
@@ -253,8 +269,15 @@ struct AnalysisView: View {
 
     // MARK: Chart
 
+    /// The take-home line runs across monthly bars only; a weekly bar against
+    /// a monthly figure would be guesswork.
+    private var showsTakeHomeLine: Bool { takeHome > 0 && range != .month }
+
     private var chartCard: some View {
         let ceilingInfo = AnalysisSummary.chartCeiling(for: bars)
+        // Room for the take-home line when it's drawn.
+        let ceiling = showsTakeHomeLine ? max(ceilingInfo.ceiling, takeHome * 1.05) : ceilingInfo.ceiling
+        let lineHeight: CGFloat? = showsTakeHomeLine ? 112 * takeHome / ceiling : nil
         let showValues = bars.count <= 6
 
         return card(minHeight: 236) {
@@ -274,11 +297,11 @@ struct AnalysisView: View {
                         NavigationLink {
                             WeekDetailView(weekStart: bar.start, title: "Week of \(bar.label)")
                         } label: {
-                            barColumn(bar, ceiling: ceilingInfo.ceiling, showValue: showValues)
+                            barColumn(bar, ceiling: ceiling, showValue: showValues, takeHomeHeight: lineHeight)
                         }
                         .buttonStyle(.plain)
                     } else {
-                        barColumn(bar, ceiling: ceilingInfo.ceiling, showValue: showValues)
+                        barColumn(bar, ceiling: ceiling, showValue: showValues, takeHomeHeight: lineHeight)
                     }
                 }
             }
@@ -288,12 +311,28 @@ struct AnalysisView: View {
             HStack(spacing: 14) {
                 legend("Leaked", brand)
                 legend("Worth it", worthItBar)
+                if showsTakeHomeLine {
+                    HStack(spacing: 5) {
+                        DashedLine()
+                            .stroke(style: StrokeStyle(lineWidth: 1.2, dash: [3, 3]))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 14, height: 2)
+                        Text("Take-home")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
             .padding(.top, 10)
         }
     }
 
-    private func barColumn(_ bar: AnalysisSummary.Bar, ceiling: Double, showValue: Bool) -> some View {
+    private func barColumn(
+        _ bar: AnalysisSummary.Bar,
+        ceiling: Double,
+        showValue: Bool,
+        takeHomeHeight: CGFloat? = nil
+    ) -> some View {
         let plotHeight: CGFloat = 112
         let isCut = bar.spent > ceiling
         let shown = min(bar.spent, ceiling)
@@ -325,6 +364,19 @@ struct AnalysisView: View {
             }
             // A cut bar gets a break near its top, so it reads as "taller
             // than this" rather than as the real height.
+            // The take-home line, drawn per column from the shared bottom
+            // edge and stretched across the gaps so it reads as one line.
+            .overlay(alignment: .bottom) {
+                if let takeHomeHeight {
+                    DashedLine()
+                        .stroke(style: StrokeStyle(lineWidth: 1.2, dash: [3, 3]))
+                        .foregroundStyle(.secondary)
+                        .frame(height: 2)
+                        .padding(.horizontal, -5)
+                        .offset(y: -takeHomeHeight)
+                        .allowsHitTesting(false)
+                }
+            }
             .overlay(alignment: .top) {
                 if isCut {
                     Rectangle()
@@ -505,6 +557,16 @@ struct AnalysisView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 60)
+    }
+}
+
+/// A horizontal line through the middle of its frame, for dashed strokes.
+struct DashedLine: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        return path
     }
 }
 
