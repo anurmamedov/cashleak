@@ -17,6 +17,7 @@ struct CaptureLogView: View {
     private var entries: [CaptureLogEntry]
 
     @State private var exportText: String?
+    @State private var isConfirmingClear = false
 
     private var distinctMerchants: Int {
         Set(entries.map(\.normalizedAtCapture).filter { !$0.isEmpty }).count
@@ -49,6 +50,12 @@ struct CaptureLogView: View {
                     ForEach(entries) { entry in
                         row(entry)
                     }
+                    // One entry at a time — a test run, a stray $0.00 — without
+                    // losing the real captures L3 still needs.
+                    .onDelete { offsets in
+                        for index in offsets { context.delete(entries[index]) }
+                        try? context.save()
+                    }
                 }
 
                 Section {
@@ -65,12 +72,24 @@ struct CaptureLogView: View {
                     }
 
                     Button(role: .destructive) {
-                        CaptureLog.clear(in: context)
+                        isConfirmingClear = true
                     } label: {
                         Label("Clear log", systemImage: "trash")
                     }
                 }
             }
+        }
+        .confirmationDialog(
+            "Clear all \(entries.count) captures?",
+            isPresented: $isConfirmingClear,
+            titleVisibility: .visible
+        ) {
+            Button("Clear log", role: .destructive) {
+                CaptureLog.clear(in: context)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Only the log is cleared. Your purchases in Sort and History aren't touched.")
         }
         .navigationTitle("Capture log")
         .navigationBarTitleDisplayMode(.inline)
