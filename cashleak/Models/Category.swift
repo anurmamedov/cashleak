@@ -20,8 +20,16 @@ final class Category {
 
     var kindRaw: String = CategoryKind.want.rawValue
 
-    /// `0` means no budget set.
+    /// Unused. Kept only because removing a field from a synced CloudKit
+    /// schema isn't possible once it's in production; no screen sets it (D-027).
     var monthlyBudget: Double = 0
+
+    /// The starter category this began as — "Coffee", "Groceries" — or empty
+    /// for one the user created. Never shown and never edited.
+    ///
+    /// Automatic filing looks categories up by this, not by `name`, so renaming
+    /// Coffee to Café keeps Tim Hortons filing there (D-027).
+    var builtInName: String = ""
 
     /// Display order in pickers and chips.
     var sortIndex: Int = 0
@@ -44,7 +52,6 @@ final class Category {
         set { kindRaw = newValue.rawValue }
     }
 
-    var hasBudget: Bool { monthlyBudget > 0 }
 
     init(
         name: String,

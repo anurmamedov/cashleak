@@ -73,7 +73,11 @@ anticipation.
 ## Data model
 
 Seven SwiftData `@Model` types — the five below plus `UserProfile` and
-`CaptureLogEntry`.
+`CaptureLogEntry`. `UserProfile` holds the name, email, sign-in method and an
+optional `photo` (512 px JPEG, external storage, D-026) and an optional
+`monthlyTakeHome` (D-031). `Category.builtInName`
+records which starter category a category began as, so renaming one doesn't
+break automatic filing (D-027).
 
 | Model | Key fields |
 |---|---|

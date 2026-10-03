@@ -143,13 +143,21 @@ enum TransactionIngest {
         guard let name = MerchantCategoryHints.categoryName(forMerchant: transaction.merchant)
         else { return }
 
-        // Match the user's own categories by name. A renamed or deleted
-        // category simply yields no suggestion — the table never creates one,
-        // because inventing categories nobody asked for is how a tidy list
-        // turns into a mess.
-        let descriptor = FetchDescriptor<Category>(
+        // The starter category first, whatever it's been renamed to — Coffee
+        // renamed Café still collects Tim Hortons. Then any category with that
+        // name. A deleted one simply yields no suggestion: the table never
+        // creates categories, because inventing ones nobody asked for is how a
+        // tidy list turns into a mess.
+        let builtIn = FetchDescriptor<Category>(
+            predicate: #Predicate { $0.builtInName == name }
+        )
+        if let match = (try? context.fetch(builtIn))?.first {
+            transaction.category = match
+            return
+        }
+        let byName = FetchDescriptor<Category>(
             predicate: #Predicate { $0.name == name }
         )
-        transaction.category = (try? context.fetch(descriptor))?.first
+        transaction.category = (try? context.fetch(byName))?.first
     }
 }

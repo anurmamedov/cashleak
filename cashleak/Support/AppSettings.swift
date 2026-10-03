@@ -29,7 +29,10 @@ enum AppSettings {
 
     /// Coral by default — the leak accent.
     static var accentHex: String {
-        get { UserDefaults.standard.string(forKey: Key.accentHex) ?? AccentOption.coral.hex }
+        // Fixed to CashLeak orange since the redesign (D-025). The picker is
+        // gone; the stored value is ignored so an old choice of blue can't
+        // leave stray blue in an orange app.
+        get { "C65A2E" }
         set { UserDefaults.standard.set(newValue, forKey: Key.accentHex) }
     }
 

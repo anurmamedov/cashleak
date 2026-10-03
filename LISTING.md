@@ -83,11 +83,12 @@ Comma-separated, no spaces after commas — spaces waste characters. Don't repea
 words already in the name or subtitle; Apple indexes those separately.
 
 ```
-spending,expense,tracker,budget,money,apple pay,receipt,privacy,offline,no sync,canada,leak,waste,habit
+spending,expense,tracker,budget,money,apple pay,goals,privacy,no bank,canada,leak,habit,face id
 ```
 
-103 characters — trim one term before submitting. Drop `waste` first; `leak`
-already covers the concept and appears in the name.
+95 characters, under the 100 limit. `receipt` and `no sync` were removed —
+receipt scanning isn't built yet, and the app does sync through iCloud — and
+`leak` is kept although it's in the name, so drop it first if space is needed.
 
 ---
 
@@ -100,88 +101,75 @@ what makes this different.
 Most spending apps tell you where your money went. This one tells you what it
 cost you.
 
-Tracking spending is easy and useless. You already know you spend too much. What
-you don't know is which of it you'd take back.
+Tracking spending is easy. Knowing which of it you'd take back is harder.
 
 CashLeak asks one question per purchase: worth it, or a leak?
 
-One swipe. You decide — never an algorithm, never a category rule. Coffee isn't a
+One swipe, and you decide — not an algorithm or a category rule. Coffee isn't a
 leak. The fourth coffee this week might be, and only you know that.
 
-Then it turns what you'd take back into something you actually want:
+Then it puts what you'd take back next to something you want:
 
 "$412 leaked this month. That's 68% of your flight to Lisbon."
 
 
 NO BANK LOGIN
 
-CashLeak never connects to your bank. It can't — there's no code in it that
-could.
+CashLeak doesn't connect to your bank or ask for banking credentials.
 
-Apple Pay taps arrive automatically through a Shortcuts automation you set up
-once. Recurring bills post themselves. Anything else takes five seconds on a
-number pad that opens ready to type.
+Apple Pay purchases can arrive automatically through a Shortcuts automation you
+set up once. Recurring bills post themselves. Anything else takes a few seconds
+to add.
 
-Your spending lives on your phone and syncs through your own iCloud. There is no
-CashLeak server holding it. Signing in stores an email address and nothing else.
+Your spending is stored on your phone and synced through your own iCloud. We
+don't receive it.
 
 
-HONEST ABOUT WHAT IT CATCHES
+CLEAR ABOUT WHAT IT CATCHES
 
-Apple Pay taps from your phone and watch arrive on their own. Physical card taps,
-in-app purchases, e-transfers and cash don't — no app can see those without your
-bank credentials.
+Apple Pay purchases from your iPhone and Apple Watch can be added automatically.
+Physical card taps, in-app purchases, e-transfers and cash aren't, because apps
+can't see those without a bank connection.
 
-Recurring rules cover the predictable rest: rent, insurance, subscriptions,
-phone. What's left takes a moment to add by hand.
-
-The app tells you this up front, on the settings screen, before you've spent a
-month wondering why something's missing.
+Recurring bills cover the predictable part: rent, insurance, subscriptions,
+phone. The rest takes a moment to add by hand. The app explains this in its
+setup screen.
 
 
 WHAT'S INSIDE
 
-• A leak total that deepens in colour as the share of regretted spending rises —
-  tied to the ratio, never the amount, so a big month you meant to have doesn't
-  get treated as a failure
+• A monthly overview: what you spent, how much you'd take back, and today's
+  purchases at a glance
 
-• A sort queue where everything lands unconfirmed until you've seen it, so a
-  mis-read receipt never quietly counts
+• A Sort queue where new purchases wait until you've seen them, so nothing
+  counts before you've confirmed it
 
-• Charts that end in a sentence, not another chart: "Friday is your most
-  expensive day. It costs about $52 more than a Tuesday."
+• Analysis for the month, three months or a year, with findings in plain
+  words: "The week of Sep 20 was your leakiest week."
 
-• Trip forecasts built from your own daily spending and a cost index for 78
-  cities — not a generic per-diem
+• Goals that turn your leak total into something concrete
 
-• CSV export, because data you can't take out isn't really yours
+• Face ID to sign in and to lock the app
+
+• CSV export, so your data is always yours to take
 
 
-FREE, AND NOT PAID FOR BY YOU
+FREE
 
-No subscription. No ads, ever. Nothing about you is sold, because nothing about
-your spending ever reaches us.
-
-Most apps in this category charge monthly because they pay an aggregator for
-every bank connection. CashLeak has no aggregator and no server holding your
-data, so it has no per-user cost to pass on.
+No subscription and no ads. Your spending data isn't sold, because we don't
+receive it.
 
 
 PRIVACY
 
-Sign in with an email address or with Apple — that account, and nothing else,
-is all we hold. No analytics. No tracking SDK. No crash reporter.
+Signing in uses your email address or Sign in with Apple. The app includes no
+analytics, advertising or tracking tools.
 
-Your purchases, amounts, merchants and judgements stay on your phone and sync
-through your own private iCloud, which we cannot read.
-
-Receipt scanning runs on-device with Apple's Vision framework — images never
-leave your phone.
-
-The privacy label is nearly empty, and that's the point.
+Your purchases, amounts, shops and judgements are stored on your phone and in
+your own private iCloud, which we have no access to.
 ```
 
-~2,150 characters. Room to grow.
+~2,250 characters. Room to grow.
 
 ---
 
@@ -190,11 +178,12 @@ The privacy label is nearly empty, and that's the point.
 Lead with the leak card. It states the thesis in the top third of the screen,
 which is what makes the first screenshot legible to someone scrolling.
 
-1. Overview — the leak card with a real figure and the trip comparison
-2. Sort — mid-swipe, source badges visible
-3. Analysis — the trend chart with the serif finding underneath
-4. Trips — the forecast with its arithmetic shown
-5. You — the "what won't be captured" panel, because the honesty is a feature
+1. Overview — this month's spending, the leak share and the goal comparison
+2. Sort — mid-swipe, with source badges visible
+3. Analysis — the weekly bars with a finding beside them
+4. Today — the day's purchases with their verdict pills
+5. Apple Pay setup — the step-by-step guide, because being clear about what's
+   captured is a feature
 
 ---
 
@@ -205,6 +194,9 @@ dependency — reviewers may read "requires setting up an automation" as the app
 being incomplete.
 
 Review notes should state plainly: the app is fully functional without any
-automation. Manual entry, receipt scanning and recurring rules all work
-standalone. The Shortcuts automation is an optional convenience for Apple Pay
-users, and the app explains its limits inside the settings screen.
+automation. Manual entry and recurring bills work on their own. The Shortcuts
+automation is an optional convenience for Apple Pay users, and the app explains
+how it works, and its limits, in Profile › Apple Pay capture.
+
+Also mention: Profile › Delete account deletes the account in-app (guideline
+5.1.1(v)), and Profile › Privacy links to the full privacy policy.

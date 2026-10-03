@@ -1,19 +1,22 @@
 import SwiftUI
 import SwiftData
 
-/// Capture status first, preferences second, data last.
+/// Profile: who you are, then everything grouped by what it's for, with the
+/// account actions last.
 ///
-/// Capture leads because it's the thing users will be confused about, and
-/// because stating what *won't* be captured up front is the honesty the whole
-/// product rests on.
+/// Rebuilt to the proposed layout (D-025). Sign out used to sit directly under
+/// your name; there was no way to delete the account, which App Review
+/// requires of any app that lets you create one; card labels left over from
+/// the one-automation-per-card assumption still invited people to add cards
+/// that changed nothing; and Goals lived under Capture.
 struct YouView: View {
 
     @Environment(\.modelContext) private var context
+    @Environment(\.openURL) private var openURL
     @EnvironmentObject private var authentication: AuthenticationService
 
     @Query private var transactions: [Transaction]
     @Query private var categories: [Category]
-    @Query(sort: \CardAutomation.createdAt) private var cards: [CardAutomation]
     @Query private var goals: [Goal]
     @Query private var rules: [RecurringRule]
     @Query private var profiles: [UserProfile]
@@ -21,152 +24,193 @@ struct YouView: View {
     @Query(sort: \CaptureLogEntry.receivedAt, order: .reverse)
     private var captures: [CaptureLogEntry]
 
-    @State private var isAddingCard = false
-    @State private var newCardLabel = ""
     @State private var exportURL: URL?
-    @State private var accent = AppSettings.accentHex
     @State private var currency = AppSettings.currencyCode
     @State private var notificationTime = Date.now
     @State private var remindersEnabled = AppSettings.notificationsEnabled
     @State private var isUpdatingReminder = false
     @State private var showNotificationSettingsAlert = false
 
+    @State private var isEditingProfile = false
+    @State private var isDeletingAccount = false
+    @State private var isConfirmingSignOut = false
+    @State private var isEnablingFaceIDSignIn = false
+    @State private var faceIDSignInOn = SavedSignIn.savedEmail != nil
+    @State private var appLockOn = AppLock.isEnabled
+
+    private let brand = Color(hex: "C65A2E")
+
+    private var profile: UserProfile? { profiles.first }
+    private var stats: AccountData.Stats { AccountData.stats(from: transactions) }
     private var supersededCount: Int { transactions.filter(\.isSuperseded).count }
     private var activeCount: Int { transactions.count - supersededCount }
 
     var body: some View {
         NavigationStack {
             List {
-                profileSection
+                profileCard
                     .scrollToTopAnchor()
                 captureSection
-                coverageNote
-                preferencesSection
+                moneySection
+                remindersSection
+                securitySection
                 dataSection
+                helpSection
+                // Debug tools sit above the account actions, so Sign out and
+                // Delete account are always the last thing on the screen.
                 #if DEBUG
                 debugSection
                 #endif
+                accountSection
             }
+            .listStyle(.insetGrouped)
             .scrollsToTopOnTabChange()
             .navigationTitle("Profile")
+            .tint(brand)
             .sheet(item: $exportURL) { url in
                 ShareSheet(items: [url])
             }
-            .alert("Add a card", isPresented: $isAddingCard) {
-                TextField("Visa ···6411", text: $newCardLabel)
-                Button("Cancel", role: .cancel) { newCardLabel = "" }
-                Button("Add") { addCard() }
-            } message: {
-                Text("Name it however you'll recognise it. CashLeak can't read your Wallet, so this is just a label.")
+            .sheet(isPresented: $isEditingProfile) {
+                if let profile { EditProfileView(profile: profile) }
+            }
+            .sheet(isPresented: $isDeletingAccount) {
+                DeleteAccountView()
+            }
+            .sheet(isPresented: $isEnablingFaceIDSignIn, onDismiss: refreshSecurity) {
+                EnableFaceIDSignInView()
             }
             .alert("Notifications are off", isPresented: $showNotificationSettingsAlert) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("Allow notifications for CashLeak in Settings to use the daily reminder.")
             }
-            .onAppear(perform: loadNotificationTime)
+            .confirmationDialog("Sign out of CashLeak?", isPresented: $isConfirmingSignOut, titleVisibility: .visible) {
+                Button("Sign out", role: .destructive, action: signOut)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Your spending stays on this iPhone and in your iCloud. The app lock is turned off.")
+            }
+            .onAppear {
+                loadNotificationTime()
+                refreshSecurity()
+            }
         }
     }
 
-    // MARK: Profile
+    // MARK: Rows
 
-    private var profileSection: some View {
+    /// A coloured tile, a title and an optional value — the same shape as every
+    /// row on Overview and Analysis.
+    private func row(
+        _ title: String,
+        icon: String,
+        tint: Color,
+        value: String? = nil
+    ) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .background(tint.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            Text(title)
+                .foregroundStyle(.primary)
+            Spacer(minLength: 8)
+            if let value {
+                Text(value)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    private func header(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(brand)
+            .textCase(nil)
+    }
+
+    // MARK: Profile card
+
+    private var profileCard: some View {
         Section {
-            if let profile = profiles.first {
+            VStack(spacing: 14) {
                 HStack(spacing: 12) {
-                    Text(profile.initials)
-                        .font(.subheadline.weight(.medium))
-                        .frame(width: 42, height: 42)
-                        .background(Color(hex: AppSettings.accentHex).opacity(0.18))
-                        .foregroundStyle(Color(hex: AppSettings.accentHex))
-                        .clipShape(Circle())
+                    // Display only. The photo is changed in Edit, nowhere else.
+                    ProfileAvatar(photo: profile?.photo, initials: profile?.initials ?? "", size: 56)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(profile.fullName.isEmpty ? "You" : profile.fullName)
-                            .font(.body.weight(.medium))
-                        if !profile.email.isEmpty {
-                            Text(profile.email)
-                                .font(.caption)
+                        Text(displayName)
+                            .font(.headline)
+                        if let email = profile?.email, !email.isEmpty {
+                            Text(email)
+                                .font(.footnote)
                                 .foregroundStyle(.secondary)
+                                .lineLimit(1)
                         }
-                        Text("Signed in with \(profile.signInMethod.displayName)")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
                     }
-                }
-                .padding(.vertical, 4)
 
-                NavigationLink {
-                    LockSettingsView()
-                } label: {
-                    HStack {
-                        Label("App lock", systemImage: "lock")
-                        Spacer()
-                        Text(AppLock.isEnabled ? "On" : "Off")
-                            .foregroundStyle(.secondary)
-                    }
+                    Spacer(minLength: 8)
+
+                    Button("Edit") { isEditingProfile = true }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(brand)
+                        .buttonStyle(.borderless)
+                        .disabled(profile == nil)
                 }
 
-                Button(role: .destructive) {
-                    signOut()
-                } label: {
-                    Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+                Divider()
+
+                HStack(spacing: 0) {
+                    stat("\(stats.sorted)", "sorted")
+                    Divider().frame(height: 28)
+                    stat(
+                        stats.worthItShare.map { "\(Int(($0 * 100).rounded()))%" } ?? "—",
+                        "worth it",
+                        tint: Color(hex: "1D9E75")
+                    )
+                    Divider().frame(height: 28)
+                    stat(
+                        stats.since.map { $0.formatted(.dateTime.month(.abbreviated).year(.twoDigits)) } ?? "—",
+                        "tracking since"
+                    )
                 }
             }
-        } footer: {
-            Text("Signing out ends the Firebase session on this device. Your transactions remain in your private iCloud.")
+            .padding(.vertical, 6)
+            .accessibilityElement(children: .contain)
         }
     }
 
-    private func signOut() {
-        AppLock.removePassword()
-        try? authentication.signOut()
+    private var displayName: String {
+        guard let profile, !profile.fullName.isEmpty else { return "You" }
+        return profile.fullName
+    }
+
+    private func stat(_ value: String, _ label: String, tint: Color = .primary) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.headline)
+                .foregroundStyle(tint)
+                .monospacedDigit()
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: Capture
 
-    /// The setup entry point, and the most important row on this screen.
-    ///
-    /// It used to be reachable only by tapping a card — which meant someone who
-    /// had added no cards had **no route to it at all**, and the one step that
-    /// decides whether the product works was hidden behind a label for a card
-    /// the app can't read anyway.
-    ///
-    /// It also states the truth about itself. Either something has been captured
-    /// or it hasn't, and that's read from the capture log rather than from a
-    /// "configured" flag someone ticked hopefully.
-    private var walletSetupRow: some View {
-        NavigationLink {
-            WalletSetupView()
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: walletStatusIcon)
-                    .font(.title3)
-                    .foregroundStyle(walletStatusTint)
-                    .frame(width: 28)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Apple Pay capture")
-                        .font(.subheadline.weight(.medium))
-                    Text(walletStatusText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.vertical, 2)
-        }
-    }
-
-    /// Same three-state reading as the setup screen, so the row and the screen
-    /// behind it never disagree. A capture without a merchant doesn't count as
-    /// working — manual test runs look exactly like that.
     private var walletStatus: CaptureStatus { .from(captures) }
 
-    private var walletStatusIcon: String {
+    private var walletStatusText: String {
         switch walletStatus {
-        case .notConnected: "bolt.badge.clock"
-        case .missingMerchant: "exclamationmark.triangle"
-        case .working: "bolt.fill"
+        case .notConnected: "Set up"
+        case .missingMerchant: "Check step 5"
+        case .working: "Working"
         }
     }
 
@@ -178,170 +222,66 @@ struct YouView: View {
         }
     }
 
-    private var walletStatusText: String {
-        switch walletStatus {
-        case .notConnected:
-            "Not set up — about two minutes in Shortcuts"
-        case .missingMerchant:
-            "Merchant isn't coming through — check step 5"
-        case let .working(date, _):
-            "Working · last capture \(date.formatted(.relative(presentation: .named)))"
-        }
-    }
-
     private var captureSection: some View {
         Section {
-            walletSetupRow
-
-            ForEach(cards) { card in
-                NavigationLink {
-                    WalletSetupView()
-                } label: {
-                    HStack {
-                        Image(systemName: "creditcard")
-                            .foregroundStyle(.secondary)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(card.label)
-                                .font(.subheadline)
-                            Text(card.statusText)
-                                .font(.caption)
-                                .foregroundStyle(statusColor(card))
-                        }
-                        Spacer()
-                    }
-                }
-                .swipeActions {
-                    Button(role: .destructive) {
-                        context.delete(card)
-                        try? context.save()
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                    Button {
-                        card.isConfigured.toggle()
-                        try? context.save()
-                    } label: {
-                        Label(card.isConfigured ? "Mark unset" : "Mark set up", systemImage: "checkmark")
-                    }
-                    .tint(Color(hex: "1D9E75"))
-                }
-            }
-
-            Button {
-                isAddingCard = true
-            } label: {
-                Label("Add a card", systemImage: "plus")
-            }
-
             NavigationLink {
-                RecurringRulesView()
+                WalletSetupView()
             } label: {
-                Label("Recurring · \(rules.count) rules", systemImage: "repeat")
+                row("Apple Pay capture", icon: "bolt.fill", tint: walletStatusTint, value: walletStatusText)
             }
-
-            NavigationLink {
-                GoalsView()
-            } label: {
-                Label("Goals · \(goals.count)", systemImage: "target")
-            }
-
             NavigationLink {
                 CaptureLogView()
             } label: {
-                Label("Capture log", systemImage: "list.bullet.rectangle")
+                row("Capture log", icon: "list.bullet.rectangle", tint: Color(hex: "888780"))
+            }
+            NavigationLink {
+                RecurringRulesView()
+            } label: {
+                row("Recurring bills", icon: "repeat", tint: Color(hex: "7F77DD"), value: rules.isEmpty ? nil : "\(rules.count)")
             }
         } header: {
-            Text("Capture")
-        } footer: {
-            // Corrects the assumption this section was built on. The automation
-            // is per *trigger*, not per card — one covers everything in Wallet,
-            // and telling people to repeat the setup for each card is asking for
-            // work that achieves nothing (L3).
-            Text("One automation covers every card in Wallet. Cards listed here are your own labels — CashLeak can't read Wallet, so adding one changes nothing about what's captured.")
+            header("Capture")
         }
     }
 
-    private func statusColor(_ card: CardAutomation) -> Color {
-        if !card.isConfigured { return Color(hex: "993C1D") }
-        if card.looksStale { return Color(hex: "854F0B") }
-        return Color(hex: "0F6E56")
-    }
+    // MARK: Money
 
-    private var coverageNote: some View {
+    private var moneySection: some View {
         Section {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("What won't be captured")
-                    .font(.subheadline.weight(.medium))
-                Text("Physical card taps, in-app and web purchases, e-transfers and cash. Recurring rules cover the predictable rest; anything else takes five seconds to add by hand.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            NavigationLink {
+                GoalsView()
+            } label: {
+                row("Goals", icon: "target", tint: brand, value: GoalStore.current(from: goals)?.name)
             }
-            .padding(.vertical, 2)
-        }
-    }
-
-    // MARK: Preferences
-
-    private var preferencesSection: some View {
-        Section("Preferences") {
-            HStack {
-                Text("Accent")
-                Spacer()
-                HStack(spacing: 8) {
-                    ForEach(AccentOption.allCases) { option in
-                        Circle()
-                            .fill(Color(hex: option.hex))
-                            .frame(width: 20, height: 20)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.primary, lineWidth: accent == option.hex ? 2 : 0)
-                                    .padding(-3)
-                            )
-                            .opacity(accent == option.hex ? 1 : 0.4)
-                            .onTapGesture {
-                                accent = option.hex
-                                AppSettings.accentHex = option.hex
-                            }
-                            .accessibilityLabel(option.name)
-                    }
+            if let profile {
+                NavigationLink {
+                    TakeHomeView(profile: profile)
+                } label: {
+                    row(
+                        "Monthly take-home",
+                        icon: "wallet.pass",
+                        tint: Color(hex: "639922"),
+                        value: profile.monthlyTakeHome > 0 ? profile.monthlyTakeHome.currencyRounded : "Add"
+                    )
                 }
             }
-
-            Toggle("Daily reminder", isOn: Binding(
-                get: { remindersEnabled },
-                set: { updateReminders(enabled: $0) }
-            ))
-            .disabled(isUpdatingReminder)
-
-            DatePicker("Reminder time", selection: $notificationTime, displayedComponents: .hourAndMinute)
-                .onChange(of: notificationTime) { _, newValue in
-                    let parts = Calendar.current.dateComponents([.hour, .minute], from: newValue)
-                    AppSettings.notificationHour = parts.hour ?? 21
-                    AppSettings.notificationMinute = parts.minute ?? 0
-                    guard remindersEnabled else { return }
-                    Task { await DailyReminderScheduler.refresh(in: context) }
-                }
-                .disabled(!remindersEnabled)
-
-            Picker("Currency", selection: $currency) {
+            NavigationLink {
+                CategoriesView()
+            } label: {
+                row("Categories", icon: "tag", tint: Color(hex: "D4537E"), value: "\(categories.count)")
+            }
+            Picker(selection: $currency) {
                 ForEach(currencyOptions, id: \.self) { code in
                     Text(code).tag(code)
                 }
+            } label: {
+                row("Currency", icon: "dollarsign", tint: Color(hex: "639922"))
             }
             .onChange(of: currency) { _, newValue in
                 AppSettings.currencyCode = newValue
             }
-
-            NavigationLink {
-                CategoriesView()
-            } label: {
-                HStack {
-                    Text("Categories")
-                    Spacer()
-                    Text("\(categories.count)")
-                        .foregroundStyle(.secondary)
-                }
-            }
+        } header: {
+            header("Money")
         }
     }
 
@@ -351,40 +291,161 @@ struct YouView: View {
         return options
     }
 
-    // MARK: Data
+    // MARK: Reminders
+
+    private var remindersSection: some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { remindersEnabled },
+                set: { updateReminders(enabled: $0) }
+            )) {
+                row("Daily reminder", icon: "bell.fill", tint: Color(hex: "BA7517"))
+            }
+            .disabled(isUpdatingReminder)
+
+            if remindersEnabled {
+                DatePicker("Time", selection: $notificationTime, displayedComponents: .hourAndMinute)
+                    .padding(.leading, 42)
+                    .onChange(of: notificationTime) { _, newValue in
+                        let parts = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+                        AppSettings.notificationHour = parts.hour ?? 21
+                        AppSettings.notificationMinute = parts.minute ?? 0
+                        Task { await DailyReminderScheduler.refresh(in: context) }
+                    }
+            }
+        } header: {
+            header("Reminders")
+        } footer: {
+            Text("Only when there's something waiting in Sort.")
+        }
+    }
+
+    // MARK: Security
+
+    private var securitySection: some View {
+        Section {
+            NavigationLink {
+                LockSettingsView()
+            } label: {
+                row("App lock", icon: "faceid", tint: Color(hex: "378ADD"), value: appLockOn ? "On" : "Off")
+            }
+
+            // Only for email accounts — Sign in with Apple already uses Face ID.
+            if !authentication.isAppleAccount && SavedSignIn.biometryIsAvailable {
+                Toggle(isOn: Binding(
+                    get: { faceIDSignInOn },
+                    set: { wanted in
+                        if wanted {
+                            isEnablingFaceIDSignIn = true
+                        } else {
+                            SavedSignIn.forget()
+                            faceIDSignInOn = false
+                        }
+                    }
+                )) {
+                    row("Sign in with Face ID", icon: "key.fill", tint: Color(hex: "378ADD"))
+                }
+            }
+        } header: {
+            header("Security")
+        } footer: {
+            Text("App lock asks for Face ID when you open CashLeak. Sign in with Face ID replaces typing your password after you sign out.")
+        }
+    }
+
+    private func refreshSecurity() {
+        faceIDSignInOn = SavedSignIn.savedEmail != nil
+        appLockOn = AppLock.isEnabled
+    }
+
+    // MARK: Data and privacy
 
     private var dataSection: some View {
         Section {
             NavigationLink {
                 HistoryView()
             } label: {
-                HStack {
-                    Label("History", systemImage: "list.bullet")
-                    Spacer()
-                    Text("\(activeCount)")
-                        .foregroundStyle(.secondary)
-                }
+                row("History", icon: "clock.arrow.circlepath", tint: Color(hex: "888780"), value: "\(activeCount)")
             }
-            if supersededCount > 0 {
-                LabeledContent("Merged duplicates", value: "\(supersededCount)")
+            Button(action: export) {
+                row("Export CSV", icon: "square.and.arrow.up", tint: Color(hex: "888780"))
             }
-
-            Button {
-                export()
-            } label: {
-                Label("Export CSV", systemImage: "square.and.arrow.up")
-            }
-
             NavigationLink {
                 PrivacyView()
             } label: {
-                Label("Privacy", systemImage: "lock")
+                row("Privacy", icon: "lock.shield", tint: Color(hex: "888780"))
+            }
+            NavigationLink {
+                DeleteOldPurchasesView()
+            } label: {
+                row("Delete old purchases", icon: "calendar.badge.minus", tint: Color(hex: "888780"))
+            }
+            if supersededCount > 0 {
+                LabeledContent("Merged duplicates", value: "\(supersededCount)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         } header: {
-            Text("Data")
-        } footer: {
-            Text("Financial data lives on this device and in your private iCloud. Firebase is used only for account authentication.")
+            header("Data and privacy")
         }
+    }
+
+    // MARK: Help
+
+    private var helpSection: some View {
+        Section {
+            Button(action: contactSupport) {
+                row("Contact support", icon: "envelope.fill", tint: Color(hex: "888780"))
+            }
+            row("Version", icon: "info.circle", tint: Color(hex: "888780"), value: AppVersion.display)
+        } header: {
+            header("Help")
+        }
+    }
+
+    /// The email arrives with the version already in it — the first thing
+    /// support asks, and the thing people least know how to find.
+    private func contactSupport() {
+        let subject = "CashLeak support (\(AppVersion.display), iOS \(UIDevice.current.systemVersion))"
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = "support@karasandlabs.com"
+        components.queryItems = [URLQueryItem(name: "subject", value: subject)]
+        if let url = components.url { openURL(url) }
+    }
+
+    // MARK: Account
+
+    private var accountSection: some View {
+        Section {
+            Button {
+                isConfirmingSignOut = true
+            } label: {
+                Text("Sign out")
+                    .fontWeight(.semibold)
+                    .foregroundStyle(brand)
+                    .frame(maxWidth: .infinity)
+            }
+            Button(role: .destructive) {
+                isDeletingAccount = true
+            } label: {
+                Text("Delete account")
+                    .frame(maxWidth: .infinity)
+            }
+        } footer: {
+            Text("Your spending stays on this iPhone and in your own iCloud.")
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    /// Signing out also turns the app lock off — a lock on a signed-out app
+    /// would only stand between the next person and the sign-in screen. The
+    /// saved Face ID sign-in stays: that's what makes signing back in quick.
+    private func signOut() {
+        AppLock.removePassword()
+        AppLock.disableDeviceAuthentication()
+        try? authentication.signOut()
     }
 
     #if DEBUG
@@ -476,14 +537,6 @@ struct YouView: View {
     }
     #endif
 
-    private func addCard() {
-        let trimmed = newCardLabel.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        context.insert(CardAutomation(label: trimmed))
-        try? context.save()
-        newCardLabel = ""
-    }
-
     private func export() {
         exportURL = try? CSVExport.writeTemporaryFile(from: transactions)
     }
@@ -528,11 +581,11 @@ struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
 
-/// Categories. Create, rename, recolour, delete.
+/// Categories. Create, rename, recolour, reorder, delete.
 ///
-/// Previously list-and-delete only — fourteen seeded categories, permanently,
-/// and deleting one was irreversible. Anyone with a hobby, a pet or childcare
-/// was stuck with someone else's taxonomy.
+/// The order here is the order of the chips on the Add screen, so the ones
+/// used most can come first. Deleting always says what happens to the
+/// purchases — they become uncategorised, never deleted (D-027).
 struct CategoriesView: View {
 
     @Environment(\.modelContext) private var context
@@ -540,50 +593,108 @@ struct CategoriesView: View {
 
     @State private var editing: Category?
     @State private var isAdding = false
+    @State private var pendingDelete: Category?
 
     var body: some View {
         List {
-            ForEach(categories) { category in
-                Button {
-                    editing = category
-                } label: {
-                    HStack {
-                        Image(systemName: category.icon)
-                            .foregroundStyle(Color(hex: category.colorHex))
-                            .frame(width: 26)
-                        Text(category.name)
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Text(category.kind == .need ? "Need" : "Want")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+            Section {
+                ForEach(categories) { category in
+                    Button {
+                        editing = category
+                    } label: {
+                        HStack(spacing: 12) {
+                            CategoryTile(category: category)
+                            Text(category.name)
+                                .foregroundStyle(.primary)
+                            Spacer(minLength: 8)
+                            Text("\(CategoryRules.purchaseCount(category))")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .swipeActions {
+                        Button(role: .destructive) {
+                            pendingDelete = category
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
                     }
                 }
-                .buttonStyle(.plain)
+                .onMove(perform: move)
+            } footer: {
+                Text("Tap Edit to drag them into the order the Add screen shows. The number is how many purchases each holds.")
             }
-            .onDelete(perform: delete)
 
             Section {
                 Button {
                     isAdding = true
                 } label: {
                     Label("Add a category", systemImage: "plus")
+                        .foregroundStyle(Color(hex: "C65A2E"))
                 }
-            } footer: {
-                Text("Deleting a category keeps its transactions — they become uncategorised.")
             }
         }
         .navigationTitle("Categories")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar { EditButton() }
+        .tint(Color(hex: "C65A2E"))
         .sheet(isPresented: $isAdding) { CategoryEditor(category: nil) }
         .sheet(item: $editing) { category in CategoryEditor(category: category) }
+        .confirmCategoryDelete($pendingDelete) { category in
+            CategoryRules.delete(category, in: context)
+        }
     }
 
-    private func delete(at offsets: IndexSet) {
-        for index in offsets {
-            context.delete(categories[index])
+    private func move(from source: IndexSet, to destination: Int) {
+        var ordered = categories
+        ordered.move(fromOffsets: source, toOffset: destination)
+        for (index, category) in ordered.enumerated() where category.sortIndex != index {
+            category.sortIndex = index
         }
         try? context.save()
+    }
+}
+
+/// A category's symbol on a pale wash of its colour — the same tile Overview
+/// uses.
+struct CategoryTile: View {
+    let category: Category
+    var size: CGFloat = 30
+
+    var body: some View {
+        let tint = Color(hex: category.colorHex)
+        Image(systemName: category.icon)
+            .font(.system(size: size * 0.47, weight: .semibold))
+            .foregroundStyle(tint)
+            .frame(width: size, height: size)
+            .background(tint.opacity(0.15))
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.27, style: .continuous))
+            .accessibilityHidden(true)
+    }
+}
+
+extension View {
+    /// The one confirmation for deleting a category, used by the list's swipe
+    /// and by the edit screen's button, so both say the same thing.
+    func confirmCategoryDelete(
+        _ pending: Binding<Category?>,
+        perform: @escaping (Category) -> Void
+    ) -> some View {
+        confirmationDialog(
+            "Delete \(pending.wrappedValue?.name ?? "category")?",
+            isPresented: Binding(
+                get: { pending.wrappedValue != nil },
+                set: { if !$0 { pending.wrappedValue = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: pending.wrappedValue
+        ) { category in
+            Button("Delete category", role: .destructive) { perform(category) }
+            Button("Cancel", role: .cancel) {}
+        } message: { category in
+            Text(CategoryRules.deleteMessage(for: category))
+        }
     }
 }
 
@@ -600,7 +711,7 @@ struct CategoryEditor: View {
     @State private var icon = "circle"
     @State private var colorHex = "888780"
     @State private var kind: CategoryKind = .want
-    @State private var budgetText = ""
+    @State private var pendingDelete: Category?
 
     private static let icons = [
         "circle", "cart", "fork.knife", "cup.and.saucer", "bag", "car",
@@ -615,8 +726,21 @@ struct CategoryEditor: View {
         "7F77DD", "D4537E", "888780",
     ]
 
-    private var canSave: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty
+    private var trimmed: String { name.trimmingCharacters(in: .whitespaces) }
+
+    private var isTaken: Bool {
+        CategoryRules.isNameTaken(trimmed, among: existing, excluding: category)
+    }
+
+    private var canSave: Bool { !trimmed.isEmpty && !isTaken }
+
+    /// A starter category whose name has changed — worth saying that automatic
+    /// filing still lands here.
+    private var renamedBuiltIn: String? {
+        guard let category, !category.builtInName.isEmpty,
+              trimmed.caseInsensitiveCompare(category.builtInName) != .orderedSame,
+              !trimmed.isEmpty else { return nil }
+        return category.builtInName
     }
 
     var body: some View {
@@ -630,7 +754,17 @@ struct CategoryEditor: View {
                     }
                     .pickerStyle(.segmented)
                 } footer: {
-                    Text("Need or want is for grouping only. It never affects a verdict — whether something was worth it is always your call.")
+                    if isTaken {
+                        Label("You already have a \(trimmed) category.", systemImage: "exclamationmark.circle")
+                            .foregroundStyle(Color(hex: "A32D2D"))
+                    } else if let original = renamedBuiltIn {
+                        Label(
+                            "Was \(original). Purchases that used to file there automatically still do.",
+                            systemImage: "sparkles"
+                        )
+                    } else {
+                        Text("Need or want is for grouping only. It never affects a verdict — whether something was worth it is always your call.")
+                    }
                 }
 
                 Section("Colour") {
@@ -668,16 +802,35 @@ struct CategoryEditor: View {
                     }
                     .padding(.vertical, 4)
                 }
+
+                if let category {
+                    Section {
+                        Button(role: .destructive) {
+                            pendingDelete = category
+                        } label: {
+                            Text("Delete category")
+                                .fontWeight(.semibold)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                }
             }
             .navigationTitle(category == nil ? "New category" : "Edit category")
             .navigationBarTitleDisplayMode(.inline)
+            .tint(Color(hex: "C65A2E"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }.disabled(!canSave)
+                    Button("Save") { save() }
+                        .fontWeight(.semibold)
+                        .disabled(!canSave)
                 }
+            }
+            .confirmCategoryDelete($pendingDelete) { category in
+                CategoryRules.delete(category, in: context)
+                dismiss()
             }
             .onAppear(perform: load)
         }
@@ -692,7 +845,7 @@ struct CategoryEditor: View {
     }
 
     private func save() {
-        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard canSave else { return }
 
         if let category {
             category.name = trimmed
@@ -700,7 +853,7 @@ struct CategoryEditor: View {
             category.colorHex = colorHex
             category.kind = kind
         } else {
-            let next = (existing.map(\.sortIndex).max() ?? 0) + 1
+            let next = (existing.map(\.sortIndex).max() ?? -1) + 1
             context.insert(Category(
                 name: trimmed, icon: icon, colorHex: colorHex,
                 kind: kind, sortIndex: next
@@ -712,25 +865,50 @@ struct CategoryEditor: View {
     }
 }
 
-/// The privacy page distinguishes account identity from financial data.
+/// What CashLeak keeps and where, in plain words — a summary of the privacy
+/// policy, with a link to the full text (App Review 5.1.1 asks for the policy
+/// to be reachable inside the app).
+///
+/// Worded carefully: it describes what the app does rather than promising
+/// what can never happen, and it doesn't claim more than is true about
+/// services CashLeak doesn't run — iCloud is Apple's (D-029).
 struct PrivacyView: View {
+
+    static let policyURL = URL(string: "https://github.com/anurmamedov/cashleak/blob/main/PRIVACY.md")!
+
     var body: some View {
         List {
             Section {
-                row("Firebase account", "Firebase Authentication handles your email/password or Apple identity.")
-                row("Financial data stays private", "Transactions, income, cards and goals are not sent to Firebase.")
-                row("No bank connection", "The app never asks for banking credentials and couldn't use them.")
-                row("No analytics", "Firebase Analytics is disabled. There is no usage tracking or advertising SDK.")
-                row("Your iCloud", "Sync uses your own private CloudKit database. Apple can't read it and neither can we.")
+                row("Your spending stays yours",
+                    "Purchases, amounts, shops, verdicts and goals are stored on this iPhone and synced only through your own iCloud account. We don't receive them.")
+                row("Your iCloud",
+                    "Your data is kept in your private iCloud database, which we have no access to. Apple stores it encrypted; with Advanced Data Protection turned on in Settings, it's end-to-end encrypted.")
+                row("Your account",
+                    "Signing in uses your email address — or your Apple sign-in — and an account identifier. We don't store your name with your account; it stays in your profile.")
+                row("Face ID sign-in",
+                    "If you turn it on, your password is kept in this iPhone's Keychain, protected by Face ID. It isn't synced and is used only to sign you in.")
+                row("Profile photo",
+                    "Optional. It's resized on your iPhone and kept with the rest of your data, on the device and in your iCloud.")
+                row("No bank connection",
+                    "CashLeak doesn't ask for or use banking credentials.")
+                row("No tracking or ads",
+                    "CashLeak contains no analytics or advertising tools, and doesn't track you across apps or websites.")
             }
+
             Section {
-                Text("Receipt scanning runs on-device using Apple's Vision framework. Images never leave your phone.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                Link(destination: Self.policyURL) {
+                    Label("Read the full privacy policy", systemImage: "doc.text")
+                }
+                Link(destination: URL(string: "mailto:support@karasandlabs.com")!) {
+                    Label("Questions? support@karasandlabs.com", systemImage: "envelope")
+                }
+            } footer: {
+                Text("CashLeak is published by Karasand Software Inc. (Karasand Labs), Toronto, Canada.")
             }
         }
         .navigationTitle("Privacy")
         .navigationBarTitleDisplayMode(.inline)
+        .tint(Color(hex: "C65A2E"))
     }
 
     private func row(_ title: String, _ detail: String) -> some View {

@@ -724,3 +724,173 @@ passcode is removed. Saved only after Firebase accepts it. If it stops working
 next successful password sign-in replaces it.
 
 The sign-in screen also gains the show-password eye, matching registration.
+
+---
+
+## D-025 · Profile regrouped; account deletion in the app
+
+**Decided.** Profile is rebuilt to the proposed layout: your card (name, email,
+Edit, and three numbers — sorted, % worth it, tracking since), then Capture,
+Money, Reminders, Security, Data and privacy, Help, and Account last.
+
+- **Delete account, in the app.** App Review requires apps that let people
+  create an account to let them delete it in-app; an email to support isn't
+  enough. Confirms with the password, or with Apple — for Sign in with Apple
+  the app also revokes its Apple tokens, which Apple requires. "Also erase my
+  spending" is **on by default**: someone deleting their account usually means
+  "remove me", and the data is tied to them. Turning it off keeps everything on
+  the iPhone. Data is erased only after the account deletion succeeds.
+- **Sign out** moves to the bottom, asks once, and turns the app lock off.
+- **Removed:** card labels and "Add a card" (one automation covers every card),
+  the accent picker (the redesign is CashLeak orange throughout; the stored
+  accent is now ignored), and the duplicate "what won't be captured" note.
+- **Added:** edit name, Sign in with Face ID on/off (password checked before
+  it's saved), Contact support (email pre-filled with version and iOS), version.
+- **Change email** confirms the password, then sends a link to the *new*
+  address; the email changes only when it's opened, after which the person
+  signs in with the new one. A typo can't lock anyone out, and a borrowed phone
+  can't move the account. The profile and the saved Face ID sign-in follow the
+  account's email. Apple accounts change their email in iPhone Settings.
+
+**App copy names no vendors.** No screen mentions the sign-in provider; the
+Privacy screen says what's kept and where. The account may later move to an
+Apple service. `PRIVACY.md` still names Firebase, because a privacy policy has
+to disclose the processors actually in use.
+
+---
+
+## D-026 · Optional profile photo
+
+**Decided.** Profile › Edit — and only there; the avatar itself isn't
+tappable — offers **Add photo**,
+**Change photo** and **Remove**. Without one, initials on CashLeak orange, as
+before.
+
+- Picked with the system photo picker, which needs **no Photos permission** —
+  it hands over only the photo chosen.
+- Cropped to the centre square and shrunk to **512 px JPEG** on the phone
+  before saving, so a few dozen KB syncs rather than a multi-megabyte original.
+- Stored on `UserProfile.photo` — optional, external storage — so it stays on
+  the device and in the person's own iCloud like everything else, and is never
+  uploaded anywhere else. Changes apply on Save; Cancel discards them.
+- No camera option: taking a photo would need camera permission for a feature
+  most people use once. Photos covers it.
+
+**Before release:** this adds a field to the CloudKit schema. Development
+picks it up automatically; **production needs "Deploy Schema Changes" in the
+CloudKit Console** before an App Store build ships, or the photo won't sync.
+
+---
+
+## D-027 · Categories: no duplicates, deliberate deletes, reorder, stable starters
+
+**Decided.** Fixes found reviewing the Categories screen.
+
+- **No duplicate names.** "coffee " and "Coffee" are one category to a person;
+  two would split one habit across two rows everywhere the app groups by name.
+  The editor says "You already have a Coffee category" and won't save.
+- **Starter categories are added once per install.** The old check — "seed
+  when there are none" — brought all fourteen back the launch after someone
+  deleted every one, the opposite of what its comment promised. Now a flag
+  remembers. "Delete account" with erase clears it, so a fresh start is fresh.
+- **Deleting is deliberate and explained.** A Delete button on the edit screen,
+  and the same confirmation for the list's swipe: "14 purchases will become
+  Uncategorised. They aren't deleted."
+- **Drag to reorder.** The order is the order of the Add screen's chips.
+- **Renaming a starter keeps automatic filing.** `Category.builtInName`
+  remembers what a starter category began as; filing looks it up by that, so
+  Coffee renamed Café still collects Tim Hortons. Backfilled at launch for
+  categories created before it existed.
+- The list shows each category's purchase count.
+- The budget field stays in the model — a field can't be removed from a
+  production CloudKit schema — but nothing reads or sets it.
+
+**Before release:** `builtInName` is another CloudKit schema change; deploy it
+with the profile photo's (D-026).
+
+**Known, not fixed here:** on a second device, the starter categories can be
+added before iCloud delivers the first device's, leaving two of each. That
+belongs to the two-device sync work in L8.
+
+---
+
+## D-028 · Recurring bills keep their day; History is kept, tidied, and undoable
+
+**Recurring bills.**
+
+- **Month-end drift fixed.** Each date was worked out from the previous one,
+  so a bill on the 31st went to the 28th in February and stayed there for good.
+  `RecurringRule.anchorDay` remembers the intended day: Jan 31 → Feb 28 →
+  Mar 31. Rules saved before this get their anchor from their next date.
+- **No amount, no lost months.** A rule saved without an amount ("Rent", to
+  fill in later) used to be rejected and advanced, so each month was skipped
+  for good. It now waits; once an amount is added, the missed months post.
+- Amounts are read like the Apple Pay capture reads them, so "1 250,00" and
+  "$1,250" work. Templates find starter categories even after a rename.
+
+**Daily reminder.** The title carries the number, per the voice rules: "3
+purchases · $58.39 waiting". It no longer asks for badge permission it never
+used.
+
+**History.**
+
+- **Kept by default, never trimmed automatically.** Analysis's year view,
+  month comparisons and the CSV export read it, and a year is under a
+  megabyte.
+- **Merged duplicates are deleted after 90 days** — they exist only so a wrong
+  merge can be undone, and nobody spots one three months on.
+- **Swipe-to-delete gets Undo**, held back for five seconds like Sort's.
+- **Profile › Delete old purchases** — opt-in: older than 1, 2 or 3 years,
+  with the count shown, an export offered first, and a confirmation.
+
+**Before release:** `anchorDay` joins the CloudKit schema changes from D-026
+and D-027 — one "Deploy Schema Changes" covers all three.
+
+---
+
+## D-029 · Privacy statements describe, they don't over-promise
+
+**Decided.** A review of the in-app Privacy screen and `PRIVACY.md` found
+statements that were stronger than the facts:
+
+- "Apple can't read it" about iCloud — only true with Advanced Data Protection
+  on. Now: we have no access; Apple stores it encrypted; with Advanced Data
+  Protection it's end-to-end encrypted.
+- "Never sent to any server" — iCloud is a server. Now: synced only through the
+  person's own iCloud; we don't receive it.
+- Receipt scanning described as working on-device — it isn't built yet. Removed
+  until it ships, along with "budgets" and "card labels", which aren't features.
+- The account was described as holding only email and identifiers, but earlier
+  versions also stored the **name** with it.
+
+**The name is no longer sent to the sign-in account.** It lives in the profile,
+on the phone and in iCloud. Apple's first-sign-in name goes straight to the
+profile. Names stored by earlier versions are cleared from the account once
+the profile has them. This keeps the App Store privacy answers (email address
+and user ID) accurate without adding "Name".
+
+**Tone.** Both texts now describe what the app does rather than promising what
+can never happen, avoid claims about services CashLeak doesn't run, and name the
+company. The Privacy screen links to the full policy, which App Review asks to
+be reachable in the app.
+
+---
+
+## D-030 · Optional monthly take-home figure — OPEN
+
+**Open.** Proposed, not decided; nothing is built.
+
+Spending without income has no scale: $2,800 means one thing on $3,500 a month
+and another on $9,000. Full income tracking stays out of scope (`CLAUDE.md`) — it
+would make CashLeak a budgeting app, add manual work that can't be captured
+automatically, and pull attention from "was this worth it?".
+
+**The middle ground under consideration:** one optional **monthly take-home**
+number, typed once in Profile like a goal's price — not transactions, nothing
+to keep logging. Overview would add one line, "Spent 62% of your take-home ·
+leaked 9%", and Analysis could compare months against it. Left blank, nothing
+changes. Stays on the device and in iCloud like everything else.
+
+**Decide after TestFlight.** If testers say they can't tell whether a month's
+spending is a lot, build it and supersede the out-of-scope line for this one
+figure. If nobody does, leave it.

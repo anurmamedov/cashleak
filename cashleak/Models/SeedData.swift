@@ -27,16 +27,31 @@ enum SeedData {
         ("Fun",           "ticket",                  "7F77DD", .want),
     ]
 
-    /// Inserts the default categories exactly once.
+    private static let seededKey = "seed.categoriesDone"
+
+    /// Inserts the starter categories once per install.
     ///
-    /// Guarded by a count check rather than a stored flag so that a user who
-    /// deletes every category doesn't get them silently reinstated on the next
-    /// launch — that would be the app overruling them.
+    /// Remembered with a flag. A count check alone — "seed when there are
+    /// none" — brought all fourteen back the next launch after someone deleted
+    /// every one, which is the app overruling them. In-memory stores (tests,
+    /// previews) skip the flag so each starts fresh.
+    ///
+    /// Also fills in `builtInName` on starter categories from before it
+    /// existed, so a rename doesn't stop automatic filing.
     @MainActor
     static func seedCategoriesIfNeeded(in context: ModelContext) {
-        let descriptor = FetchDescriptor<Category>()
-        let existing = (try? context.fetchCount(descriptor)) ?? 0
-        guard existing == 0 else { return }
+        let inMemory = context.container.configurations.contains { $0.isStoredInMemoryOnly }
+        let defaults = UserDefaults.standard
+
+        let existing = (try? context.fetch(FetchDescriptor<Category>())) ?? []
+
+        if !existing.isEmpty {
+            backfillBuiltInNames(existing)
+            try? context.save()
+            if !inMemory { defaults.set(true, forKey: seededKey) }
+            return
+        }
+        if !inMemory && defaults.bool(forKey: seededKey) { return }
 
         for (index, spec) in defaultCategories.enumerated() {
             let category = Category(
@@ -46,9 +61,24 @@ enum SeedData {
                 kind: spec.3,
                 sortIndex: index
             )
+            category.builtInName = spec.0
             context.insert(category)
         }
         try? context.save()
+        if !inMemory { defaults.set(true, forKey: seededKey) }
+    }
+
+    /// After "Delete account" erases everything, the next start is a fresh one
+    /// and gets the starter categories again.
+    static func resetSeededFlag() {
+        UserDefaults.standard.removeObject(forKey: seededKey)
+    }
+
+    private static func backfillBuiltInNames(_ categories: [Category]) {
+        let starterNames = Set(defaultCategories.map(\.0))
+        for category in categories where category.builtInName.isEmpty && starterNames.contains(category.name) {
+            category.builtInName = category.name
+        }
     }
 
     // MARK: Debug dataset

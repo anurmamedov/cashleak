@@ -50,6 +50,7 @@ struct CashLeakApp: App {
                 .task {
                     let context = AppModelContainer.shared.mainContext
                     SeedData.seedCategoriesIfNeeded(in: context)
+                    HistoryMaintenance.purgeOldMergedDuplicates(in: context)
                     RecurringPoster.postDue(in: context)
                     await DailyReminderScheduler.refresh(in: context)
                     WidgetSnapshotUpdater.refresh(in: context)
@@ -134,11 +135,20 @@ struct AppGate: View {
         }
         .environmentObject(authentication)
         .animation(.easeInOut(duration: 0.2), value: authentication.user?.uid)
+        // After a confirmed email change the account's email moves on; the
+        // profile and the saved Face ID sign-in follow it.
+        .task(id: authentication.user?.email) { syncEmail() }
+        // Accounts from earlier versions carried the name; once the profile
+        // has it, it's removed from the account (D-029).
+        .task(id: authentication.user?.uid) {
+            if !profiles.isEmpty { await authentication.clearStoredName() }
+        }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .background:
                 backgroundedAt = .now
             case .active:
+                Task { await authentication.refreshUser() }
                 guard AppLock.isEnabled, let since = backgroundedAt else { return }
                 if Date.now.timeIntervalSince(since) > Self.lockGracePeriod {
                     isLocked = true
@@ -151,21 +161,46 @@ struct AppGate: View {
     }
 
     @MainActor
+    private func syncEmail() {
+        guard let email = authentication.user?.email?.lowercased(), !email.isEmpty,
+              let profile = profiles.first, profile.email.lowercased() != email else { return }
+        profile.email = email
+        try? context.save()
+        // The saved password belongs to the old address. It still works with
+        // the new one, but the saved email it's filed under doesn't — the next
+        // password sign-in saves it again.
+        if let saved = SavedSignIn.savedEmail, saved != email { SavedSignIn.forget() }
+    }
+
+    @MainActor
     private func createLocalProfileIfNeeded() {
         guard profiles.isEmpty, let user = authentication.user else { return }
 
-        let nameParts = (user.displayName ?? "")
-            .split(separator: " ", maxSplits: 1)
-            .map(String.init)
+        // Apple's name if this was a first Apple sign-in; otherwise a name an
+        // earlier version stored with the account, which is then cleared.
+        let first: String
+        let last: String
+        if let apple = authentication.consumePendingAppleName() {
+            first = apple.givenName ?? ""
+            last = apple.familyName ?? ""
+        } else {
+            let parts = (authentication.legacyDisplayName ?? "")
+                .split(separator: " ", maxSplits: 1)
+                .map(String.init)
+            first = parts.first ?? ""
+            last = parts.count > 1 ? parts[1] : ""
+        }
+
         let providers = Set(user.providerData.map(\.providerID))
         let profile = UserProfile(
-            firstName: nameParts.first ?? "",
-            lastName: nameParts.count > 1 ? nameParts[1] : "",
+            firstName: first,
+            lastName: last,
             email: user.email ?? "",
             signInMethod: providers.contains("apple.com") ? .apple : .email,
             appleUserID: providers.contains("apple.com") ? user.uid : nil
         )
         context.insert(profile)
         try? context.save()
+        Task { await authentication.clearStoredName() }
     }
 }

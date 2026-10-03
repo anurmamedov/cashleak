@@ -190,8 +190,9 @@ final class RecurringPosterTests: XCTestCase {
 
     // MARK: Rejection
 
-    /// A rule created from a template with no amount yet shouldn't post zeros.
-    func testRulesWithNoAmountAreRejected() throws {
+    /// A rule created from a template with no amount yet shouldn't post
+    /// zeros — and shouldn't lose the month either. It waits.
+    func testRulesWithNoAmountWaitInsteadOfSkipping() throws {
         let rule = RecurringRule(
             merchant: "Rent", amount: 0, cadence: .monthly,
             nextRunDate: TestSupport.date(2026, 8, 1)
@@ -202,9 +203,25 @@ final class RecurringPosterTests: XCTestCase {
             asOf: TestSupport.date(2026, 8, 10), calendar: calendar, in: context
         )
 
-        XCTAssertEqual(outcome.posted, 0)
-        XCTAssertEqual(outcome.rejected, 1)
+        XCTAssertEqual(outcome.total, 0)
         XCTAssertTrue(try transactions().isEmpty)
+        XCTAssertEqual(rule.nextRunDate, TestSupport.date(2026, 8, 1), "The month mustn't be skipped")
+    }
+
+    /// Once the amount is filled in, the months that were waiting post.
+    func testMissedMonthsPostOnceTheAmountIsSet() throws {
+        let rule = RecurringRule(
+            merchant: "Rent", amount: 0, cadence: .monthly,
+            nextRunDate: TestSupport.date(2026, 8, 1)
+        )
+        context.insert(rule)
+        RecurringPoster.postDue(asOf: TestSupport.date(2026, 8, 10), calendar: calendar, in: context)
+
+        rule.amount = 2100
+        let outcome = RecurringPoster.postDue(
+            asOf: TestSupport.date(2026, 9, 10), calendar: calendar, in: context
+        )
+        XCTAssertEqual(outcome.posted, 2)
     }
 
     // MARK: Multiple rules

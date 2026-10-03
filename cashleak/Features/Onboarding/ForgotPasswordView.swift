@@ -22,7 +22,7 @@ struct ForgotPasswordView: View {
                 } header: {
                     Text("Reset your password")
                 } footer: {
-                    Text("Firebase will send a secure password-reset link to this email address.")
+                    Text("We'll email a secure link to reset your password.")
                 }
 
                 Section {

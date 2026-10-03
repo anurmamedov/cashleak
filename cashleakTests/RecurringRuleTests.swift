@@ -122,4 +122,46 @@ final class RecurringRuleTests: XCTestCase {
         let next = rule.dateAfter(start, calendar: calendar)
         XCTAssertEqual(calendar.component(.month, from: next), 4)
     }
+
+    // MARK: Anchor day
+
+    /// The bug: Jan 31 → Feb 28 → Mar 28 → … stuck on the 28th for good.
+    func testMonthEndBillReturnsToThe31st() {
+        let jan31 = TestSupport.date(2026, 1, 31)
+        let rule = RecurringRule(merchant: "Rent", amount: 2100, cadence: .monthly, nextRunDate: jan31)
+
+        let feb = rule.dateAfter(jan31, calendar: calendar)
+        let mar = rule.dateAfter(feb, calendar: calendar)
+        let apr = rule.dateAfter(mar, calendar: calendar)
+
+        XCTAssertEqual(calendar.component(.day, from: feb), 28)
+        XCTAssertEqual(calendar.component(.day, from: mar), 31)
+        XCTAssertEqual(calendar.component(.day, from: apr), 30)
+    }
+
+    /// Backfilling several months keeps the day too.
+    func testBackfillKeepsTheAnchorDay() {
+        let rule = RecurringRule(
+            merchant: "Rent", amount: 2100, cadence: .monthly,
+            nextRunDate: TestSupport.date(2026, 1, 31)
+        )
+        let due = rule.datesDue(asOf: TestSupport.date(2026, 5, 31, hour: 13), calendar: calendar)
+        XCTAssertEqual(due.map { calendar.component(.day, from: $0) }, [31, 28, 31, 30, 31])
+    }
+
+    /// Leap-day yearly bills come back to the 29th in the next leap year.
+    func testYearlyLeapDayReturns() {
+        let feb29 = TestSupport.date(2028, 2, 29)
+        let rule = RecurringRule(merchant: "Domain", amount: 20, cadence: .yearly, nextRunDate: feb29)
+        var date = feb29
+        for _ in 0..<4 { date = rule.dateAfter(date, calendar: calendar) }
+        XCTAssertEqual(calendar.component(.day, from: date), 29)
+    }
+
+    /// Weekly bills aren't affected by the anchor.
+    func testWeeklyIgnoresAnchor() {
+        let jan31 = TestSupport.date(2026, 1, 31)
+        let rule = RecurringRule(merchant: "Cleaner", amount: 60, cadence: .weekly, nextRunDate: jan31)
+        XCTAssertEqual(calendar.component(.day, from: rule.dateAfter(jan31, calendar: calendar)), 7)
+    }
 }

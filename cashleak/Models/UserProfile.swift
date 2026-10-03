@@ -24,6 +24,17 @@ final class UserProfile {
 
     var createdAt: Date = Date.distantPast
 
+    /// Optional profile photo, already cropped square and shrunk to 512 px
+    /// JPEG by `ProfilePhoto.prepare` — a few dozen KB rather than a 12 MP
+    /// original syncing through iCloud. External storage keeps it out of the
+    /// main store. Optional, so it satisfies CloudKit's schema rules (D-026).
+    @Attribute(.externalStorage) var photo: Data?
+
+    /// Optional monthly take-home pay, after tax. `0` means not set — and then
+    /// nothing in the app mentions take-home (D-030). Kept with the profile so
+    /// it's the same on every device.
+    var monthlyTakeHome: Double = 0
+
     var signInMethod: SignInMethod {
         get { SignInMethod(rawValue: signInMethodRaw) ?? .email }
         set { signInMethodRaw = newValue.rawValue }

@@ -43,6 +43,15 @@ enum RecurringPoster {
         var outcome = Outcome()
 
         for rule in rules {
+            // No amount yet ("Rent", amount to come). Posting would be
+            // rejected and the month advanced — lost for good. Waiting means
+            // the missed months post once the amount is filled in.
+            guard rule.amount > 0 else { continue }
+
+            if rule.anchorDay == 0 {
+                rule.anchorDay = calendar.component(.day, from: rule.nextRunDate)
+            }
+
             let due = rule.datesDue(asOf: now, calendar: calendar)
             guard !due.isEmpty else { continue }
 

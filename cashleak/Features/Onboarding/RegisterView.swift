@@ -58,7 +58,7 @@ struct RegisterView: View {
                 } header: {
                     Text("About you")
                 } footer: {
-                    Text("Your name and email are used for your Firebase account and to personalise CashLeak.")
+                    Text("Your name and email are used for your CashLeak account and to personalise the app.")
                 }
 
                 Section {
@@ -80,7 +80,7 @@ struct RegisterView: View {
                 } header: {
                     Text("Account password")
                 } footer: {
-                    Text("Required for signing in. Firebase Authentication securely stores the credential; CashLeak never stores your password.")
+                    Text("Used only to sign in. If you turn on Face ID sign-in later, it's kept on this iPhone, locked by Face ID.")
                 }
 
                 if !failures.isEmpty {

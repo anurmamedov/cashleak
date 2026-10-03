@@ -17,6 +17,11 @@ struct HistoryView: View {
     @State private var query = ""
     @State private var filter: Filter = .all
 
+    /// Swiped away but not yet deleted — held back while Undo shows, then
+    /// deleted, the same way Sort handles removal (D-028).
+    @State private var removing: [Transaction] = []
+    @State private var undoID = UUID()
+
     enum Filter: String, CaseIterable, Identifiable {
         case all, leaks, worthIt, unsorted
         var id: String { rawValue }
@@ -32,7 +37,8 @@ struct HistoryView: View {
     }
 
     private var filtered: [Transaction] {
-        var result = transactions.filter { !$0.isSuperseded }
+        let hidden = Set(removing.map(\.persistentModelID))
+        var result = transactions.filter { !$0.isSuperseded && !hidden.contains($0.persistentModelID) }
 
         switch filter {
         case .all: break
@@ -90,6 +96,29 @@ struct HistoryView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            if !removing.isEmpty {
+                HStack {
+                    Text(removing.count == 1 ? "Deleted" : "\(removing.count) deleted")
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                    Spacer()
+                    Button("Undo") {
+                        withAnimation { removing = [] }
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color(hex: "F0997B"))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(hex: "2C2C2A"))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(.horizontal)
+                .padding(.bottom, 10)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .onDisappear(perform: finalizeRemoval)
         .searchable(text: $query, prompt: "Merchant, note or category")
         .navigationTitle("History")
         .navigationBarTitleDisplayMode(.inline)
@@ -132,7 +161,26 @@ struct HistoryView: View {
     }
 
     private func delete(_ offsets: IndexSet, in items: [Transaction]) {
-        for index in offsets { context.delete(items[index]) }
+        finalizeRemoval()
+        let picked = offsets.map { items[$0] }
+        withAnimation { removing = picked }
+        let id = UUID()
+        undoID = id
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            await MainActor.run {
+                guard undoID == id else { return }
+                withAnimation { finalizeRemoval() }
+            }
+        }
+    }
+
+    /// Deletes whatever is waiting — when Undo closes, before another delete,
+    /// or when leaving the screen.
+    private func finalizeRemoval() {
+        guard !removing.isEmpty else { return }
+        for transaction in removing { context.delete(transaction) }
         try? context.save()
+        removing = []
     }
 }

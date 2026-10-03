@@ -162,13 +162,17 @@ struct AddRecurringRuleSheet: View {
             amountText = String(format: "%.2f", template.amount)
         }
         cadence = template.cadence
-        selectedCategory = categories.first { $0.name == template.category }
+        // The starter category, even if it's been renamed (D-027).
+        selectedCategory = categories.first { $0.builtInName == template.category }
+            ?? categories.first { $0.name == template.category }
     }
 
     private func save() {
         let rule = RecurringRule(
             merchant: merchant.trimmingCharacters(in: .whitespaces),
-            amount: Double(amountText) ?? 0,
+            // Same reading as the Apple Pay capture: "1 250,00", "$1,250"
+            // and "1250" all work. Blank stays 0 — the rule waits.
+            amount: LogWalletTransaction.parseAmount(amountText),
             cadence: cadence,
             nextRunDate: nextRunDate,
             category: selectedCategory
@@ -210,7 +214,15 @@ struct EditRecurringRuleSheet: View {
                         }
                     }
                     DatePicker("Next charge", selection: $rule.nextRunDate, displayedComponents: .date)
+                        .onChange(of: rule.nextRunDate) { _, newValue in
+                            // Moving the date moves the day it's due.
+                            rule.anchorDay = Calendar.current.component(.day, from: newValue)
+                        }
                     Toggle("Active", isOn: $rule.isEnabled)
+                } footer: {
+                    if LogWalletTransaction.parseAmount(amountText) <= 0 {
+                        Text("Waiting for an amount — nothing posts until you add one, and missed months post once you do.")
+                    }
                 }
 
                 Section("Category") {
@@ -237,7 +249,7 @@ struct EditRecurringRuleSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
-                        rule.amount = Double(amountText) ?? rule.amount
+                        rule.amount = LogWalletTransaction.parseAmount(amountText)
                         try? context.save()
                         dismiss()
                     }
