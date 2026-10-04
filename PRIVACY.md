@@ -39,6 +39,7 @@ other third party:
 - Your *worth it* and *leak* judgements
 - Categories, goals and recurring bills
 - Your profile name and profile photo
+- Receipt photos
 - The capture log of Apple Pay purchases
 
 This data is stored on your device and synced through **your own private
@@ -52,8 +53,8 @@ trusted devices can read it. Apple's handling of iCloud data is described in
 
 CashLeak does not ask for or use banking credentials, and does not connect to
 your bank in any way. Purchases are added through an Apple Shortcuts
-automation that you set up yourself, through recurring bills you define, or by
-entering them yourself.
+automation that you set up yourself, through recurring bills you define, by
+entering them yourself, or by scanning a receipt.
 
 ## No analytics, advertising or tracking
 
@@ -68,6 +69,11 @@ notifications.
 
 If you add a **profile photo**, it is resized on your device and stored with the
 rest of your data, on the device and in your iCloud.
+
+If you **scan a receipt**, the app uses the camera (or a photo you choose) and
+reads the text with Apple's on-device text recognition. The photo is not
+uploaded anywhere for reading. A reduced copy is kept with that purchase, on
+the device and in your iCloud, and is deleted with it.
 
 If you turn on **Sign in with Face ID**, your password is stored in your
 device's Keychain, protected by Face ID, kept on that device only, and not

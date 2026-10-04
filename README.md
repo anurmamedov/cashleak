@@ -25,7 +25,8 @@ status, the app lock, preferences, CSV export and privacy. Capture runs through 
 single ingest funnel with deduplication and recurring rule posting. Daily Sort
 reminders and small/medium Home Screen widgets are built.
 
-**Not built** — receipt scanning, and StoreKit.
+**Not built** — StoreKit. Receipt scanning is built (D-036) and untested on a
+physical phone.
 
 **Partly verified** — 244 tests exist and last passed on the iPhone 17 Pro /
 iOS 26.1 Simulator, before the identifier change and the welcome screen rework.

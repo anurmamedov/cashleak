@@ -41,6 +41,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>The camera photographs receipts so CashLeak can read the total, store and date. The photo stays on your iPhone and in your iCloud.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Face ID opens CashLeak so your spending stays private if someone else picks up your phone.</string>
 	<key>UIApplicationSceneManifest</key>

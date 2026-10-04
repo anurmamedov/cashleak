@@ -106,7 +106,10 @@ Verdict means "I'd take it back." Never let a parser's claim count toward totals
 before a human has seen it.
 
 **Everything enters through the Sort queue unconfirmed**, regardless of source.
-No capture path writes a confirmed transaction directly.
+No capture path writes a confirmed transaction directly. The one exception is a
+person rating a purchase on the Add sheet (D-034) — `personVerdict` is honoured
+for `.manual` and `.scan` only. The app shows past verdicts, never fills one in
+(D-035).
 
 **Leak intensity maps to ratio, never amount.** A dark card for a legitimate
 large purchase is a punishment. On Overview this is now the width of the orange

@@ -219,7 +219,8 @@ Done:
 Outstanding:
 
 - [ ] Fixtures are guesses at Canadian formats until L3 lands
-- [ ] Receipt images for v1.1
+- [ ] Receipt images for v1.1 — `ReceiptParserTests` uses line fixtures until
+      real Vision output from real receipts replaces them
 
 **`Category` needed qualifying as `cashleak.Category` throughout the tests.**
 The bare name collides inside the test target, so every reference has to name the
@@ -267,12 +268,25 @@ Not unit-testable. Needs two physical devices.
 
 - [x] Number pad opens focused, digits accumulate from the right
 - [x] Category chips
-- [x] Saves confirmed — the one deliberate exception to the unconfirmed rule
+- [x] ~~Saves confirmed — the one deliberate exception to the unconfirmed rule~~
+      Superseded by D-034: saves through `TransactionIngest`, so it dedups
+      against Wallet; confirmed when a verdict is chosen, Sort when "Later"
 - [x] Optional merchant field with recent-merchant suggestions
 - [x] Category pre-fills from the last time that merchant was filed
 - [x] An explicit category tap always beats the remembered one
 - [x] Memory returns categories only, never verdicts
 - [x] 11 memory tests
+- [x] Redesigned in Overview's card style; Today / Yesterday / calendar;
+      verdict on the sheet; amount on the button (D-034)
+- [x] Shows past verdicts at the merchant, never pre-selects one (D-035)
+- [x] 11 manual entry tests
+- [x] Compact amount card with store, note and "Scan a receipt instead";
+      "Other day" opens a calendar
+- [x] Receipt scan: document camera or Photos → Vision on-device → total,
+      store, date with confidence dots, filled into the same sheet (D-036)
+- [x] 16 receipt parser tests (line fixtures, not real scans yet)
+- [ ] Try on a phone with real receipts: grocery, restaurant with tip, gas,
+      a faded one, a long one scanned as two pages
 
 ### L12 · Sort queue — done
 
@@ -644,5 +658,5 @@ The next useful order is:
 Bank sync · net worth · investments · debt payoff · shared budgets · envelope
 budgeting · income tracking · receipt line items · Android, web, Mac
 
-Receipt scanning is v1.1. Bank alerts are v1.1 if L2 comes back well. Reconcile
+Receipt scanning was v1.1; it is now built (D-036). Bank alerts are v1.1 if L2 comes back well. Reconcile
 is v1.2.

@@ -972,3 +972,89 @@ both URLs in App Store Connect; then make the repository private.
 alert rather than a dialog bubble, and the sign-in screen no longer starts
 Face ID on its own straight after signing out — only when the app is opened
 signed out.
+
+---
+
+## D-034 · The Add sheet writes through ingest, and a person's answer confirms
+
+**Decided.**
+
+Manual entry used to insert a confirmed `Transaction` directly — the one
+writer that bypassed `TransactionIngest`. That skipped dedup: a coffee Wallet
+had already caught, typed in as well, counted twice. Nothing on screen looked
+wrong.
+
+Now the Add sheet calls `ingest` like every other path. `ingest` gains two
+optional arguments, `category` and `personVerdict`:
+
+- **Worth it / Leak chosen on the sheet** → saved confirmed with that verdict.
+  A person typed the amount and answered the question; sending it to Sort would
+  ask them twice.
+- **Later** (the default) → unconfirmed, waits in Sort like any capture.
+- `personVerdict` is honoured for `.manual` and `.scan` only. From Wallet, bank
+  alerts or recurring rules it is ignored, so no parser can write a confirmed
+  record. That half of the rule is unchanged.
+
+When a typed purchase matches one already captured, the surviving record takes
+the person's verdict and category. A receipt scan's check screen will use the
+same path: a person reads each field before saving.
+
+The sheet is also redesigned in Overview's style — white cards on grouped grey,
+CashLeak orange — with Today / Yesterday / a calendar for older purchases, the
+verdict on the sheet, and the amount on the save button.
+
+**Supersedes** the "saves confirmed — the one deliberate exception" note in
+BUILD_PLAN L11.
+
+---
+
+## D-035 · Past verdicts are shown, never filled in
+
+**Decided.** Reaffirms D-002.
+
+Asked whether the app could predict Worth it or Leak from earlier answers at
+the same merchant. It could, and it won't: a pre-selected Leak gets accepted
+without thought, and the totals would then measure the app's guess rather than
+the person's judgement. The moment of deciding is the product.
+
+What it does instead: after three or more rated visits, the Add sheet shows a
+line of history under the verdict buttons — `Last 5 times here: 4 leak · 1
+worth it`. Nothing is pre-selected. `MerchantMemory.verdictHistory` counts the
+last five rated, confirmed, non-superseded purchases at that merchant.
+
+**Reverse if:** never pre-select. Showing the history elsewhere (Sort, the scan
+check screen) is fine and doesn't need a new entry.
+
+---
+
+## D-036 · Receipt scanning, built into the Add sheet
+
+**Decided.** Implements the plan's receipt section and D-009.
+
+"Scan a receipt instead" on the Add sheet opens Apple's document camera, or
+Photos (the only option in the Simulator, and the way in for a receipt
+photographed earlier). Vision reads the text on the device. `ReceiptParser`
+pulls three fields — total, store, date — and the sheet fills in with a dot on
+each: green read clearly, orange worth a look.
+
+Three choices worth recording:
+
+- **Document camera, not `DataScannerViewController`.** The plan named the live
+  scanner. The document camera finds the edges, flattens the paper and takes
+  the photo itself, which gives Vision a cleaner page and gives the purchase a
+  usable photo to keep. Multi-page scans are stacked, so a long receipt works.
+- **The Add sheet is the check screen.** No separate review step: the person
+  sees every field in the place they'd type it, and saving is the same button.
+  That satisfies D-034's condition — a person looked at each field — so a scan
+  rated on the sheet saves confirmed; Later sends it to Sort.
+- **Category from the store first, receipt words second.** Merchant memory,
+  then `MerchantCategoryHints`, then cues on the paper: TIP or SERVER →
+  Dining out, LITRES or PUMP → Fuel, PRODUCE or KG → Groceries. Never a
+  verdict (D-002).
+
+The photo is kept as `receiptImage`, reduced to 1600 px, on the device and in
+iCloud. `PRIVACY.md` and the camera permission text say so.
+
+**Not yet verified:** the parser's fixtures are written from typical layouts,
+not real Vision output. Replace them once real receipts have been scanned on a
+phone — the same caveat L3 put on the merchant fixtures.

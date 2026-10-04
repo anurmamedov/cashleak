@@ -37,6 +37,59 @@ enum MerchantMemory {
         return matches.first { $0.category != nil }?.category
     }
 
+    /// What the user said the last few times at this merchant (D-035).
+    ///
+    /// Shown as a line of history — "Last 5 times here: 4 leak · 1 worth it" —
+    /// and **never** used to pre-select a verdict. Remembering an answer is
+    /// information; filling it in is the app deciding. `nil` until there are
+    /// `minimumRated` rated visits, so one purchase doesn't read as a habit.
+    struct VerdictHistory: Equatable {
+        let leak: Int
+        let worthIt: Int
+        var total: Int { leak + worthIt }
+
+        var summary: String {
+            var parts: [String] = []
+            if leak > 0 { parts.append("\(leak) leak") }
+            if worthIt > 0 { parts.append("\(worthIt) worth it") }
+            return "Last \(total) times here: " + parts.joined(separator: " · ")
+        }
+    }
+
+    static let minimumRated = 3
+    static let historyLength = 5
+
+    @MainActor
+    static func verdictHistory(
+        forMerchant merchant: String,
+        in context: ModelContext
+    ) -> VerdictHistory? {
+
+        let normalized = MerchantNormalizer.normalize(merchant)
+        guard !normalized.isEmpty else { return nil }
+
+        var descriptor = FetchDescriptor<Transaction>(
+            predicate: #Predicate {
+                $0.normalizedMerchant == normalized && $0.isConfirmed && !$0.isSuperseded
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        descriptor.fetchLimit = 40
+
+        let rated = ((try? context.fetch(descriptor)) ?? [])
+            .filter { $0.verdict != .unrated }
+            .prefix(historyLength)
+        return verdictHistory(of: Array(rated))
+    }
+
+    /// The counting, separate from the fetch so it can be tested directly.
+    static func verdictHistory(of rated: [Transaction]) -> VerdictHistory? {
+        let leak = rated.filter { $0.verdict == .leak }.count
+        let worthIt = rated.filter { $0.verdict == .worthIt }.count
+        guard leak + worthIt >= minimumRated else { return nil }
+        return VerdictHistory(leak: leak, worthIt: worthIt)
+    }
+
     /// Merchants seen before, most recent first, for the entry field's
     /// suggestions.
     @MainActor

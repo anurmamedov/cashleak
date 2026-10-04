@@ -36,7 +36,9 @@ CloudKit replicates it to the user's own private database.
 ```
 
 Everything enters through one funnel and lands in the Sort queue unconfirmed,
-regardless of source. That single invariant is what lets partial capture coverage
+regardless of source. The one exception is a record a person enters on the Add
+sheet and rates there: `ingest` accepts a `personVerdict` from `.manual` and
+`.scan` only, and ignores it from every capture source (D-034). That invariant is what lets partial capture coverage
 be honest rather than broken — a bad parse or a declined transaction is visible
 and dismissible instead of silently corrupting the dataset.
 
@@ -245,13 +247,23 @@ than deleting, so a wrong merge stays recoverable.
 
 ### Receipts
 
-`VisionKit` `DataScannerViewController` for live capture, `Vision`
-`VNRecognizeTextRequest` with `.accurate` for OCR. Entirely on-device.
+Built (D-036). `ReceiptCamera` wraps VisionKit's `VNDocumentCameraViewController`
+— edge detection, flattening and auto-capture — with Photos as the alternative,
+and the only path in the Simulator. `ReceiptReader` runs Vision
+`VNRecognizeTextRequest` (`.accurate`, language correction off, en-US and
+fr-CA). Entirely on-device.
 
-Three fields only: **total** (largest currency figure in the bottom third),
-**merchant** (largest text in the top fifth), **date**. Each carries a confidence
-badge the user can glance-correct. Line items are explicitly out of v1 — layout
-variance across receipts turns them into a permanent support burden.
+`ReceiptParser` is pure and position-aware, tested against line fixtures:
+**total** (the amount on a TOTAL / AMOUNT DUE row, never SUBTOTAL, TAX or
+SAVINGS; the larger when a typed tip makes two), **merchant** (tallest text near
+the top, skipping addresses and greetings), **date**. Each carries `.sure` or
+`.check`, shown as a green or orange dot. Line items are explicitly out of v1 —
+layout variance across receipts turns them into a permanent support burden.
+
+The Add sheet is the check screen: a scan fills its fields and is saved
+through `ingest` with source `.scan`, the photo stored as `receiptImage`
+(1600 px JPEG, external storage). Category comes from merchant memory, then
+`MerchantCategoryHints`, then receipt words (TIP → Dining out, LITRES → Fuel).
 
 ## Notifications
 

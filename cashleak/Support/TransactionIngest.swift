@@ -7,11 +7,17 @@ import SwiftData
 /// call `ingest`. Nothing writes a `Transaction` directly, which is what makes
 /// two guarantees enforceable in one place rather than five:
 ///
-/// 1. Everything enters **unconfirmed**. A capture source makes a claim; only a
-///    person turns it into a fact.
+/// 1. Everything a **capture source** sends enters unconfirmed. A source makes
+///    a claim; only a person turns it into a fact. The one exception is a
+///    record a person entered or checked themselves on the Add sheet (D-034) —
+///    passed as `personVerdict`, honoured for `.manual` and `.scan` only.
 /// 2. Dedup runs on **every** write, not on a nightly sweep. A duplicate that
 ///    reaches a total even briefly has already been seen.
 enum TransactionIngest {
+
+    /// Sources a person types or checks field by field before saving. Only
+    /// these may arrive confirmed.
+    static let personEnteredSources: Set<TransactionSource> = [.manual, .scan]
 
     enum Result: Equatable {
         /// Stored and queued for sorting.
@@ -42,8 +48,18 @@ enum TransactionIngest {
         date: Date = .now,
         source: TransactionSource,
         note: String = "",
+        category: Category? = nil,
+        personVerdict: Verdict? = nil,
+        receiptImage: Data? = nil,
         into context: ModelContext
     ) -> Result {
+
+        // A verdict arrives with the record only when a person chose it on the
+        // Add sheet. From any other source it's ignored, so no parser can ever
+        // write a confirmed transaction (D-002, D-034).
+        let verdict: Verdict? = personEnteredSources.contains(source)
+            ? personVerdict.flatMap { $0 == .unrated ? nil : $0 }
+            : nil
 
         // The Wallet trigger fires on declined transactions too. A decline has
         // no amount worth recording, and this is the cheapest place to drop it.
@@ -68,9 +84,11 @@ enum TransactionIngest {
             merchant: cleanMerchant,
             note: note,
             source: source,
-            verdict: .unrated,
-            isConfirmed: false
+            verdict: verdict ?? .unrated,
+            isConfirmed: verdict != nil,
+            category: category
         )
+        incoming.receiptImage = receiptImage
 
         if let existing = DeduplicationMatcher.firstMatch(
             amount: amount,
@@ -89,7 +107,7 @@ enum TransactionIngest {
                 existing.isSuperseded = true
                 // Carry forward anything the human already did.
                 if incoming.category == nil { incoming.category = existing.category }
-                if existing.isConfirmed {
+                if existing.isConfirmed && !incoming.isConfirmed {
                     incoming.isConfirmed = true
                     incoming.verdict = existing.verdict
                 }
@@ -98,6 +116,21 @@ enum TransactionIngest {
                 // Fill gaps in the keeper from the newcomer.
                 if keeper.merchant.isEmpty && !incoming.merchant.isEmpty {
                     keeper.setMerchant(incoming.merchant)
+                }
+                // A person's answer on the Add sheet lands on the record that
+                // survives — typing a coffee Wallet already caught still sorts
+                // it, rather than vanishing into a superseded copy.
+                if incoming.isConfirmed && !keeper.isConfirmed {
+                    keeper.isConfirmed = true
+                    keeper.verdict = incoming.verdict
+                }
+                // A receipt photo or note added later belongs to the purchase,
+                // whichever record keeps it.
+                if keeper.receiptImage == nil { keeper.receiptImage = incoming.receiptImage }
+                if keeper.note.isEmpty && !incoming.note.isEmpty { keeper.note = incoming.note }
+                if let chosen = incoming.category,
+                   incoming.isConfirmed || keeper.category == nil {
+                    keeper.category = chosen
                 }
             }
 
