@@ -75,8 +75,14 @@ final class AuthenticationService: ObservableObject {
         try await Auth.auth().sendPasswordReset(withEmail: email)
     }
 
+    /// Set when someone signs out in this session, so the sign-in screen that
+    /// follows waits for a tap instead of starting Face ID straight away and
+    /// signing them back in.
+    private(set) var signedOutThisSession = false
+
     func signOut() throws {
         try Auth.auth().signOut()
+        signedOutThisSession = true
         user = nil
     }
 

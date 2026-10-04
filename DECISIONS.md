@@ -942,3 +942,33 @@ that already sits under the month — so it costs no space: "☀ Morning, Anar �
 
 Larger options — a big title, a header with the photo — were considered and
 passed over for something quieter.
+
+---
+
+## D-033 · CashLeak's policy and support live on karasandlabs.com
+
+**Decided.** The privacy policy and support information move from the GitHub
+repository to the company website:
+
+- `https://karasandlabs.com/cashleak/` — about CashLeak, how purchases get in,
+  your data, and support answers.
+- `https://karasandlabs.com/cashleak/privacy/` — the privacy policy, generated
+  from `PRIVACY.md`, which stays the single source.
+
+The in-app Privacy screen links to the website page — App Review asks for the
+policy to be reachable in the app — and the GitHub Pages copies in `docs/` link
+there too. Nothing public points at the repository any more, so it can be made
+private.
+
+Also corrected while there: the website's CashLeak card described features the
+app doesn't have (spotting forgotten recurring charges, yearly cost of a habit,
+a weekly summary, a pause before purchases). It now describes what CashLeak
+does, and the name is written CashLeak throughout.
+
+**Owner actions:** upload the site's `cashleak/` folder and `index.html`; set
+both URLs in App Store Connect; then make the repository private.
+
+**Sign-out tweaks in the same pass:** the sign-out confirmation is a centred
+alert rather than a dialog bubble, and the sign-in screen no longer starts
+Face ID on its own straight after signing out — only when the app is opened
+signed out.

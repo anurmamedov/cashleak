@@ -501,18 +501,17 @@ be changed while no build has been uploaded.
 - [x] Apple Developer Program membership approved
 - [x] Public support address: `support@karasandlabs.com`, with
       `karasandlabs@gmail.com` as the fallback
-- [ ] Register the developer website domain
-- [x] Support page written — `docs/support.html`
-- [ ] Enable GitHub Pages (Settings → Pages → `main` / `/docs`) to serve it
-- [x] Privacy policy written — `PRIVACY.md` (single source; the HTML copy was
-      removed to stop the two drifting)
-- [ ] Paste the GitHub URL into App Store Connect:
-      `https://github.com/anurmamedov/cashleak/blob/main/PRIVACY.md`
-- [x] Repo is public, so the link resolves for Apple's reviewer. It has to
-      keep resolving for as long as the app is listed — making the repo
-      private later would silently break the store listing
-- [ ] Keep `PRIVACY.md` the only copy — a second one drifts and then the two
-      disagree about what the app collects
+- [x] Developer website: karasandlabs.com (D-033)
+- [x] CashLeak pages on the website, generated from this repo's text:
+      `/cashleak/` (about and support) and `/cashleak/privacy/` (the policy)
+- [ ] **Upload** the site's new `cashleak/` folder and updated `index.html`
+- [ ] Set App Store Connect URLs — Privacy Policy:
+      `https://karasandlabs.com/cashleak/privacy/` · Support:
+      `https://karasandlabs.com/cashleak/`
+- [ ] Then make the GitHub repository **private**. Nothing public links to it
+      any more
+- [x] `PRIVACY.md` stays the single source. The website page is generated from
+      it — change the policy here, then regenerate and upload the page
 - [ ] **Fix the App Privacy declaration.** It currently says "Data Not
       Collected", which stopped being true when Firebase landed. Declare
       Email Address and User ID, both linked, neither used for tracking.

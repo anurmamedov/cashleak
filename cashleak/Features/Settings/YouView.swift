@@ -84,9 +84,12 @@ struct YouView: View {
             } message: {
                 Text("Allow notifications for CashLeak in Settings to use the daily reminder.")
             }
-            .confirmationDialog("Sign out of CashLeak?", isPresented: $isConfirmingSignOut, titleVisibility: .visible) {
-                Button("Sign out", role: .destructive, action: signOut)
+            // An alert rather than a confirmation dialog: on iOS 26 a dialog
+            // from a list floats as a bubble pointing at an unrelated row. An
+            // alert is centred, with Cancel beside Sign out.
+            .alert("Sign out of CashLeak?", isPresented: $isConfirmingSignOut) {
                 Button("Cancel", role: .cancel) {}
+                Button("Sign out", role: .destructive, action: signOut)
             } message: {
                 Text("Your spending stays on this iPhone and in your iCloud. The app lock is turned off.")
             }
@@ -426,6 +429,9 @@ struct YouView: View {
                     .foregroundStyle(brand)
                     .frame(maxWidth: .infinity)
             }
+            // Full-width separator. Centred text otherwise starts the line
+            // where the text starts, which reads as half a divider.
+            .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
             Button(role: .destructive) {
                 isDeletingAccount = true
             } label: {
@@ -874,7 +880,9 @@ struct CategoryEditor: View {
 /// services CashLeak doesn't run — iCloud is Apple's (D-029).
 struct PrivacyView: View {
 
-    static let policyURL = URL(string: "https://github.com/anurmamedov/cashleak/blob/main/PRIVACY.md")!
+    /// The full policy on the company website, not the source repository —
+    /// so the repository can be private (D-033).
+    static let policyURL = URL(string: "https://karasandlabs.com/cashleak/privacy")!
 
     var body: some View {
         List {
@@ -903,7 +911,7 @@ struct PrivacyView: View {
                     Label("Questions? support@karasandlabs.com", systemImage: "envelope")
                 }
             } footer: {
-                Text("CashLeak is published by Karasand Software Inc. (Karasand Labs), Toronto, Canada.")
+                Text("CashLeak is published by Karasand Software Inc.")
             }
         }
         .navigationTitle("Privacy")

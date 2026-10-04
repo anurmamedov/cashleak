@@ -199,4 +199,9 @@ automation is an optional convenience for Apple Pay users, and the app explains
 how it works, and its limits, in Profile › Apple Pay capture.
 
 Also mention: Profile › Delete account deletes the account in-app (guideline
-5.1.1(v)), and Profile › Privacy links to the full privacy policy.
+5.1.1(v)), and Profile › Privacy links to the full privacy policy at
+https://karasandlabs.com/cashleak/privacy/.
+
+**URLs for App Store Connect:** Privacy Policy
+`https://karasandlabs.com/cashleak/privacy/` · Support
+`https://karasandlabs.com/cashleak/`.

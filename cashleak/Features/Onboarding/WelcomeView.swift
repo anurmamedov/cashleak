@@ -383,15 +383,17 @@ struct WelcomeView: View {
 
     // MARK: Face ID sign-in
 
-    /// Fills the saved email and, once per appearance, starts Face ID by itself
-    /// — the screen is already saying "Sign in with Face ID", so making someone
-    /// tap first is a wasted step.
+    /// Fills the saved email and, when the app is opened while signed out,
+    /// starts Face ID by itself — the screen is already saying "Sign in with
+    /// Face ID". Not after signing out in the same session.
     private func prepareFaceID() {
         faceIDReady = SavedSignIn.isAvailable
         guard faceIDReady, let email = SavedSignIn.savedEmail else { return }
         username = email
 
-        guard !didAutoTrigger else { return }
+        // Not straight after a sign-out: starting Face ID there signs the
+        // person back in before they've let go of the button. They tap it.
+        guard !didAutoTrigger, !authentication.signedOutThisSession else { return }
         didAutoTrigger = true
         Task {
             try? await Task.sleep(for: .milliseconds(450))
