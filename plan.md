@@ -322,7 +322,7 @@ estimate, which sharpens the next one.
 SwiftUI · SwiftData · CloudKit (private database) · Swift Charts · App Intents ·
 VisionKit · Vision · UserNotifications · WidgetKit · StoreKit 2
 
-iOS 17.0+ · Swift 5.9+ · Xcode 15+
+iOS 17.6+ · Swift 5.9+ · Xcode 15+ (raised from 17.0 by D-038)
 
 No backend. No analytics SDK. No third-party dependencies.
 

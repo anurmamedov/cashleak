@@ -1058,3 +1058,40 @@ iCloud. `PRIVACY.md` and the camera permission text say so.
 **Not yet verified:** the parser's fixtures are written from typical layouts,
 not real Vision output. Replace them once real receipts have been scanned on a
 phone — the same caveat L3 put on the merchant fixtures.
+
+---
+
+## D-037 · "Up to date" only while it's true
+
+**Decided.** Refines D-032.
+
+The tick under the month used to appear once any iCloud sync finished and
+then stay for as long as the app was open — offline, or hours later, it still
+said "up to date". Now:
+
+- **First 10 seconds** after a sync finished or a pull checked: `✓ up to date`.
+- Then `updated 10 sec ago`, `30 sec ago`, each minute to nine, then 10, 15,
+  20, 30 and 45 minutes, then `updated at 8:42`, `yesterday, 21:10`, or a date.
+  Fixed steps so the line doesn't tick like a stopwatch.
+- **Offline** (Apple's `NWPathMonitor`, no permission): `offline · updated
+  12 min ago`, or `offline · showing what's on this phone` if nothing has
+  synced this launch. Never a tick.
+- Syncing and sync failure keep the whole line, as before.
+
+`SyncFreshness` holds the wording as a pure function, with tests.
+
+---
+
+## D-038 · Minimum iOS is 17.6
+
+**Decided.** Supersedes the "iOS 17.0+" line in plan.md and CLAUDE.md.
+
+The app target had already been raised to 17.6, while the test target stayed
+at 17.0 — so the tests wouldn't compile. Every target and the project now say
+17.6.
+
+Cost: next to nothing. Any iPhone that can run iOS 17.0 can update to 17.6 or
+later, and iOS 17 as a whole is a few percent of devices (Statcounter,
+September 2026: iOS 26 about 70%, iOS 18 about 12%).
+
+**Reverse if:** a feature needs iOS 18 — then raise it again, deliberately.

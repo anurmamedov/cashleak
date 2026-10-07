@@ -6,6 +6,7 @@ import XCTest
 /// Each of these is a way the screen could mislead while looking fine: a month
 /// compared against a whole previous month, a rent week flattening the chart,
 /// a "habit" read off six purchases.
+@MainActor
 final class AnalysisSummaryTests: XCTestCase {
 
     private let calendar = TestSupport.torontoCalendar

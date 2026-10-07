@@ -28,10 +28,9 @@ reminders and small/medium Home Screen widgets are built.
 **Not built** — StoreKit. Receipt scanning is built (D-036) and untested on a
 physical phone.
 
-**Partly verified** — 244 tests exist and last passed on the iPhone 17 Pro /
-iOS 26.1 Simulator, before the identifier change and the welcome screen rework.
-Re-run before trusting them. CloudKit sync has never had its two-device test,
-and no build has been archived for distribution.
+**Partly verified** — 397 tests pass on the iPhone 17 Pro Max / iOS 26.0.1
+Simulator (October 6, 2026). CloudKit sync has never had its two-device test.
+Builds go to TestFlight through Xcode Cloud.
 
 **The four gates haven't run.** L1 — two weeks of validating the verdict mechanic
 by hand — is the one step that can invalidate everything else here, and it was
@@ -74,7 +73,7 @@ capture. Everything lands in a Sort queue unconfirmed, and one swipe confirms it
 
 | | |
 |---|---|
-| Platform | iOS 17.0+ |
+| Platform | iOS 17.6+ |
 | Language | Swift 5.9+ |
 | Tooling | Xcode 15+ |
 | Dependencies | Firebase Auth (sign-in only) |

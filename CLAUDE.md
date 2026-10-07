@@ -24,7 +24,7 @@ Home Screen widget, and settings.
 Not built: CloudKit two-device verification (L8). Daily reminders, afternoon
 recurring-rule background refresh and the Home Screen widget are built.
 
-**244 tests pass** on the iPhone 17 Pro / iOS 26.1 Simulator.
+**397 tests pass** on the iPhone 17 Pro Max / iOS 26.0.1 Simulator (October 6, 2026).
 
 **All four gates — L1 to L4 — are still unrun.** Code written ahead of them
 rests on assumptions, particularly the merchant fixtures in
@@ -52,7 +52,7 @@ a resolved gate, or a completed step always does.
 
 ## Stack constraints
 
-iOS 17.0+ · Swift 5.9+ · SwiftUI · SwiftData · CloudKit private database.
+iOS 17.6+ · Swift 5.9+ · SwiftUI · SwiftData · CloudKit private database.
 
 **Firebase Auth is the only third-party dependency.** It handles sign-in,
 registration and password reset — see D-017, which supersedes D-012. Nothing

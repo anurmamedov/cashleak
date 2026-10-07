@@ -108,7 +108,7 @@ final class MerchantCategoryHintsTests: XCTestCase {
     /// must outrank the table forever after, or the app argues with them daily.
     func testUserHistoryBeatsTheTable() throws {
         let dining = try XCTUnwrap(
-            try context.fetch(FetchDescriptor<Category>())
+            try context.fetch(FetchDescriptor<cashleak.Category>())
                 .first { $0.name == "Dining out" }
         )
 
@@ -135,7 +135,7 @@ final class MerchantCategoryHintsTests: XCTestCase {
     /// or renamed Coffee gets no category, not a resurrected one.
     func testMissingCategoryIsNotRecreated() throws {
         let coffee = try XCTUnwrap(
-            try context.fetch(FetchDescriptor<Category>()).first { $0.name == "Coffee" }
+            try context.fetch(FetchDescriptor<cashleak.Category>()).first { $0.name == "Coffee" }
         )
         context.delete(coffee)
         try context.save()
@@ -147,7 +147,7 @@ final class MerchantCategoryHintsTests: XCTestCase {
         let stored = try XCTUnwrap(try context.fetch(FetchDescriptor<Transaction>()).first)
         XCTAssertNil(stored.category)
         XCTAssertEqual(
-            try context.fetch(FetchDescriptor<Category>()).filter { $0.name == "Coffee" }.count,
+            try context.fetch(FetchDescriptor<cashleak.Category>()).filter { $0.name == "Coffee" }.count,
             0
         )
     }

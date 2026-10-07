@@ -21,7 +21,7 @@ category creation, backdating, recurring rule editing, Goals replacing Trips.
 See D-014 and D-015.
 
 **Verified:** builds and runs on iPhone 17 Pro / iOS 26.5.
-**Tests:** 244 tests pass on iPhone 17 Pro / iOS 26.1 Simulator.
+**Tests:** 397 tests pass on iPhone 17 Pro Max / iOS 26.0.1 Simulator (October 6, 2026).
 **Gates:** L2 is on hold. L1, L3 and L4 haven't run.
 
 ---
