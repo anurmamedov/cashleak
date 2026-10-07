@@ -27,6 +27,7 @@ struct OverviewView: View {
     @Query private var profiles: [UserProfile]
 
     @State private var selectedMonth = MonthNavigator.startOfMonth(.now)
+    @State private var isPickingMonth = false
     /// Set by pull-to-refresh, so the status line can say when it last checked
     /// even if no iCloud event was observed.
     @State private var lastChecked: Date?
@@ -85,8 +86,12 @@ struct OverviewView: View {
         transactions.filter(\.needsSorting).count
     }
 
+    /// "September" this year; "March 2025" from an earlier one, so a month
+    /// picked from the grid a year back can't be mistaken for this year's.
     private var monthName: String {
-        selectedMonth.formatted(.dateTime.month(.wide))
+        Calendar.current.isDate(selectedMonth, equalTo: .now, toGranularity: .year)
+            ? selectedMonth.formatted(.dateTime.month(.wide))
+            : selectedMonth.formatted(.dateTime.month(.wide).year())
     }
 
     /// "this month" or "in August".
@@ -136,6 +141,13 @@ struct OverviewView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) { monthHeader }
             }
+            .sheet(isPresented: $isPickingMonth) {
+                MonthPickerSheet(
+                    years: MonthGrid.years(transactions, available: months),
+                    selected: selectedMonth,
+                    onPick: select
+                )
+            }
             .onChange(of: months.count) { _, _ in
                 // History can shrink (a deleted transaction, a reset) and leave
                 // the selection pointing at a month that no longer exists.
@@ -173,15 +185,29 @@ struct OverviewView: View {
         HStack(spacing: 14) {
             monthArrow("chevron.left", label: "Previous month", target: previousMonth)
 
-            VStack(spacing: 1) {
-                Text(monthName)
-                    .font(.headline)
-                Text(isCurrentMonth ? "This month" : "Final")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+            // Tap the name for every month at once (D-040). The small chevron
+            // is the only cue, so it stays.
+            Button {
+                isPickingMonth = true
+            } label: {
+                VStack(spacing: 1) {
+                    HStack(spacing: 3) {
+                        Text(monthName)
+                            .font(.headline)
+                        Image(systemName: "chevron.down")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(isCurrentMonth ? "This month" : "Final")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .foregroundStyle(Color.primary)
+                .frame(minWidth: 110)
             }
-            .frame(minWidth: 110)
+            .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
+            .accessibilityHint("Shows every month")
 
             monthArrow("chevron.right", label: "Next month", target: nextMonth)
         }
@@ -231,7 +257,7 @@ struct OverviewView: View {
         Button {
             select(.now)
         } label: {
-            Label("Back to \(Date.now.formatted(.dateTime.month(.wide)))", systemImage: "arrow.uturn.backward")
+            Label("Go to \(Date.now.formatted(.dateTime.month(.wide).year())) · now", systemImage: "calendar")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(brand)
                 .frame(maxWidth: .infinity)

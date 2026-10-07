@@ -1095,3 +1095,46 @@ later, and iOS 17 as a whole is a few percent of devices (Statcounter,
 September 2026: iOS 26 about 70%, iOS 18 about 12%).
 
 **Reverse if:** a feature needs iOS 18 — then raise it again, deliberately.
+
+---
+
+## D-039 · The Profile card shows setup, not spending
+
+**Decided.**
+
+The card under your name showed *sorted*, *worth it* and *tracking since*.
+"Worth it" was a share by amount, so rent alone held it near 90% whatever else
+happened, and it repeated what Overview and Analysis already show.
+
+Profile is where you look after the app, so its numbers are about the app:
+
+- **caught for you** — share of purchases that arrived without typing (Apple
+  Pay, bank alerts, recurring bills). A drop means capture broke. Opens Apple
+  Pay capture.
+- **waiting to rate** — what Sort holds. Opens Sort.
+- **using since** — the earliest purchase; the year replaces the day once it's
+  from an earlier year. Opens History.
+
+Each shows a small grey hint naming where a tap goes.
+
+No spending figure appears in Profile.
+
+---
+
+## D-040 · Jumping between months on Overview
+
+**Decided.**
+
+The arrows and swipe move one month at a time, which is fine for last month and
+tedious for March. Two changes:
+
+- **Tap the month name** (now with a small chevron) for a grid of every month,
+  grouped by year, newest first. Each cell shows what was spent and an orange
+  line for the share that leaked — a ratio, so rent doesn't make a month look
+  bad (D-020). Months outside the history are greyed out. `MonthGrid` holds the
+  figures, with tests.
+- **Months from an earlier year show the year** in the header ("March 2025").
+
+The button at the bottom of a past month reads **"Go to October 2026 · now"**
+with a calendar icon, replacing "Back to October" and its U-turn arrow, which
+read like undo.
