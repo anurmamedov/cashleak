@@ -1138,3 +1138,32 @@ tedious for March. Two changes:
 The button at the bottom of a past month reads **"Go to October 2026 · now"**
 with a calendar icon, replacing "Back to October" and its U-turn arrow, which
 read like undo.
+
+---
+
+## D-041 · Setup steps match the real iOS 26 flow
+
+**Decided**, from a screen recording of a working setup on iOS 26 (October 3,
+2026 — it captured Kabul Farms, $173.41).
+
+What the recording corrected:
+
+- Step 4 is **Create New Shortcut**, not "New Blank Automation".
+- Cards and categories all come ticked; Run Immediately sits at the bottom of
+  the same screen as the cards.
+- Connecting Amount and Merchant needs **Shortcut Input › Type: Transaction**
+  before Amount and Merchant appear. Without it the list offers only Text, File
+  Size, File Path. Step 5's instructions now say so.
+
+**Next:** the same screen shows a *My Shortcuts* list right after Run
+Immediately. A ready-made CashLeak shortcut, shared by iCloud link and
+installed from the app, would let people pick it there and skip search and both
+connections.
+
+**Built (October 7):** "Add Apple Pay capture" on the setup screen opens the
+shared shortcut (`WalletSetupView.readyShortcutURL`), followed by four short
+steps; the full manual steps stay below as "Or set it up by hand". Decoding the shared files (October 7): the iOS 26 shortcut is right — Log
+transaction with Amount and Merchant taken from the Wallet input, Show When Run
+off. The first iOS 27 shortcut carried the Wallet trigger but **no actions**, so
+it would log nothing; iOS 27 shows the manual steps until a corrected link is
+shared. Still to confirm with one real payment on a second phone.

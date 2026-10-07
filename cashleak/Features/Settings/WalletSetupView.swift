@@ -55,6 +55,44 @@ struct WalletSetupView: View {
 
     private var status: CaptureStatus { .from(captures) }
 
+    /// A ready-made shortcut with Log transaction already connected to the
+    /// payment (D-041). Installing it removes the search and both connections
+    /// — the steps people get wrong. Shared from iCloud; swap the link here if
+    /// the shortcut is ever re-shared.
+    static let readyShortcutURL = URL(string: "https://www.icloud.com/shortcuts/8b1f2a1152124245a120e9f206e4c71c")!
+
+    /// iOS 27 and later: the shortcut carries its own Wallet trigger, so
+    /// installing it *is* the setup — apart from switching it on, which iOS
+    /// leaves to the person.
+    ///
+    /// `nil` until a correct one is shared: the first iOS 27 link
+    /// (6cabd9d0…) carried the trigger but no actions, so it would have logged
+    /// nothing. Checked by decoding the shared file, October 7.
+    static let readyShortcutWithTriggerURL: URL? = nil
+
+    /// The link for this phone, or `nil` when there isn't a working one yet —
+    /// then only the manual steps show.
+    /// iOS 17 and 18 call the Wallet trigger "Transaction". Same trigger, same
+    /// fields, older name. The app's floor is 17.6 (D-038).
+    static var triggerName: String {
+        ProcessInfo.processInfo.operatingSystemVersion.majorVersion <= 18 ? "Transaction" : "Wallet"
+    }
+
+    static var quickSetupURL: URL? {
+        triggersTravelWithShortcut ? readyShortcutWithTriggerURL : readyShortcutURL
+    }
+
+    /// Read from the running OS rather than `#available`, so this compiles the
+    /// same with any SDK.
+    static var triggersTravelWithShortcut: Bool {
+        ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 27
+    }
+
+    private var isWorking: Bool {
+        if case .working = status { return true }
+        return false
+    }
+
     var body: some View {
         List {
             Section {
@@ -63,6 +101,7 @@ struct WalletSetupView: View {
             }
             .listRowSeparator(.hidden)
 
+            if Self.quickSetupURL != nil { quickSetupSection }
             stepsSection
             coverageSection
             declineSection
@@ -159,10 +198,11 @@ struct WalletSetupView: View {
     /// skimmed step is a skipped step.
     private var stepsSection: some View {
         Section {
-            step(1, "Automation, then +", "The tab at the bottom of Shortcuts.")
-            step(2, "Choose Wallet and tick every card", "One automation covers all of them. On iOS 18 and earlier it's called Transaction.")
-            step(3, "Pick Run Immediately", "Not \"Run After Confirmation\" — that waits for you, so nothing happens on its own.")
-            step(4, "Add \"Log transaction\"", "Tap New Blank Automation, search for it, and pick the one from CashLeak.")
+            // Worded from a recording of the real iOS 26 flow (D-041).
+            step(1, "Automation, then New Automation", "The tab at the bottom of Shortcuts. If you already have automations, tap + instead.")
+            step(2, "Choose Wallet", "Every card and category comes ticked. Leave them all — one automation covers every card. On iOS 18 and earlier it's called Transaction.")
+            step(3, "Scroll down, pick Run Immediately, then Next", "Not \"Run After Confirmation\" — that waits for you, so nothing happens on its own.")
+            step(4, "Create New Shortcut, then add \"Log transaction\"", "Search CashLeak and pick Log transaction.")
 
             NavigationLink {
                 ConnectFieldsView()
@@ -173,7 +213,48 @@ struct WalletSetupView: View {
 
             step(6, "Pay with your phone", "Something small, at a real till. The status above turns green. Pressing play in Shortcuts doesn't count — there's no payment behind it.")
         } header: {
-            Text("Set it up")
+            Text(Self.quickSetupURL == nil ? "Set it up" : (isWorking ? "Set it up by hand" : "Or set it up by hand"))
+        }
+    }
+
+    // MARK: Quick setup
+
+    /// The short way: install the ready-made shortcut, then point one
+    /// automation at it. Still needs the person to create the automation —
+    /// iOS doesn't let an app do that — but every step is a pick from a list.
+    private var quickSetupSection: some View {
+        Section {
+            Button {
+                if let url = Self.quickSetupURL { openURL(url) }
+            } label: {
+                Label(isWorking ? "Add Apple Pay capture again" : "Add Apple Pay capture", systemImage: "square.and.arrow.down")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(isWorking ? brand : .white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(isWorking ? brand.opacity(0.12) : brand)
+                    .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+
+            if !isWorking && Self.triggersTravelWithShortcut {
+                step(1, "Tap Add Shortcut", "It arrives with the Wallet trigger and fields already set.")
+                step(2, "Turn on Automation", "Open the shortcut and switch Automation on under \"When Any Card is tapped\". iOS leaves this one switch to you.")
+                step(3, "Pay with your phone", "The status above turns green.")
+            } else if !isWorking {
+                step(1, "Tap Add Shortcut", "Shortcuts opens with it already connected.")
+                step(2, "Automation, then New Automation", "If you already have automations, tap + instead.")
+                step(3, "\(Self.triggerName) › scroll down › Run Immediately › Next", "Leave every card ticked.")
+                step(4, "Pick the shortcut you just added", "Under My Shortcuts. That's it — no fields to connect.")
+                step(5, "Pay with your phone", "The status above turns green.")
+            }
+        } header: {
+            Text(isWorking ? "Something wrong?" : "Quickest way")
+        } footer: {
+            if isWorking {
+                Text("If an iOS update or an edit changed the shortcut, add it again and point the automation at the new one.")
+            }
         }
     }
 
@@ -295,8 +376,10 @@ struct ConnectFieldsView: View {
             Section {
                 instruction("a", "Tap Amount", nil)
                 instruction("b", "Tap Shortcut Input", "In the bar above the keyboard.")
-                instruction("c", "Tap it again and choose Amount", "Skip this and the whole payment arrives as one lump of text.")
-                instruction("d", "Do the same for Merchant", "Tap Merchant, tap Shortcut Input, tap it again, choose Merchant.")
+                instruction("c", "Tap Shortcut Input again", "A list opens.")
+                instruction("d", "Set Type to Transaction", "At the top of the list. Until you do, it only offers Text, File Size and so on — this is the step nobody guesses.")
+                instruction("e", "Choose Amount", nil)
+                instruction("f", "Do the same for Merchant", "Tap Merchant › Shortcut Input › tap it again › Type: Transaction › Merchant.")
             } header: {
                 Text("How to connect each word")
             }
