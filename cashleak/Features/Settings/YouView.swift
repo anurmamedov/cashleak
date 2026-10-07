@@ -14,6 +14,7 @@ struct YouView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.openURL) private var openURL
     @EnvironmentObject private var authentication: AuthenticationService
+    @EnvironmentObject private var navigation: AppNavigation
 
     @Query private var transactions: [Transaction]
     @Query private var categories: [Category]
@@ -32,6 +33,8 @@ struct YouView: View {
     @State private var showNotificationSettingsAlert = false
 
     @State private var isEditingProfile = false
+    @State private var isShowingCaptureSetup = false
+    @State private var isShowingHistory = false
     @State private var isDeletingAccount = false
     @State private var isConfirmingSignOut = false
     @State private var isEnablingFaceIDSignIn = false
@@ -70,6 +73,8 @@ struct YouView: View {
             .sheet(item: $exportURL) { url in
                 ShareSheet(items: [url])
             }
+            .navigationDestination(isPresented: $isShowingCaptureSetup) { WalletSetupView() }
+            .navigationDestination(isPresented: $isShowingHistory) { HistoryView() }
             .sheet(isPresented: $isEditingProfile) {
                 if let profile { EditProfileView(profile: profile) }
             }
@@ -166,19 +171,28 @@ struct YouView: View {
 
                 Divider()
 
+                // How the app is set up for you, not how you spend (D-039).
+                // The first two open what they're about.
                 HStack(spacing: 0) {
-                    stat("\(stats.sorted)", "sorted")
+                    Button { isShowingCaptureSetup = true } label: {
+                        stat(
+                            stats.caughtShare.map { "\(Int(($0 * 100).rounded()))%" } ?? "—",
+                            "caught for you",
+                            tint: Color(hex: "1D9E75"),
+                            hint: "Apple Pay ›"
+                        )
+                    }
+                    .buttonStyle(.borderless)
                     Divider().frame(height: 28)
-                    stat(
-                        stats.worthItShare.map { "\(Int(($0 * 100).rounded()))%" } ?? "—",
-                        "worth it",
-                        tint: Color(hex: "1D9E75")
-                    )
+                    Button { navigation.destination = .sort } label: {
+                        stat("\(stats.waiting)", "waiting to rate", tint: stats.waiting > 0 ? brand : .primary, hint: "Sort ›")
+                    }
+                    .buttonStyle(.borderless)
                     Divider().frame(height: 28)
-                    stat(
-                        stats.since.map { $0.formatted(.dateTime.month(.abbreviated).year(.twoDigits)) } ?? "—",
-                        "tracking since"
-                    )
+                    Button { isShowingHistory = true } label: {
+                        stat(stats.since.map(Self.sinceText) ?? "—", "using since", hint: "History ›")
+                    }
+                    .buttonStyle(.borderless)
                 }
             }
             .padding(.vertical, 6)
@@ -186,12 +200,21 @@ struct YouView: View {
         }
     }
 
+    /// "Aug 26" this year; "Aug 2025" once it's from an earlier year, so the
+    /// day is never mistaken for a year.
+    static func sinceText(_ date: Date) -> String {
+        Calendar.current.isDate(date, equalTo: .now, toGranularity: .year)
+            ? date.formatted(.dateTime.month(.abbreviated).day())
+            : date.formatted(.dateTime.month(.abbreviated).year())
+    }
+
     private var displayName: String {
         guard let profile, !profile.fullName.isEmpty else { return "You" }
         return profile.fullName
     }
 
-    private func stat(_ value: String, _ label: String, tint: Color = .primary) -> some View {
+    /// `hint` names where a tap goes, so a number that opens something says so.
+    private func stat(_ value: String, _ label: String, tint: Color = .primary, hint: String? = nil) -> some View {
         VStack(spacing: 2) {
             Text(value)
                 .font(.headline)
@@ -200,6 +223,11 @@ struct YouView: View {
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+            if let hint {
+                Text(hint)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
@@ -462,6 +490,14 @@ struct YouView: View {
             Button("Generate 4 months of data") {
                 SeedData.generate(months: 4, in: context)
             }
+            // Reaches back into last year, so the month picker shows two
+            // years and the header shows "March 2025".
+            Button("Generate 18 months of data") {
+                SeedData.generate(months: 18, in: context)
+            }
+            Button("Add a scanned receipt purchase") {
+                addSampleReceipt()
+            }
             Button("Simulate a 2-week L1 trial") {
                 SeedData.clearTransactions(in: context)
                 SeedData.generateTwoWeekTrial(in: context)
@@ -493,6 +529,39 @@ struct YouView: View {
     // MARK: Actions
 
     #if DEBUG
+    /// A purchase that looks like it came from a receipt scan, photo and all,
+    /// so the receipt row and viewer can be checked without a camera.
+    private func addSampleReceipt() {
+        let lines = [
+            "LOBLAWS #1029", "60 CARL HALL RD", "TORONTO ON", "",
+            "BANANAS            1.84", "MILK 2L            5.49", "BREAD              3.99",
+            "CHICKEN 1.2 KG    18.62", "COFFEE BEANS      15.16", "",
+            "SUBTOTAL          45.10", "HST 13%            3.17", "TOTAL             48.27", "",
+            "VISA **** 4411    48.27", "THANK YOU",
+        ]
+        let size = CGSize(width: 600, height: 1000)
+        let image = UIGraphicsImageRenderer(size: size).image { _ in
+            UIColor(white: 0.97, alpha: 1).setFill()
+            UIRectFill(CGRect(origin: .zero, size: size))
+            let font = UIFont.monospacedSystemFont(ofSize: 26, weight: .regular)
+            for (index, line) in lines.enumerated() {
+                (line as NSString).draw(
+                    at: CGPoint(x: 50, y: 60 + CGFloat(index) * 52),
+                    withAttributes: [.font: font, .foregroundColor: UIColor.darkGray]
+                )
+            }
+        }
+        TransactionIngest.ingest(
+            amount: 48.27,
+            merchant: "Loblaws",
+            date: Calendar.current.date(byAdding: .day, value: -1, to: .now) ?? .now,
+            source: .scan,
+            personVerdict: .worthIt,
+            receiptImage: ReceiptReader.storedImage(from: image),
+            into: context
+        )
+    }
+
     /// Merchant strings shaped like what card feeds actually deliver — processor
     /// prefixes, store numbers, city suffixes, and the occasional empty string
     /// from a timed-out trigger.

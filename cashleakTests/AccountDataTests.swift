@@ -20,34 +20,48 @@ final class AccountDataTests: XCTestCase {
         context = nil
     }
 
-    func testStatsCountOnlySortedPurchases() {
-        let unsorted = Transaction(amount: 4.19, merchant: "Tim Hortons", source: .applePay)
+    func testCaughtShareCountsPurchasesThatNeededNoTyping() {
         let stats = AccountData.stats(from: [
-            TestSupport.confirmed(30, verdict: .worthIt),
-            TestSupport.confirmed(10, verdict: .leak),
-            unsorted,
+            Transaction(amount: 4.19, merchant: "Tim Hortons", source: .applePay),
+            Transaction(amount: 1500, merchant: "Rent", source: .recurring),
+            Transaction(amount: 48.27, merchant: "Loblaws", source: .scan),
+            Transaction(amount: 12, merchant: "Market", source: .manual),
         ])
-        XCTAssertEqual(stats.sorted, 2)
-        XCTAssertEqual(stats.worthItShare ?? 0, 0.75, accuracy: 0.001)
+        XCTAssertEqual(stats.caughtShare ?? 0, 0.5, accuracy: 0.001)
     }
 
-    func testNoShareBeforeAnyVerdict() {
-        let stats = AccountData.stats(from: [TestSupport.confirmed(30, verdict: .unrated)])
-        XCTAssertNil(stats.worthItShare)
+    func testMergedDuplicatesAreLeftOut() {
+        let merged = Transaction(amount: 4.19, merchant: "Tim Hortons", source: .manual)
+        merged.isSuperseded = true
+        let stats = AccountData.stats(from: [
+            Transaction(amount: 4.19, merchant: "Tim Hortons", source: .applePay),
+            merged,
+        ])
+        XCTAssertEqual(stats.caughtShare ?? 0, 1, accuracy: 0.001)
     }
 
-    func testSinceIsTheEarliestSortedPurchase() {
+    func testWaitingIsWhatSortHolds() {
+        let stats = AccountData.stats(from: [
+            Transaction(amount: 4.19, merchant: "Tim Hortons", source: .applePay),
+            Transaction(amount: 5.93, merchant: "Starbucks", source: .applePay),
+            TestSupport.confirmed(30, verdict: .worthIt),
+        ])
+        XCTAssertEqual(stats.waiting, 2)
+    }
+
+    func testSinceIsTheEarliestPurchase() {
         let july = TestSupport.date(2026, 7, 4)
         let stats = AccountData.stats(from: [
             TestSupport.confirmed(5, verdict: .leak, date: TestSupport.date(2026, 9, 1)),
-            TestSupport.confirmed(5, verdict: .leak, date: july),
+            Transaction(amount: 5, date: july, merchant: "Shop", source: .applePay),
         ])
         XCTAssertEqual(stats.since, july)
     }
 
     func testEmptyHistory() {
         let stats = AccountData.stats(from: [])
-        XCTAssertEqual(stats.sorted, 0)
+        XCTAssertNil(stats.caughtShare)
+        XCTAssertEqual(stats.waiting, 0)
         XCTAssertNil(stats.since)
     }
 

@@ -7,27 +7,31 @@ enum AccountData {
 
     // MARK: Stats
 
+    /// How CashLeak is set up for you — not how you spend. Spending lives on
+    /// Overview and Analysis; repeating it here only invites a second, slightly
+    /// different number (D-039).
     struct Stats: Equatable {
-        /// Purchases you've confirmed.
-        let sorted: Int
-        /// Of what you've judged, the share by amount you said was worth it.
-        /// `nil` until something has a verdict.
-        let worthItShare: Double?
-        /// The date of your earliest sorted purchase.
+        /// Share of purchases that arrived without typing: Apple Pay, bank
+        /// alerts, recurring bills. A drop means capture broke. `nil` with no
+        /// purchases.
+        let caughtShare: Double?
+        /// Waiting in Sort right now.
+        let waiting: Int
+        /// The earliest purchase on record.
         let since: Date?
     }
 
-    /// Counted the same way as every total in the app: confirmed, not merged
-    /// away.
+    /// Sources that need no typing. A receipt scan still needs a person.
+    static let automaticSources: Set<TransactionSource> = [.applePay, .bankAlert, .recurring]
+
+    /// Merged duplicates don't count — one purchase is one purchase.
     static func stats(from transactions: [Transaction]) -> Stats {
-        let counted = transactions.filter(\.countsTowardTotals)
-        let kept = counted.filter { $0.verdict == .worthIt }.reduce(0) { $0 + $1.amount }
-        let leaked = counted.filter { $0.verdict == .leak }.reduce(0) { $0 + $1.amount }
-        let judged = kept + leaked
+        let live = transactions.filter { !$0.isSuperseded }
+        let automatic = live.filter { automaticSources.contains($0.source) }.count
         return Stats(
-            sorted: counted.count,
-            worthItShare: judged > 0 ? kept / judged : nil,
-            since: counted.map(\.date).min()
+            caughtShare: live.isEmpty ? nil : Double(automatic) / Double(live.count),
+            waiting: live.filter(\.needsSorting).count,
+            since: live.map(\.date).min()
         )
     }
 
