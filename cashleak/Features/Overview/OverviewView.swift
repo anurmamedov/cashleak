@@ -20,6 +20,7 @@ struct OverviewView: View {
     @Environment(\.modelContext) private var context
     @EnvironmentObject private var navigation: AppNavigation
     @ObservedObject private var sync = CloudSyncMonitor.shared
+    @ObservedObject private var network = NetworkMonitor.shared
 
     @Query private var transactions: [Transaction]
     @Query private var goals: [Goal]
@@ -265,26 +266,47 @@ struct OverviewView: View {
     }
 
     /// "☀ Morning, Anar · ✓ up to date" — a small hello in the line that
-    /// already exists, so it costs no space (D-032). Re-evaluated each minute,
-    /// so it moves from morning to afternoon on its own.
+    /// already exists, so it costs no space (D-032). After the first ten
+    /// seconds the tick gives way to how long ago it updated (D-037).
+    /// Re-evaluated every five seconds so "10 sec ago" moves on its own.
     private var greetingLine: some View {
-        TimelineView(.everyMinute) { timeline in
+        TimelineView(.periodic(from: .now, by: 5)) { timeline in
             let moment = Greeting.moment(at: timeline.date)
+            let freshness = SyncFreshness.state(
+                lastSync: lastSync,
+                isOffline: network.isOffline,
+                now: timeline.date
+            )
             HStack(spacing: 5) {
                 Image(systemName: moment.symbol)
                     .foregroundStyle(moment.isDaytime ? Color(hex: "BA7517") : Color(hex: "7F77DD"))
                 Text(Greeting.text(for: moment, firstName: profiles.first?.firstName ?? ""))
                     .foregroundStyle(.secondary)
-                if isUpToDate {
+                if let freshness {
                     Text("·")
                         .foregroundStyle(.tertiary)
-                    Image(systemName: "checkmark")
-                        .foregroundStyle(worthIt)
-                    Text("up to date")
-                        .foregroundStyle(.secondary)
+                    switch freshness {
+                    case .upToDate:
+                        Image(systemName: "checkmark")
+                            .foregroundStyle(worthIt)
+                        Text("up to date")
+                            .foregroundStyle(.secondary)
+                    case .ago(let text):
+                        Image(systemName: "clock")
+                            .foregroundStyle(.tertiary)
+                        Text(text)
+                            .foregroundStyle(.secondary)
+                    case .offline(let text):
+                        Image(systemName: "wifi.slash")
+                            .foregroundStyle(.tertiary)
+                        Text(text)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .font(.caption)
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .combine)
         }
@@ -304,10 +326,10 @@ struct OverviewView: View {
         return nil
     }
 
-    /// Known to be current: an iCloud import finished, or a pull just checked.
-    /// With neither, the greeting shows alone rather than claim it.
-    private var isUpToDate: Bool {
-        sync.lastImportFinished != nil || lastChecked != nil
+    /// The latest moment the data was known current: an iCloud import
+    /// finished, or a pull checked. With neither, the greeting shows alone.
+    private var lastSync: Date? {
+        [sync.lastImportFinished, lastChecked].compactMap { $0 }.max()
     }
 
     // MARK: Summary
@@ -634,7 +656,7 @@ struct OverviewView: View {
             categoryIcon(transaction.category, size: 40)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(transaction.merchant.isEmpty ? "Unknown" : transaction.merchant)
+                Text(transaction.merchant.isEmpty ? "Unknown" : MerchantNormalizer.displayName(transaction.merchant))
                     .font(.body)
                     .lineLimit(1)
                 Text(transaction.date.formatted(date: .omitted, time: .shortened))
