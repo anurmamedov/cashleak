@@ -25,6 +25,7 @@ struct TransactionDetailView: View {
     @State private var note = ""
     @State private var date = Date.now
     @State private var confirmingDelete = false
+    @State private var showingReceipt = false
 
     private var amount: Double { Double(amountText) ?? 0 }
     private var hasValidAmount: Bool { amount > 0 }
@@ -47,6 +48,30 @@ struct TransactionDetailView: View {
                 if !hasValidAmount {
                     Text("Amount must be more than zero.")
                         .foregroundStyle(Color(hex: "993C1D"))
+                }
+            }
+
+            if let receipt = receiptImage {
+                Section {
+                    Button {
+                        showingReceipt = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(uiImage: receipt)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 36, height: 48)
+                                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                            Text("Receipt")
+                                .foregroundStyle(Color.primary)
+                            Spacer()
+                            Text("View")
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                 }
             }
 
@@ -100,8 +125,16 @@ struct TransactionDetailView: View {
                 }
             }
         }
-        .navigationTitle(transaction.merchant.isEmpty ? "Transaction" : transaction.merchant)
+        .navigationTitle(transaction.merchant.isEmpty ? "Transaction" : MerchantNormalizer.displayName(transaction.merchant))
         .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(isPresented: $showingReceipt) {
+            if let receipt = receiptImage {
+                ReceiptPhotoView(image: receipt) {
+                    transaction.receiptImage = nil
+                    try? context.save()
+                }
+            }
+        }
         .onAppear(perform: load)
         .onDisappear(perform: save)
         .confirmationDialog(
@@ -117,6 +150,11 @@ struct TransactionDetailView: View {
         } message: {
             Text("It'll come out of your totals. This can't be undone.")
         }
+    }
+
+    /// Decoded once per render; a 1600 px JPEG is quick enough not to cache.
+    private var receiptImage: UIImage? {
+        transaction.receiptImage.flatMap(UIImage.init(data:))
     }
 
     private func load() {

@@ -6,6 +6,7 @@ import XCTest
 /// Written after the first real device test, where ten manual runs of the
 /// shortcut made a two-state check say "working" while not one capture had
 /// come from a card tap. A green light that lies is worse than none.
+@MainActor
 final class CaptureStatusTests: XCTestCase {
 
     private func entry(_ merchant: String, secondsAgo: TimeInterval = 0) -> CaptureLogEntry {
@@ -43,5 +44,29 @@ final class CaptureStatusTests: XCTestCase {
             return XCTFail("Expected working")
         }
         XCTAssertEqual(merchant, "Sobeys")
+    }
+
+    // MARK: Gone quiet (iOS updates can break the shortcut silently)
+
+    func testACaptureWithinThreeDaysIsStillWorking() {
+        let real = entry("Tim Hortons", secondsAgo: 2 * 86_400)
+        guard case .working = CaptureStatus.from([real]) else {
+            return XCTFail("Two days without a purchase is normal")
+        }
+    }
+
+    func testNothingForMoreThanThreeDaysIsQuiet() {
+        let real = entry("Tim Hortons", secondsAgo: 4 * 86_400)
+        guard case let .quiet(_, merchant) = CaptureStatus.from([real]) else {
+            return XCTFail("Four days of silence should be flagged")
+        }
+        XCTAssertEqual(merchant, "Tim Hortons")
+    }
+
+    func testANewCaptureClearsQuiet() {
+        let captures = [entry("Starbucks", secondsAgo: 60), entry("Tim Hortons", secondsAgo: 10 * 86_400)]
+        guard case .working = CaptureStatus.from(captures) else {
+            return XCTFail("The next real payment should turn it green again")
+        }
     }
 }

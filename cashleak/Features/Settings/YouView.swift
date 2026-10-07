@@ -214,6 +214,7 @@ struct YouView: View {
         case .notConnected: "Set up"
         case .missingMerchant: "Check step 5"
         case .working: "Working"
+        case .quiet: "Check it"
         }
     }
 
@@ -222,6 +223,7 @@ struct YouView: View {
         case .notConnected: Color(hex: "854F0B")
         case .missingMerchant: Color(hex: "993C1D")
         case .working: Color(hex: "1D9E75")
+        case .quiet: Color(hex: "C65A2E")
         }
     }
 
@@ -629,7 +631,7 @@ struct CategoriesView: View {
                 }
                 .onMove(perform: move)
             } footer: {
-                Text("Tap Edit to drag them into the order the Add screen shows. The number is how many purchases each holds.")
+                Text("Tap Edit to drag them into the order the Add screen shows. The number is how many purchases each holds. Swipe left on a category to delete it.")
             }
 
             Section {

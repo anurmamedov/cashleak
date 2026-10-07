@@ -262,7 +262,9 @@ layout variance across receipts turns them into a permanent support burden.
 
 The Add sheet is the check screen: a scan fills its fields and is saved
 through `ingest` with source `.scan`, the photo stored as `receiptImage`
-(1600 px JPEG, external storage). Category comes from merchant memory, then
+(1600 px JPEG, external storage). The purchase detail screen shows it
+full screen, with pinch to zoom and a Remove photo button that frees the space
+and leaves the purchase as it is. Category comes from merchant memory, then
 `MerchantCategoryHints`, then receipt words (TIP → Dining out, LITRES → Fuel).
 
 ## Notifications

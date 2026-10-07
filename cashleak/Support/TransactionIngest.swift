@@ -86,6 +86,9 @@ enum TransactionIngest {
             source: source,
             verdict: verdict ?? .unrated,
             isConfirmed: verdict != nil,
+            // The currency chosen in Profile at the time, so an export says
+            // what the person was spending in rather than the model default.
+            currencyCode: AppSettings.currencyCode,
             category: category
         )
         incoming.receiptImage = receiptImage

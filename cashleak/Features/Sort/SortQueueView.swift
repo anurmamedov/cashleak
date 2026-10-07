@@ -405,12 +405,20 @@ private struct BulkCategorySheet: View {
 private struct QueueRow: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.modelContext) private var context
     @Bindable var transaction: Transaction
+
+    /// What the person said the last few times here — shown, never applied
+    /// (D-035). Silent until three rated visits.
+    private var history: MerchantMemory.VerdictHistory? {
+        guard !transaction.merchant.isEmpty else { return nil }
+        return MerchantMemory.verdictHistory(forMerchant: transaction.merchant, in: context)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
-                Text(transaction.merchant.isEmpty ? "Unknown" : transaction.merchant)
+                Text(transaction.merchant.isEmpty ? "Unknown" : MerchantNormalizer.displayName(transaction.merchant))
                     .font(.body.weight(.medium))
                     .lineLimit(1)
                     .truncationMode(.tail)
@@ -441,6 +449,13 @@ private struct QueueRow: View {
                     categoryText
                         .lineLimit(1)
                 }
+            }
+
+            if let history {
+                Text(history.shortSummary)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
             }
         }
         .padding(.vertical, 4)
@@ -516,7 +531,7 @@ struct CategoryPickerSheet: View {
                         }
                     }
                 } header: {
-                    Text(transaction.merchant.isEmpty ? "Category" : transaction.merchant)
+                    Text(transaction.merchant.isEmpty ? "Category" : MerchantNormalizer.displayName(transaction.merchant))
                 } footer: {
                     Text("Setting a category doesn't confirm the transaction — it stays in the queue until you swipe.")
                 }

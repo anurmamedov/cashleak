@@ -48,11 +48,16 @@ enum MerchantMemory {
         let worthIt: Int
         var total: Int { leak + worthIt }
 
-        var summary: String {
+        var summary: String { "Last \(total) times here: " + counts }
+
+        /// For the narrower Sort row.
+        var shortSummary: String { "Last \(total) here: " + counts }
+
+        private var counts: String {
             var parts: [String] = []
             if leak > 0 { parts.append("\(leak) leak") }
             if worthIt > 0 { parts.append("\(worthIt) worth it") }
-            return "Last \(total) times here: " + parts.joined(separator: " · ")
+            return parts.joined(separator: " · ")
         }
     }
 

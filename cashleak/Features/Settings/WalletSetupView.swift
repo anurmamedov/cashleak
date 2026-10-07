@@ -16,10 +16,21 @@ enum CaptureStatus: Equatable {
     case missingMerchant
     /// A real capture, merchant and all.
     case working(lastCapture: Date, merchant: String)
+    /// It worked, then went quiet. An iOS update can rewrite or switch off the
+    /// shortcut without a word — iOS 27 did — and one old capture would
+    /// otherwise keep this green forever.
+    case quiet(lastCapture: Date, merchant: String)
 
-    static func from(_ captures: [CaptureLogEntry]) -> CaptureStatus {
+    /// After this long without a real capture, say so. Three days is short
+    /// enough to catch a broken shortcut within a week, long enough that a
+    /// weekend of paying cash isn't an alarm.
+    static let quietAfter: TimeInterval = 3 * 86_400
+
+    static func from(_ captures: [CaptureLogEntry], now: Date = .now) -> CaptureStatus {
         if let real = captures.first(where: { !$0.rawMerchant.isEmpty }) {
-            return .working(lastCapture: real.receivedAt, merchant: real.rawMerchant)
+            return now.timeIntervalSince(real.receivedAt) > quietAfter
+                ? .quiet(lastCapture: real.receivedAt, merchant: real.rawMerchant)
+                : .working(lastCapture: real.receivedAt, merchant: real.rawMerchant)
         }
         return captures.isEmpty ? .notConnected : .missingMerchant
     }
@@ -86,6 +97,7 @@ struct WalletSetupView: View {
         case .notConnected: "bolt.badge.clock"
         case .missingMerchant: "exclamationmark.triangle"
         case .working: "checkmark.circle.fill"
+        case .quiet: "clock.badge.exclamationmark"
         }
     }
 
@@ -94,6 +106,7 @@ struct WalletSetupView: View {
         case .notConnected: Color(hex: "854F0B")
         case .missingMerchant: Color(hex: "993C1D")
         case .working: Color(hex: "1D9E75")
+        case .quiet: Color(hex: "C65A2E")
         }
     }
 
@@ -102,6 +115,7 @@ struct WalletSetupView: View {
         case .notConnected: "Not connected yet"
         case .missingMerchant: "Merchant isn't coming through"
         case .working: "Working"
+        case let .quiet(date, _): "Nothing since \(date.formatted(.dateTime.month(.abbreviated).day()))"
         }
     }
 
@@ -112,7 +126,9 @@ struct WalletSetupView: View {
         case .missingMerchant:
             "Captures are arriving without a shop name. Check step 5."
         case let .working(date, merchant):
-            "Last capture \(date.formatted(.relative(presentation: .named))) at \(merchant)."
+            "Last capture \(date.formatted(.relative(presentation: .named))) at \(MerchantNormalizer.displayName(merchant))."
+        case .quiet:
+            "No Apple Pay purchase has come through for a few days. If you've paid with your phone since, an iOS update may have changed the shortcut — check it."
         }
     }
 
@@ -144,7 +160,7 @@ struct WalletSetupView: View {
     private var stepsSection: some View {
         Section {
             step(1, "Automation, then +", "The tab at the bottom of Shortcuts.")
-            step(2, "Choose Wallet and tick every card", "One automation covers all of them. On iOS 25 and earlier it's called Transaction.")
+            step(2, "Choose Wallet and tick every card", "One automation covers all of them. On iOS 18 and earlier it's called Transaction.")
             step(3, "Pick Run Immediately", "Not \"Run After Confirmation\" — that waits for you, so nothing happens on its own.")
             step(4, "Add \"Log transaction\"", "Tap New Blank Automation, search for it, and pick the one from CashLeak.")
 
