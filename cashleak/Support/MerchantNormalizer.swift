@@ -50,6 +50,20 @@ enum MerchantNormalizer {
         return tokens.joined(separator: " ").trimmingCharacters(in: .whitespaces)
     }
 
+    /// A merchant name fit to show: `Tim Hortons #5524` → `Tim Hortons`.
+    ///
+    /// Display only. Store numbers say which location, not which shop, and
+    /// visits are already grouped across locations by `normalize`. Casing and
+    /// punctuation are left as delivered; a name that is nothing but a number
+    /// is returned unchanged rather than emptied.
+    static func displayName(_ raw: String) -> String {
+        let trimmed = raw
+            .replacingOccurrences(of: #"\s*#\s?\d+\b"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: #"(\s+(no\.?\s?)?\d{2,})+\s*$"#, with: "", options: [.regularExpression, .caseInsensitive])
+            .trimmingCharacters(in: .whitespaces)
+        return trimmed.contains(where: \.isLetter) ? trimmed : raw
+    }
+
     /// Whether two normalized merchants are close enough to be the same place.
     ///
     /// Exact match, safe phrase containment, or a Levenshtein distance within

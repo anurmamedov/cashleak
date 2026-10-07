@@ -285,6 +285,6 @@ enum AnalysisSummary {
         }
         return visits.values
             .max { $0.count == $1.count ? $0.amount < $1.amount : $0.count < $1.count }
-            .map { (name: $0.display, count: $0.count, amount: $0.amount) }
+            .map { (name: MerchantNormalizer.displayName($0.display), count: $0.count, amount: $0.amount) }
     }
 }

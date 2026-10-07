@@ -137,7 +137,7 @@ struct HistoryView: View {
     private func row(_ transaction: Transaction) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(transaction.merchant.isEmpty ? "Unknown" : transaction.merchant)
+                Text(transaction.merchant.isEmpty ? "Unknown" : MerchantNormalizer.displayName(transaction.merchant))
                     .font(.body)
                 HStack(spacing: 5) {
                     if transaction.needsSorting {

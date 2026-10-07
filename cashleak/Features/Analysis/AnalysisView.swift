@@ -112,10 +112,16 @@ struct AnalysisView: View {
 
     private func card<Content: View>(
         minHeight: CGFloat = 0,
+        fillsHeight: Bool = false,
         @ViewBuilder _ content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 0) { content() }
-            .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .topLeading)
+            .frame(
+                maxWidth: .infinity,
+                minHeight: minHeight,
+                maxHeight: fillsHeight ? .infinity : nil,
+                alignment: .topLeading
+            )
             .padding(14)
             .background(Color(.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -237,9 +243,13 @@ struct AnalysisView: View {
 
     /// Two cards side by side, snapping. Each takes 92% of the width so the
     /// next one's edge shows — the cue that there is a next one.
+    ///
+    /// A plain `HStack` with a fixed vertical size, so both cards are measured
+    /// and both take the taller one's height. The lazy stack sized the row to
+    /// the chart alone and cut the bottom off a longer Findings card.
     private var pager: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
                 chartCard
                     .containerRelativeFrame(.horizontal) { width, _ in width * 0.92 }
                     .id(Page.chart)
@@ -247,6 +257,7 @@ struct AnalysisView: View {
                     .containerRelativeFrame(.horizontal) { width, _ in width * 0.92 }
                     .id(Page.findings)
             }
+            .fixedSize(horizontal: false, vertical: true)
             .scrollTargetLayout()
         }
         .scrollTargetBehavior(.viewAligned)
@@ -280,7 +291,7 @@ struct AnalysisView: View {
         let lineHeight: CGFloat? = showsTakeHomeLine ? 112 * takeHome / ceiling : nil
         let showValues = bars.count <= 6
 
-        return card(minHeight: 236) {
+        return card(minHeight: 236, fillsHeight: true) {
             sectionTitle(range == .month ? "Week by week" : "Month by month")
 
             if ceilingInfo.isCapped {
@@ -289,6 +300,10 @@ struct AnalysisView: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 2)
             }
+
+            // When Findings is the taller card, the extra room goes above the
+            // bars, so they stay anchored to the legend at the bottom.
+            Spacer(minLength: 0)
 
             HStack(alignment: .bottom, spacing: bars.count > 6 ? 5 : 9) {
                 ForEach(bars) { bar in
@@ -419,7 +434,7 @@ struct AnalysisView: View {
         let sorted = headline.count
         let threshold = AnalysisSummary.patternThreshold
 
-        return card(minHeight: 236) {
+        return card(minHeight: 236, fillsHeight: true) {
             sectionTitle("What stood out")
 
             if findings.isEmpty {
@@ -518,7 +533,7 @@ struct AnalysisView: View {
                 NavigationLink(value: merchant) {
                     HStack {
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(merchant.merchant)
+                            Text(MerchantNormalizer.displayName(merchant.merchant))
                                 .font(.subheadline)
                             Text("\(merchant.count) \(merchant.count == 1 ? "visit" : "visits")")
                                 .font(.caption)
@@ -630,7 +645,7 @@ struct WeekDetailView: View {
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(transaction.merchant.isEmpty ? "Unknown" : transaction.merchant)
+                                Text(transaction.merchant.isEmpty ? "Unknown" : MerchantNormalizer.displayName(transaction.merchant))
                                     .font(.subheadline)
                                 Text(transaction.date.formatted(.dateTime.weekday(.abbreviated).month().day()))
                                     .font(.caption)
@@ -735,7 +750,7 @@ struct CategoryDetailView: View {
             ForEach(matching) { transaction in
                 HStack {
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(transaction.merchant.isEmpty ? "Unknown" : transaction.merchant)
+                        Text(transaction.merchant.isEmpty ? "Unknown" : MerchantNormalizer.displayName(transaction.merchant))
                             .font(.subheadline)
                         Text(transaction.date.formatted(.dateTime.month().day()))
                             .font(.caption)
